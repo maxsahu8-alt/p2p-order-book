@@ -1455,6 +1455,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
       <summary>AI connection · <span id="aiProvLbl">Built-in</span></summary>
       <div class="aigrid">
         <label class="full">Provider<select id="ai-prov">
+          <option value="braingemini">P2P Brain + Gemini (learns from Google Gemini · free key)</option>
           <option value="brainclaude">P2P Brain + Claude (learns from Claude · your Claude key)</option>
           <option value="brain">P2P Brain (app's own brain · offline · no AI)</option>
           <option value="builtin">Built-in (Claude, inside this app link)</option>
@@ -2657,13 +2658,13 @@ sheets.imphist=function(){const L=recs.filter(r=>r.kind==="implog").sort((a,b)=>
 const AIK="p2p_ai_cfg_v1";
 let aiCfg={prov:"builtin",key:"",model:"",url:""};
 try{aiCfg=Object.assign(aiCfg,JSON.parse(localStorage.getItem(AIK)||"{}"))}catch(e){}
-const PROV={brainclaude:{n:"P2P Brain + Claude",help:"Best of both. P2P Brain answers first, offline and free. Questions it can't answer go to Claude with your API key, and the Brain learns each answer so next time it replies by itself. Get a key at console.anthropic.com (pay per use, usually a few paise per question).",def:"claude-sonnet-5-5"},brain:{n:"P2P Brain",help:"The app's own brain. Answers from your data and records entries, works offline, and learns the words and phrases you teach it. No AI, no key, nothing leaves your phone."},builtin:{n:"Built-in",help:"Uses Claude through this app link. No key needed."},
+const PROV={braingemini:{n:"P2P Brain + Gemini",help:"Free. P2P Brain answers first, offline. Questions it can't answer go to Google Gemini with your free key, and the Brain learns each answer. Get a free key at aistudio.google.com → Get API key. Free use has a daily limit, and Google may use free-tier questions to improve its products, so don't ask it anything private."},brainclaude:{n:"P2P Brain + Claude",help:"Best of both. P2P Brain answers first, offline and free. Questions it can't answer go to Claude with your API key, and the Brain learns each answer so next time it replies by itself. Get a key at console.anthropic.com (pay per use, usually a few paise per question).",def:"claude-sonnet-5-5"},brain:{n:"P2P Brain",help:"The app's own brain. Answers from your data and records entries, works offline, and learns the words and phrases you teach it. No AI, no key, nothing leaves your phone."},builtin:{n:"Built-in",help:"Uses Claude through this app link. No key needed."},
   anthropic:{n:"Anthropic Claude",help:"Get a key at console.anthropic.com. Leave Model empty to use the default.",def:"claude-sonnet-5-5"},
   openai:{n:"OpenAI",help:"Get a key at platform.openai.com and type the model name you want to use."},
   gemini:{n:"Google Gemini",help:"Get a key at aistudio.google.com and type the model name you want to use."},
   custom:{n:"Custom",help:"Any OpenAI-compatible service. Enter its base URL, key and model."}};
 function aiFormSync(){const p=$("#ai-prov").value;
-  $("#ai-key-w").hidden=p==="builtin"||p==="brain";$("#ai-model-w").hidden=p==="builtin"||p==="brain"||p==="brainclaude";$("#ai-url-w").hidden=p!=="custom";
+  $("#ai-key-w").hidden=p==="builtin"||p==="brain";$("#ai-model-w").hidden=p==="builtin"||p==="brain"||p==="brainclaude"||p==="braingemini";$("#ai-url-w").hidden=p!=="custom";
   $("#ai-help").textContent=PROV[p].help+(p!=="builtin"&&p!=="brain"?" Your key stays on this device.":"");}
 function aiErr(code,text){const e=new Error(text||code);e.code=code;e.text=text;return e}
 async function postJSON(url,headers,body){
@@ -2675,9 +2676,10 @@ async function postJSON(url,headers,body){
   if(!res.ok)throw aiErr("api",(j.error&&(j.error.message||j.error))||("AI service error "+res.status));
   return j;
 }
-function isBrain(){return aiCfg.prov==="brain"||aiCfg.prov==="brainclaude"}
-function brainVia(){if(!isBrain()||pref("brainSmart")===false)return null;if(sampleFn)return{prov:"builtin"};if(aiCfg.prov==="brainclaude"&&aiCfg.key)return{prov:"anthropic",key:aiCfg.key,model:aiCfg.model||""};return null}
-async function aiCall(turns,onText,images){images=images||[];if(isBrain()&&!brainVia())throw aiErr("brain",aiCfg.prov==="brainclaude"?"Add your Claude API key in Settings → AI so P2P Brain can ask Claude.":"P2P Brain is on. Pick “P2P Brain + Claude” in Settings → AI to let it learn from Claude.");
+function isBrain(){return aiCfg.prov==="brain"||aiCfg.prov==="brainclaude"||aiCfg.prov==="braingemini"}
+const brainKeyMode=()=>(aiCfg.prov==="brainclaude"||aiCfg.prov==="braingemini")&&!!aiCfg.key;
+function brainVia(){if(!isBrain()||pref("brainSmart")===false)return null;if(sampleFn)return{prov:"builtin"};if(aiCfg.prov==="brainclaude"&&aiCfg.key)return{prov:"anthropic",key:aiCfg.key,model:aiCfg.model||""};if(aiCfg.prov==="braingemini"&&aiCfg.key)return{prov:"gemini",key:aiCfg.key,model:aiCfg.model||"",auto:true};return null}
+async function aiCall(turns,onText,images){images=images||[];if(isBrain()&&!brainVia())throw aiErr("brain",aiCfg.prov==="brainclaude"?"Add your Claude API key in Settings → AI so P2P Brain can ask Claude.":aiCfg.prov==="braingemini"?"Add your free Gemini key in Settings → AI so P2P Brain can ask Gemini.":"P2P Brain is on. Pick “P2P Brain + Claude” in Settings → AI to let it learn from Claude.");
   const c=isBrain()?brainVia():aiCfg;
   if(c.prov==="builtin"){
     if(!sampleFn)throw aiErr("unavailable","Built-in AI isn't available here. Choose a provider and add your API key.");
@@ -2692,8 +2694,13 @@ async function aiCall(turns,onText,images){images=images||[];if(isBrain()&&!brai
     const j=await postJSON("https://api.anthropic.com/v1/messages",{"x-api-key":c.key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},{model:c.model||PROV.anthropic.def,max_tokens:2000,messages:turns.map(t=>t._imgs?{role:t.role,content:[...t._imgs.map(i=>({type:"image",source:{type:"base64",media_type:i.type,data:i.data}})),{type:"text",text:t.content}]}:{role:t.role,content:t.content})});
     text=(j.content||[]).map(x=>x.text||"").join("");
   }else if(c.prov==="gemini"){
-    if(!c.model)throw aiErr("no_model","Type the Gemini model name in AI connection.");
-    const j=await postJSON("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(c.model)+":generateContent",{"x-goog-api-key":c.key},{contents:turns.map(t=>({role:t.role==="assistant"?"model":"user",parts:[...(t._imgs||[]).map(i=>({inline_data:{mime_type:i.type,data:i.data}})),{text:t.content}]}))});
+    if(!c.model&&!c.auto)throw aiErr("no_model","Type the Gemini model name in AI connection.");
+    const body={contents:turns.map(t=>({role:t.role==="assistant"?"model":"user",parts:[...(t._imgs||[]).map(i=>({inline_data:{mime_type:i.type,data:i.data}})),{text:t.content}]}))};
+    // free-tier models change names over time: try the saved one, then known free Flash models, and remember what works
+    const tryM=c.auto?[...new Set([c.model,"gemini-flash-latest","gemini-3.8-flash","gemini-3.5-flash","gemini-3.5-flash-lite","gemini-3.1-flash-lite"].filter(Boolean))]:[c.model];let j=null,last=null;
+    for(const m of tryM){try{j=await postJSON("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(m)+":generateContent",{"x-goog-api-key":c.key},body);if(c.auto&&aiCfg.model!==m){aiCfg.model=m;try{localStorage.setItem(AIK,JSON.stringify(aiCfg))}catch(e){}}break}
+      catch(e){last=e;if(!c.auto||e.code==="bad_key"||e.code==="network"||!/not found|not supported|404|unknown|no longer|deprecat/i.test(String(e.text||e.message)))throw e}}
+    if(!j)throw last||aiErr("api","No Gemini model available on this key.");
     text=((j.candidates||[])[0]?.content?.parts||[]).map(x=>x.text||"").join("");
   }else{
     if(!c.model)throw aiErr("no_model","Type the model name in AI connection.");
@@ -2712,16 +2719,16 @@ async function aiJson(prompt){
 function setAiState(ok,msg){const e=$("#aiState");e.className="aistate"+(ok===true?" on":ok===false?" err":"");e.textContent=msg;$("#aiProvLbl").textContent=PROV[aiCfg.prov].n}
 async function testAi(){
   setAiState(null,"Connecting…");
-  if(aiCfg.prov==="brainclaude"&&!sampleFn){if(!aiCfg.key){setAiState(false,"Add your Claude key");return aiErr("no_key","Paste your Claude API key (from console.anthropic.com).")}
-    try{await aiCall([{role:"user",content:"Reply with the single word: OK"}]);setAiState(true,"P2P Brain + Claude (smart)");return true}catch(e){setAiState(false,"Claude key not working");return e}}
-  if(isBrain()){setAiState(true,aiOnline()?"P2P Brain + Claude (smart)":"P2P Brain · offline");return true}
+  if((aiCfg.prov==="brainclaude"||aiCfg.prov==="braingemini")&&!sampleFn){const nm=aiCfg.prov==="braingemini"?"Gemini":"Claude";if(!aiCfg.key){setAiState(false,"Add your "+nm+" key");return aiErr("no_key",nm==="Gemini"?"Paste your free Gemini key (aistudio.google.com → Get API key).":"Paste your Claude API key (from console.anthropic.com).")}
+    try{await aiCall([{role:"user",content:"Reply with the single word: OK"}]);setAiState(true,"P2P Brain + "+nm+" (smart)");return true}catch(e){setAiState(false,nm+" key not working");return e}}
+  if(isBrain()){setAiState(true,aiOnline()?(aiCfg.prov==="braingemini"?"P2P Brain + Gemini (smart)":"P2P Brain + Claude (smart)"):"P2P Brain · offline");return true}
   try{await aiCall([{role:"user",content:"Reply with the single word: OK"}]);setAiState(true,PROV[aiCfg.prov].n+" connected");return true}
   catch(e){setAiState(false,"Not connected");return e}
 }
 $("#ai-prov").value=aiCfg.prov;$("#ai-key").value=aiCfg.key;$("#ai-model").value=aiCfg.model;$("#ai-url").value=aiCfg.url;aiFormSync();
 $("#ai-prov").onchange=aiFormSync;
 $("#ai-connect").onclick=async()=>{
-  aiCfg={prov:$("#ai-prov").value,key:$("#ai-key").value.trim(),model:$("#ai-model").value.trim(),url:$("#ai-url").value.trim()};
+  const pv=$("#ai-prov").value;aiCfg={prov:pv,key:$("#ai-key").value.trim(),model:pv==="braingemini"?(aiCfg.prov===pv?aiCfg.model:""):$("#ai-model").value.trim(),url:$("#ai-url").value.trim()};
   try{localStorage.setItem(AIK,JSON.stringify(aiCfg))}catch(e){}
   const b=$("#ai-connect");b.disabled=true;b.textContent="Connecting…";
   const r=await testAi();b.disabled=false;b.textContent="Connect";
@@ -3110,7 +3117,7 @@ sheets.brain=function(){const st=brPending||brStats(),B=brainRecs(),al=B.filter(
   openSheet(`<div class="insw"><div class="insh"><h3>P2P Brain</h3><span class="note">${isBrain()?"active":"backup when AI is off"}</span></div>
     <div class="tgh">${ring(lvl,100,"#8b5cf6",lvl,"brain level")}<div class="tgk"><div><span>Questions answered</span><b>${st.answered||0}</b></div><div><span>Accuracy (your 👍/👎)</span><b>${acc==null?"—":acc+"%"}</b></div></div></div>
     <div class="msgr">${[["Words taught",al.length],["Phrases taught",ph.length],["Words learned",learnedWords],["Typos fixed",st.fuzzy||0],["Learned from Claude",st.fromAi||0],["👍 / 👎",fb.up+" / "+fb.down]].map(([l,v])=>`<div><span>${l}</span><b>${v}</b></div>`).join("")}</div>
-    <div class="rml" style="margin-bottom:12px"><div class="dqr"><span>Smart mode<small>${sampleFn||aiCfg.prov==="brainclaude"&&aiCfg.key?"Hard questions go to Claude, and I learn from its answers":"Pick “P2P Brain + Claude” in Settings → AI and add your Claude key"}</small></span><label class="tog"><input type="checkbox" id="br-smart" ${pref("brainSmart")!==false?"checked":""} ${sampleFn||aiCfg.prov==="brainclaude"&&aiCfg.key?"":"disabled"}><span></span></label></div></div>
+    <div class="rml" style="margin-bottom:12px"><div class="dqr"><span>Smart mode<small>${sampleFn||brainKeyMode()?"Hard questions go to "+(aiCfg.prov==="braingemini"&&!sampleFn?"Gemini":"Claude")+", and I learn from its answers":"Pick “P2P Brain + Gemini” (free) or “P2P Brain + Claude” in Settings → AI and add the key"}</small></span><label class="tog"><input type="checkbox" id="br-smart" ${pref("brainSmart")!==false?"checked":""} ${sampleFn||brainKeyMode()?"":"disabled"}><span></span></label></div></div>
     <div class="pcsec">What I learned from your business</div>${insList(H.slice(0,10).map(h=>["ok",esc(h)]))}
     <div class="pcsec">Words & phrases you taught <span>${B.length}</span></div>
     <div class="rml">${B.length?B.sort((a,b)=>b.time-a.time).map(r=>`<div class="rmi" style="grid-template-columns:1fr auto"><div class="rmt"><b>"${esc(r.from)}"</b><small>${r.type==="alias"?"means":"answers as"} ${esc(r.to)}</small></div><button type="button" class="link del" data-brdel="${r.id}">Forget</button></div>`).join(""):'<p class="note" style="padding:10px 0">Nothing yet. In AI Agent type e.g. "sb matlab SBI".</p>'}</div>
@@ -3320,7 +3327,7 @@ DATA: ${JSON.stringify(agentContext())}`;
 const AP_CHIPS={home:["aaj ka profit","is hafte kitna kamaya","pending orders","aaj ka report"],orders:["pending orders","kis time order zyada aate hain","loss kitna hua","mera score"],wallet:["balance","limit","agle hafte paisa kam padega","usdt kitna bacha"],direct:["kis kis ko dena baki hai","agle hafte paisa kam padega","is mahine ka profit"],coins:["kis rate pe ad lagau","usdt kitna bacha","is mahine ka profit"],add:["kis rate pe ad lagau","usdt kitna bacha","limit"],_:["aaj ka profit","kis kis ko dena baki hai","balance","help"]};
 function apPage(){return Object.keys(PAGE_NAMES).find(k=>{const el=$("#p-"+k);return el&&!el.hidden})||"home"}
 function openAiPop(){const pg=apPage();$("#apChips").innerHTML=(AP_CHIPS[pg]||AP_CHIPS._).map(q=>`<button type="button" data-apq="${esc(q)}">${esc(q)}</button>`).join("");
-  $("#apSub").textContent=isBrain()?(aiOnline()?"P2P Brain + Claude (smart)":"P2P Brain · offline"):aiOnline()?PROV[aiCfg.prov].n+" + P2P Brain":"P2P Brain · offline";
+  $("#apSub").textContent=isBrain()?(aiOnline()?(aiCfg.prov==="braingemini"?"P2P Brain + Gemini (smart)":"P2P Brain + Claude (smart)"):"P2P Brain · offline"):aiOnline()?PROV[aiCfg.prov].n+" + P2P Brain":"P2P Brain · offline";
   if(!$("#apMsgs").children.length){const d=document.createElement("div");d.className="msg a";d.textContent=LA.t("Hi! Ask about profit, parties, banks, limits, stock or traders, or tell me what happened, like \"500 usdt 93 pe becha Ravi ko\".","Namaste! Profit, party, bank, limit, stock, trader kuch bhi poocho, ya bolo kya hua, jaise \"500 usdt 93 pe becha Ravi ko\".");$("#apMsgs").appendChild(d)}
   $("#aiPop").hidden=false;requestAnimationFrame(()=>$("#aiPop").classList.add("open"));setTimeout(()=>$("#apIn").focus(),150)}
 function closeAiPop(){const p=$("#aiPop");p.classList.remove("open");setTimeout(()=>p.hidden=true,180)}
@@ -3446,7 +3453,7 @@ function openDrawer(){
   const exT=exps.filter(x=>x.time>=t0.getTime()).reduce((t,x)=>t+(+x.amt||0),0);
   const coinsN=new Set(orders.map(o=>o.coin)).size;const blk=recs.filter(r=>r.kind==="cptag"&&r.tag==="block").length;
   const best=(()=>{try{return banks.filter(b=>b.type!=="Cash").sort((a,b)=>bal[b.id]-bal[a.id])[0]}catch(e){return null}})();
-  const M={intake:jobs?jobs+" in queue":"Auto save",ai:isBrain()?(aiOnline()?"Brain + Claude":"P2P Brain"):aiCfg.prov==="builtin"?(sampleFn?"Built-in":"Offline mode"):(PROV[aiCfg.prov]||{n:"Own"}).n,coins:coinsN?coinsN+" coin"+(coinsN>1?"s":""):"",import:"",expense:exT?H(inr(Math.round(exT)))+" today":"",which:best?best.name:"",report:"",cps:blk?blk+" blocked":"",ideas:"",settings:pinOn?"":"Set PIN",upiqr:"",coach:(()=>{const c=coachRecs.find(x=>x.week===weekStart());return c?"Ready":"New week"})(),cashflow:(()=>{try{const f=cashFlow(pref("cfProfit")!==false);return f.short?"Short "+new Date(f.short.t).toLocaleDateString("en-IN",{weekday:"short"}):f.totOut?"OK 7 days":""}catch(e){return""}})(),bankrisk:(()=>{try{const r=bankRisk();const h=r.filter(x=>x.lv==="bad").length,m=r.filter(x=>x.lv==="warn").length;return h?h+" high":m?m+" medium":r.length?"Low":""}catch(e){return""}})(),loss:(()=>{try{const d=lossData("30");return d.tot?"−"+inr(Math.round(d.tot)):""}catch(e){return""}})(),rules:(()=>{const n=arules.filter(r=>r.on!==false).length,h=evalRules().length;return h?h+" firing":n?n+" on":"Add"})(),besttime:(()=>{try{return bestTimeTop("30")}catch(e){return""}})(),bestrate:(()=>{const g=rateSuggest(pref("coin")||"USDT");return g.sell?"Sell ₹"+g.sell.toFixed(2):""})(),target:(()=>{const t=targetInfo();return t.T?Math.round(t.pct)+"%":"Set"})(),mscore:(()=>{const d=scoreData("30");return d.closed?d.score+" · "+grade(d.score)[0]:""})(),nightrep:pref("repAuto")===false?"Off":(()=>{const [h,m]=(pref("repAt")||"23:00").split(":").map(Number);return (h%12||12)+(m?":"+String(m).padStart(2,"0"):"")+(h<12?" AM":" PM")})(),conv:(()=>{const r=convRate();return r?"₹"+fmtR(r):""})(),gallery:(()=>{const n=allProofs().length;return n?n+" photo"+(n>1?"s":""):""})(),notes:(()=>{const d=reminds.filter(r=>!r.done&&r.at&&r.at<=Date.now()).length,u=reminds.filter(r=>!r.done).length;return d?d+" due":u?u+" open":""})()};
+  const M={intake:jobs?jobs+" in queue":"Auto save",ai:isBrain()?(aiOnline()?(aiCfg.prov==="braingemini"?"Brain + Gemini":"Brain + Claude"):"P2P Brain"):aiCfg.prov==="builtin"?(sampleFn?"Built-in":"Offline mode"):(PROV[aiCfg.prov]||{n:"Own"}).n,coins:coinsN?coinsN+" coin"+(coinsN>1?"s":""):"",import:"",expense:exT?H(inr(Math.round(exT)))+" today":"",which:best?best.name:"",report:"",cps:blk?blk+" blocked":"",ideas:"",settings:pinOn?"":"Set PIN",upiqr:"",coach:(()=>{const c=coachRecs.find(x=>x.week===weekStart());return c?"Ready":"New week"})(),cashflow:(()=>{try{const f=cashFlow(pref("cfProfit")!==false);return f.short?"Short "+new Date(f.short.t).toLocaleDateString("en-IN",{weekday:"short"}):f.totOut?"OK 7 days":""}catch(e){return""}})(),bankrisk:(()=>{try{const r=bankRisk();const h=r.filter(x=>x.lv==="bad").length,m=r.filter(x=>x.lv==="warn").length;return h?h+" high":m?m+" medium":r.length?"Low":""}catch(e){return""}})(),loss:(()=>{try{const d=lossData("30");return d.tot?"−"+inr(Math.round(d.tot)):""}catch(e){return""}})(),rules:(()=>{const n=arules.filter(r=>r.on!==false).length,h=evalRules().length;return h?h+" firing":n?n+" on":"Add"})(),besttime:(()=>{try{return bestTimeTop("30")}catch(e){return""}})(),bestrate:(()=>{const g=rateSuggest(pref("coin")||"USDT");return g.sell?"Sell ₹"+g.sell.toFixed(2):""})(),target:(()=>{const t=targetInfo();return t.T?Math.round(t.pct)+"%":"Set"})(),mscore:(()=>{const d=scoreData("30");return d.closed?d.score+" · "+grade(d.score)[0]:""})(),nightrep:pref("repAuto")===false?"Off":(()=>{const [h,m]=(pref("repAt")||"23:00").split(":").map(Number);return (h%12||12)+(m?":"+String(m).padStart(2,"0"):"")+(h<12?" AM":" PM")})(),conv:(()=>{const r=convRate();return r?"₹"+fmtR(r):""})(),gallery:(()=>{const n=allProofs().length;return n?n+" photo"+(n>1?"s":""):""})(),notes:(()=>{const d=reminds.filter(r=>!r.done&&r.at&&r.at<=Date.now()).length,u=reminds.filter(r=>!r.done).length;return d?d+" due":u?u+" open":""})()};
   M.wa=waApiOn()?"API on":"App";M.dbphone=typeof dbsCfg!=="undefined"&&dbsCfg.on?(dbsCfg.err?"Offline":"On"):"Off";{const FL=fbList();const pv=FL.filter(x=>x.status==="proposed").length,w=FL.filter(x=>x.status==="new").length;M.feedback=w?w+" waiting":"";M.about=pv?"Update ready":"v"+APP_VER}
   document.querySelectorAll("#drawer .dmeta").forEach(e=>{const v=M[e.dataset.m]||"";e.textContent=v;e.hidden=!v;e.classList.toggle("warn",e.dataset.m==="settings"||(e.dataset.m==="intake"&&jobs>0)||(e.dataset.m==="notes"&&/due/.test(v))||/Short|high|firing|Update ready/.test(v))});
   const cur=Object.keys(PAGE_NAMES).find(k=>{const el=$("#p-"+k);return el&&!el.hidden});
@@ -4108,7 +4115,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=14;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=15;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4175,6 +4182,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00015","4 Oct 2026",["New free AI option: P2P Brain + Gemini. The Brain asks Google Gemini (free key) when it doesn't know, and learns the answer"]],
   ["0.0.0.00014","4 Oct 2026",["New AI option: P2P Brain + Claude. The Brain answers first; hard questions go to Claude with your key and the Brain learns the answer"]],
   ["0.0.0.00013","4 Oct 2026",["Delete all data and Restore backup now work instantly in the phone app, even with thousands of orders"]],
   ["0.0.0.00012","4 Oct 2026",["KuCoin PDF import fixed: every order ID, name and status read correctly (CHARGED = Completed)","Rows that continue on the next page are joined","Platform (KuCoin, Binance…) detected from the file","Button to remove a wrong earlier import of the same file"]],
@@ -4932,13 +4940,13 @@ applyTheme();if(devGet("p2p_hide_default","0")==="1")hideAmt=true;
 lsLoad();applyPrefs();applyFormDefaults();render();updateChrome();
 (async()=>{
   const C=window.claude;
-  if(!C||!C.use){($("#syncNote").classList.add("ok"),$("#syncNote").textContent="Saved on this device");if(aiCfg.prov==="builtin"||isBrain())setAiState(true,isBrain()?(aiOnline()?"P2P Brain + Claude (smart)":"P2P Brain · offline"):"App assistant · offline");return}
+  if(!C||!C.use){($("#syncNote").classList.add("ok"),$("#syncNote").textContent="Saved on this device");if(aiCfg.prov==="builtin"||isBrain())setAiState(true,isBrain()?(aiOnline()?(aiCfg.prov==="braingemini"?"P2P Brain + Gemini (smart)":"P2P Brain + Claude (smart)"):"P2P Brain · offline"):"App assistant · offline");return}
   const [db,user,sample]=await Promise.all([C.use("db"),C.use("user"),C.use("sample")]);
   sampleFn=sample;
   if(sample&&sample.limits)sample.limits().then(l=>{i2Max=l&&l.images?Math.min(5,l.images.maxCount):0}).catch(()=>{});
   C.use("mcp").then(m=>{mcp=m;$("#nowBtn").hidden=!m});
   C.use("assets").then(a=>{assetsApi=a});C.use("downloads").then(d=>{dlApi=d});
-  if(isBrain())setAiState(true,aiOnline()?"P2P Brain + Claude (smart)":"P2P Brain · offline");else if(aiCfg.prov==="builtin")setAiState(true,sample?"Built-in connected":"App assistant · offline");
+  if(isBrain())setAiState(true,aiOnline()?(aiCfg.prov==="braingemini"?"P2P Brain + Gemini (smart)":"P2P Brain + Claude (smart)"):"P2P Brain · offline");else if(aiCfg.prov==="builtin")setAiState(true,sample?"Built-in connected":"App assistant · offline");
   else setAiState(null,PROV[aiCfg.prov].n+(aiCfg.key?" · key saved":" · add key"));
   if(db&&user){
     try{
