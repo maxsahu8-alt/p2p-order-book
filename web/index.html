@@ -1188,6 +1188,10 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 .vabox[data-st=speak] .vwave{display:flex}.vabox[data-st=speak] .vcore{animation:vbeat 1s ease-in-out infinite}
 .vastate{font:700 1.05rem var(--display)}.vaheard{min-height:1.2em;color:#c4cbd6;font-size:.92rem;text-align:center}.vareply{color:#fff;font-size:.95rem;line-height:1.45;text-align:center;max-height:7.5em;overflow:hidden}.vahint{margin-top:6px;color:#6b7686;font-size:.74rem;text-align:center}
 @keyframes vring{0%{transform:scale(.8);opacity:.7}100%{transform:scale(1.5);opacity:0}}@keyframes vwav{0%,100%{height:6px}50%{height:24px}}@keyframes vbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.vaupd{border:0;border-radius:14px;padding:12px 22px;font:700 .9rem var(--body);background:#23c58f;color:#04130d;cursor:pointer}
+.vaheard{cursor:pointer}.vaheard small{color:#6b7686;font-size:.72rem}
+.vafix{display:flex;gap:8px;width:100%}.vafix[hidden]{display:none}.vafix input{flex:1;min-width:0;border:1px solid #ffffff22;background:#ffffff10;color:#fff;border-radius:12px;padding:11px 12px;font:500 .9rem var(--body)}.vafix button{border:0;border-radius:12px;padding:0 14px;background:#8b5cf6;color:#fff;font:700 .82rem var(--body);cursor:pointer}
+.vachips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px}.vachips button{border:1px solid #ffffff22;background:#ffffff0d;color:#e5e7eb;border-radius:99px;padding:8px 12px;font:600 .78rem var(--body);cursor:pointer}
 </style>
 
 <div class="wrap">
@@ -3369,6 +3373,7 @@ const VOICE={native:!!(window.P2PNative&&window.P2PNative.hasVoice),on:false,sta
 VOICE.lang=()=>"en-IN";
 VOICE.listen=function(){return new Promise((ok,no)=>{
   if(VOICE.native){VOICE._res=t=>{VOICE._res=null;if(String(t).startsWith("__ERR__:"))no(new Error(String(t).slice(8)));else ok(String(t||""))};try{window.P2PNative.listen(VOICE.lang())}catch(e){no(e)}return}
+  if(window.P2PNative&&!VOICE.native){const e=new Error("Voice needs the new app version (0.0.0.00017). Tap Update app below.");e.code="old_apk";no(e);return}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){no(new Error("Voice isn't available here. Use the phone app."));return}
   let txt="",done=false;const rec=new SR();rec.lang=VOICE.lang();rec.interimResults=true;rec.maxAlternatives=1;VOICE._rec=rec;
   rec.onresult=ev=>{txt=[...ev.results].map(r=>r[0].transcript).join(" ");const l=$("#vaHeard");if(l)l.textContent=txt};
@@ -3387,24 +3392,48 @@ async function voiceMode(){if(VOICE.on)return;VOICE.on=true;
     <div class="vasub">${esc(isBrain()?(aiOnline()?(aiCfg.prov==="braingemini"&&!sampleFn?"P2P Brain + Gemini":"P2P Brain + Claude"):"P2P Brain"):PROV[aiCfg.prov]?PROV[aiCfg.prov].n:"AI")}</div>
     <button type="button" class="vaorb" id="vaOrb" aria-label="Talk"><span class="vr1"></span><span class="vr2"></span><span class="vcore"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span class="vwave"><i></i><i></i><i></i><i></i><i></i></span></button>
     <div class="vastate" id="vaState"></div><div class="vaheard" id="vaHeard"></div><div class="vareply" id="vaReply"></div>
-    <div class="vahint">Try: “aaj ka profit” · “Vineet ko kitna dena hai” · “500 USDT 93 pe becha Ravi ko”</div></div>`;
+    <div class="vafix" id="vaFix" hidden><input id="vaFixIn" placeholder="Type what you said"><button type="button" id="vaFixGo">Fix & learn</button></div>
+    <div class="vachips" id="vaChips">${(voiceTop(4).length?voiceTop(4):["aaj ka profit","pending orders","kis party ko dena hai"]).map(t=>`<button type="button" data-vq="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+    <div class="vahint">${voiceStats().n?`I learn from you · ${voiceStats().n} voice questions · ${voiceStats().fixes||0} words corrected`:"Try: “aaj ka profit” · “Vineet ko kitna dena hai” · “500 USDT 93 pe becha Ravi ko”"}</div></div>`;
   document.body.appendChild(o);requestAnimationFrame(()=>o.classList.add("open"));
   $("#vaX").onclick=VOICE.stop;o.addEventListener("click",e=>{if(e.target===o)VOICE.stop()});
   $("#vaOrb").onclick=()=>{if(VOICE.stage==="speak"){try{window.P2PNative&&window.P2PNative.stopSpeak&&window.P2PNative.stopSpeak()}catch(e){}try{speechSynthesis.cancel()}catch(e){}if(VOICE._spk)VOICE._spk();return}if(VOICE.stage==="idle")loop()};
-  let empty=0;
+  let empty=0,lastHeard="";
+  $("#vaChips").onclick=e=>{const b=e.target.closest("[data-vq]");if(!b)return;VOICE.stop();setTimeout(()=>{openAiPop();ask(b.dataset.vq)},250)};
+  $("#vaHeard").onclick=()=>{if(!lastHeard)return;$("#vaFix").hidden=false;$("#vaFixIn").value=lastHeard;$("#vaFixIn").focus()};
+  $("#vaFixGo").onclick=async()=>{const m=$("#vaFixIn").value.trim();if(!m)return;const n=await voiceLearn(lastHeard,m);$("#vaFix").hidden=true;toast(n?"Learned · next time I'll hear it right":"Got it");VOICE.stop();setTimeout(()=>{openAiPop();ask(m)},250)};
   const loop=async()=>{while(VOICE.on){vaStage("listen");$("#vaHeard").textContent="";let q="";
-      try{q=(await VOICE.listen()).trim()}catch(e){vaStage("idle",e.message||"Couldn't hear");return}
+      try{q=(await VOICE.listen()).trim()}catch(e){vaStage("idle",e.message||"Couldn't hear");if(e.code==="old_apk"&&!$("#vaUpd")){$("#vaState").insertAdjacentHTML("afterend",'<button type="button" class="vaupd" id="vaUpd">Update app</button>');$("#vaUpd").onclick=()=>{try{window.P2PNative.openUrl("https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk")}catch(err){}}}return}
+      q=voiceNorm(q);
       if(!VOICE.on)return;if(!q){if(++empty>=2||VOICE.native&&empty>=1){vaStage("idle");return}continue}empty=0;
-      $("#vaHeard").textContent="“"+q+"”";if(/^(bas|stop|band karo|bye|ruk jao|thik hai bas|ok bye)\b/i.test(q)){await VOICE.speak("Theek hai, bye!");VOICE.stop();return}
+      lastHeard=q;voiceUse(q);$("#vaHeard").innerHTML="“"+esc(q)+"” <small>· wrong? tap to fix</small>";if(/^(bas|stop|band karo|bye|ruk jao|thik hai bas|ok bye)\b/i.test(q)){await VOICE.speak("Theek hai, bye!");VOICE.stop();return}
       vaStage("think");$("#vaReply").textContent="";const before=curMsgs().children.length;
       try{await ask(q)}catch(e){}
       let last=[...curMsgs().querySelectorAll(".msg.a")].pop();let tries=0;while(last&&last.querySelector(".thk")&&tries++<60){await new Promise(k=>setTimeout(k,500));last=[...curMsgs().querySelectorAll(".msg.a")].pop()}
       if(!VOICE.on)return;const ans=last&&curMsgs().children.length>before?last.innerText:"";$("#vaReply").textContent=VOICE.clean(ans).slice(0,220);
       vaStage("speak");await VOICE.speak(ans)}};
   loop()}
+// what the phone hears → what the user means (numbers, coin names, learned corrections)
+const VN_NUM={ek:1,do:2,teen:3,char:4,chaar:4,paanch:5,panch:5,chhe:6,che:6,saat:7,aath:8,nau:9,das:10,bees:20,pachas:50,pachaas:50};
+function voiceNorm(q){let x=" "+String(q||"").toLowerCase()+" ";
+  x=x.replace(/\b(you|u)\s*s\s*d\s*t\b|\busd\s*t\b|\busdts?\b|\byou sdt\b|\bu sdt\b|\btether\b/g," usdt ").replace(/\bbit ?coin\b/g," btc ").replace(/\brupay(e|ee|es)?\b|\brupees?\b|\brs\b/g," rupees ");
+  x=x.replace(/\b(ek|do|teen|char|chaar|paanch|panch|chhe|che|saat|aath|nau|das|bees|pachas|pachaas) (sau|hazaar|hazar|hajar|lakh)\b/g,(m,a,b)=>" "+VN_NUM[a]*(b==="sau"?100:b==="lakh"?100000:1000)+" ");
+  x=x.replace(/\b(\d+) (sau|hazaar|hazar|hajar|lakh|thousand|hundred)\b/g,(m,a,b)=>" "+(+a)*(/sau|hundred/.test(b)?100:b==="lakh"?100000:1000)+" ");
+  x=x.replace(/(\d),(\d{3})/g,"$1$2");
+  try{x=brainApply(x).q||x}catch(e){}
+  return x.replace(/\s+/g," ").trim()}
+// learn from corrections: user fixes what the phone heard → Brain remembers those words for next time
+async function voiceLearn(heard,meant){const H=heard.toLowerCase().split(/\s+/),M=meant.trim().split(/\s+/);let n=0;
+  if(H.length===M.length)for(let i=0;i<H.length;i++){if(H[i]&&M[i]&&H[i]!==M[i].toLowerCase()&&H[i].length>=2){try{await brainTeach("alias",H[i],M[i]);n++}catch(e){}}}
+  else if(H.join(" ")!==meant.toLowerCase()){try{await brainTeach("phrase",heard,meant);n++}catch(e){}}
+  const st=voiceStats();st.fixes=(st.fixes||0)+n;voiceSave(st);return n}
+function voiceStats(){try{return JSON.parse(localStorage.getItem("p2p_voice")||"{}")}catch(e){return{}}}
+function voiceSave(st){try{localStorage.setItem("p2p_voice",JSON.stringify(st))}catch(e){}}
+function voiceUse(q){const st=voiceStats();st.n=(st.n||0)+1;st.q=st.q||{};const k=q.toLowerCase().slice(0,60);st.q[k]=(st.q[k]||0)+1;const keys=Object.keys(st.q);if(keys.length>60){keys.sort((a,b)=>st.q[a]-st.q[b]).slice(0,keys.length-60).forEach(k=>delete st.q[k])}voiceSave(st)}
+function voiceTop(n){const st=voiceStats();return Object.entries(st.q||{}).sort((a,b)=>b[1]-a[1]).slice(0,n).map(x=>x[0])}
 function thinkHTML(t){return`<span class="thk"><span class="thk-orb"></span><span class="thk-txt">${esc(t)}</span><span class="thk-dots"><i></i><i></i><i></i></span></span>`}
 (function(){const m=$("#apMic");if(!(VOICE.native||window.SpeechRecognition||window.webkitSpeechRecognition))return;m.hidden=false;
-  m.onclick=async()=>{if(m.classList.contains("on"))return;m.classList.add("on");try{const q=(await VOICE.listen()).trim();if(q){$("#apIn").value="";ask(q)}}catch(e){toast(e.message||"Couldn't hear. Try again")}m.classList.remove("on")};
+  m.onclick=async()=>{if(m.classList.contains("on"))return;m.classList.add("on");try{const q=voiceNorm((await VOICE.listen()).trim());if(q){$("#apIn").value="";ask(q)}}catch(e){toast(e.message||"Couldn't hear. Try again")}m.classList.remove("on")};
   const v=$("#apVoice");if(v){v.hidden=false;v.onclick=()=>voiceMode()}})();
 function apFabSync(){const pg=apPage();$("#aiFab").hidden=pg==="ai"||!$("#sheetBg").hidden||!$("#drawer").hidden}
 document.addEventListener("click",()=>setTimeout(apFabSync,0));setInterval(apFabSync,800);
@@ -4183,7 +4212,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=17;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=18;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4250,6 +4279,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00018","4 Oct 2026",["Voice: if the app is old, an Update app button appears","Voice learns: tap what it heard to correct it, and P2P Brain remembers those words","Your most-used voice questions show as quick buttons","Better hearing of numbers (paanch sau = 500) and USDT"]],
   ["0.0.0.00017","4 Oct 2026",["AI thinking animation","Voice assistant: tap the headphones in Ask anything, speak, and P2P Brain answers out loud","Mic button works in the phone app (needs app 0.0.0.00017)"]],
   ["0.0.0.00016","4 Oct 2026",["P2P Brain says Gemini (not Claude) when it asks Gemini","When Gemini is busy, another free Gemini model is tried, then the Brain answers itself","Brain replies to good night, kya kar rahe ho, kaise ho, thanks… by itself"]],
   ["0.0.0.00015","4 Oct 2026",["New free AI option: P2P Brain + Gemini. The Brain asks Google Gemini (free key) when it doesn't know, and learns the answer"]],

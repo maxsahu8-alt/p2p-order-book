@@ -1,9 +1,9 @@
 {
- "web": "0.0017",
- "build": 17,
- "display": "0.0.0.00017",
+ "web": "0.0018",
+ "build": 18,
+ "display": "0.0.0.00018",
  "files": {
-  "index.html": "0d18f8409d974fcd77c58e5151d2fdafdc13a679",
+  "index.html": "2375638568a71e56b9c35eb758a83435c6162a14",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 3,
   "name": "0.0.0.00017",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "0.0.0.00017: Voice assistant (speak to P2P Brain and hear the answer), mic works in the app, AI thinking animation."
+  "notes": "Voice learns from your corrections; Update app button for old app"
  }
 }
