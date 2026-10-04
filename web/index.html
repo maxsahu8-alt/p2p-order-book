@@ -455,6 +455,7 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .fbr{margin-top:8px;background:var(--bg);border-radius:12px;padding:9px 11px;font-size:.82rem;line-height:1.4}.fbr span{display:block;font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
 .fbact{display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin-top:10px}.fbact>*{display:flex;align-items:center;justify-content:center;text-decoration:none;padding:11px 8px!important}
 .fbhow{display:grid;gap:0;margin-top:14px}.fbst{display:flex;gap:12px;position:relative;padding-bottom:16px}.fbst:not(:last-child)::before{content:"";position:absolute;left:14px;top:30px;bottom:2px;width:2px;background:var(--line)}.fbst>span{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--fg);color:var(--bg);font:700 .8rem var(--body)}.fbst b{display:block;font-size:.9rem;margin-top:5px}.fbst small{color:var(--muted);font-size:.8rem;line-height:1.4}
+.irold{border-color:color-mix(in srgb,var(--sell) 40%,var(--line))}.irold b{display:block}
 .trh{margin:4px 0 8px;background:var(--bg);border-radius:12px;padding:9px 11px}
 #i-what{margin:2px 0 -4px}
 .imph{display:flex;align-items:center;justify-content:space-between}.imph .link{color:var(--primary);font-weight:700}
@@ -2474,8 +2475,8 @@ let IMP={files:[],rows:[],tz:"ist",fix:{}};let impWhat=(()=>{try{return localSto
 const loadScript=src=>new Promise((ok,no)=>{if(document.querySelector(`script[src="${src}"]`))return ok();const t=document.createElement("script");t.src=src;t.onload=ok;t.onerror=()=>no(new Error("load"));document.head.appendChild(t)});
 const num=v=>{if(typeof v==="number")return v;let s=String(v??"").replace(/[₹$,\s]|INR|USDT|rs\.?/gi,"");const n=parseFloat(s.replace(/[^0-9.\-]/g,""));return isFinite(n)?n:0};
 function normSide(v){v=String(v||"").toLowerCase();return /sell|^s$|sold|बेच/.test(v)?"SELL":/buy|purchase|^b$|bought/.test(v)?"BUY":""}
-function normStatusX(v){v=String(v||"").toLowerCase().replace(/\s+/g," ").trim();if(!v)return"Completed";if(/cancel|expire|fail|reject|timeout|timed out|closed by|refund/.test(v))return"Cancelled";if(/appeal|dispute|complain/.test(v))return"Appeal";if(/^compl|complet|success|done|finish|releas|paid|filled|settled|^ok$/.test(v))return"Completed";if(/pending|processing|in progress|unpaid|waiting|to be paid|ongoing|created|open/.test(v))return"Pending";return null}
-function normStatus(v){v=String(v||"").toLowerCase();if(/cancel|expire|fail|reject|timeout/.test(v))return"Cancelled";if(/appeal|dispute/.test(v))return"Appeal";if(/complet|success|done|finish|released|paid|filled/.test(v)||!v)return"Completed";return"Pending"}
+function normStatusX(v){v=String(v||"").toLowerCase().replace(/\s+/g," ").trim();if(!v)return"Completed";if(/cancel|expire|fail|reject|timeout|timed out|closed by|refund/.test(v))return"Cancelled";if(/appeal|dispute|complain/.test(v))return"Appeal";if(/^compl|complet|charged|success|done|finish|releas|paid|filled|settled|^ok$/.test(v))return"Completed";if(/pending|processing|in progress|unpaid|waiting|to be paid|ongoing|created|open/.test(v))return"Pending";return null}
+function normStatus(v){v=String(v||"").toLowerCase();if(/cancel|expire|fail|reject|timeout/.test(v))return"Cancelled";if(/appeal|dispute/.test(v))return"Appeal";if(/complet|charged|success|done|finish|released|paid|filled/.test(v)||!v)return"Completed";return"Pending"}
 // date: decides day-first vs month-first from all samples, returns NaN when unreadable (never "now")
 function impDateMode(samples){let dmy=0,mdy=0;samples.forEach(s=>{const m=String(s||"").match(/^\s*(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);if(!m)return;if(+m[1]>12)dmy++;else if(+m[2]>12)mdy++});return mdy>dmy?"mdy":"dmy"}
 function normTime(v,mode){if(v instanceof Date)return isNaN(v)?NaN:v.getTime();if(typeof v==="number"&&v>20000&&v<80000)return Math.round((v-25569)*864e5+new Date().getTimezoneOffset()*6e4);if(typeof v==="number"&&v>1e11&&v<1e13)return v;if(typeof v==="number"&&v>1e9&&v<1e10)return v*1000;
@@ -2488,6 +2489,7 @@ function normTime(v,mode){if(v instanceof Date)return isNaN(v)?NaN:v.getTime();i
 function safeId(s){return String(s).replace(/[^A-Za-z0-9_\-.~]/g,"").slice(0,120)}
 function impAutoMap(head){const map={};FIELDS.forEach(([k,,re])=>{const i=head.findIndex(h=>re.test(String(h).trim())&&!Object.values(map).includes(h));map[k]=i>=0?head[i]:""});if(map.total&&map.total===map.qty)map.total="";if(map.rate&&/exchange.?rate/i.test(map.rate)){const i=head.findIndex(h=>/^price/i.test(h));map.rate=i>=0?head[i]:map.rate}return map}
 // ---- readers: every file → {name, head, rows:[{cells:{}, src}], map, via, note}
+function impPlat(t){t=String(t||"").toLowerCase();return /kucoin/.test(t)?"KuCoin":/binance/.test(t)?"Binance":/bybit/.test(t)?"Bybit":/\bokx\b|okex/.test(t)?"OKX":/bitget/.test(t)?"Bitget":/\bmexc\b/.test(t)?"MEXC":""}
 async function impReadSheet(file){
   await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
   const isTxt=/\.(csv|txt|tsv)$/i.test(file.name);const wb=isTxt?XLSX.read(await file.text(),{type:"string",raw:true,dense:false}):XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});const out=[];
@@ -2495,7 +2497,7 @@ async function impReadSheet(file){
     let hi=a.findIndex(r=>r.filter(c=>String(c).trim()).length>=3&&FIELDS.filter(([,,re])=>r.some(c=>re.test(String(c).trim()))).length>=3);if(hi<0)continue;
     const head=a[hi].map((h,i)=>String(h).trim()||"Column "+(i+1));const hs=head.join("|");
     const rows=[];a.slice(hi+1).forEach((r,ri)=>{if(!r.some(c=>String(c).trim()))return;if(r.map(c=>String(c).trim()).join("|")===hs)return;rows.push({cells:Object.fromEntries(head.map((h,i)=>[h,r[i]])),src:`${n} · row ${hi+ri+2}`})});
-    out.push({name:file.name+(wb.SheetNames.length>1?" › "+n:""),head,rows,map:impAutoMap(head),via:"sheet"})}
+    out.push({name:file.name+(wb.SheetNames.length>1?" › "+n:""),head,rows,map:impAutoMap(head),via:"sheet",plat:impPlat(file.name+" "+a.slice(0,hi+1).flat().join(" "))})}
   if(!out.length)out.push({name:file.name,head:[],rows:[],map:{},via:"sheet",note:"No order table found in this file."});
   return out}
 async function impPdfLib(){const v="3.11.174";await loadScript(`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${v}/pdf.min.js`);pdfjsLib.GlobalWorkerOptions.workerSrc=`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${v}/pdf.worker.min.js`}
@@ -2503,19 +2505,39 @@ function impPdfLines(items){const L=[];items.filter(t=>t.str&&t.str.trim()).map(
 async function impReadPdf(file){await impPdfLib();
   const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;const pages=[];
   for(let i=1;i<=pdf.numPages;i++){$("#i-status").textContent=`Reading ${file.name} · page ${i} of ${pdf.numPages}…`;const c=await(await pdf.getPage(i)).getTextContent();pages.push(impPdfLines(c.items))}
-  // 1) offline table reader
-  let cols=null,head=[];const rows=[];let cur=null;
-  pages.forEach((lines,pi)=>lines.forEach(l=>{const txt=l.items.map(i=>i.s).join(" ");
-    const hits=FIELDS.filter(([,,re])=>l.items.some(i=>re.test(i.s))||re.test(txt)).length;
-    if(hits>=4&&!/\d{6,}/.test(txt)){const H=[];l.items.forEach(it=>{const p=H[H.length-1];if(p&&it.x-(p.x+p.w)<6)p.s+=" "+it.s,p.w=it.x+it.w-p.x;else H.push({...it})});cols=H.map(h=>({s:h.s,c:h.x+h.w/2,x:h.x}));head=cols.map(c=>c.s);cur=null;return}
+  // 1) offline table reader — rows are vertical bands around each "anchor" line (the line that has Buy/Sell),
+  //    so cells that wrap above or below (long order IDs, names) stay with their own order
+  let cols=null,head=[];const rows=[];
+  const hdrWord=s=>/^(order|release|time|date|name|amount|quantity|status|currency|side|type|price|fiat|crypto|counterparty|tax|fee|total|coin|asset|\(?utc[^\s]*\)?|time\(utc[^)]*\)|\(.*\))$/i.test(s.trim());
+  const mkCols=(H)=>H.map(h=>({s:h.s,c:h.x+h.w/2,x:h.x,w:h.w}));
+  const nearest=(it)=>{const cx=it.x+it.w/2;let best=0,bd=1e9;cols.forEach((c,ci)=>{const d=Math.min(Math.abs(cx-c.c),Math.abs(it.x-c.x));if(d<bd){bd=d;best=ci}});return best};
+  pages.forEach((lines,pi)=>{let hi=-1;
+    lines.forEach((l,li)=>{const txt=l.items.map(i=>i.s).join(" ");const hits=FIELDS.filter(([,,re])=>l.items.some(i=>re.test(i.s))||re.test(txt)).length;
+      if(hi<0&&hits>=4&&!/\d{6,}/.test(txt.replace(/utc[+\-]\d+:\d+/ig,""))){hi=li;const H=[];l.items.forEach(it=>{const p=H[H.length-1];if(p&&it.x-(p.x+p.w)<6){p.s+=" "+it.s;p.w=it.x+it.w-p.x}else H.push({...it})});
+        // header words printed just above/below the header line (two-line headers like "Release / Time(UTC+08:00)")
+        [lines[li-1],lines[li+1]].forEach((x,k)=>{if(!x||Math.abs(x.y-l.y)>18||!x.items.every(it=>it.s.split(/\s+/).every(hdrWord)))return;x.hdr=true;
+          x.items.forEach(it=>{const cx=it.x+it.w/2;const m=H.find(h=>Math.abs(h.x+h.w/2-cx)<24||Math.abs(h.x-it.x)<12);if(m)m.s=k===0?it.s+" "+m.s:m.s+" "+it.s;else H.push({...it})})});
+        H.sort((a,b)=>a.x-b.x);cols=mkCols(H);head=cols.map(c=>c.s)}});
     if(!cols)return;
-    const cells={};l.items.forEach(it=>{const cx=it.x+it.w/2;let best=0,bd=1e9;cols.forEach((c,ci)=>{const d=Math.min(Math.abs(cx-c.c),Math.abs(it.x-c.x));if(d<bd){bd=d;best=ci}});const k=cols[best].s;cells[k]=cells[k]?cells[k]+" "+it.s:it.s});
-    const sideCol=cols.find(c=>FIELDS[1][2].test(c.s)),noCol=cols.find(c=>FIELDS[0][2].test(c.s));
-    const nCells=Object.keys(cells).length;const starts=(sideCol&&normSide(cells[sideCol.s]))||(!sideCol&&noCol&&/\d{6,}/.test(cells[noCol.s]||"")&&nCells>=3)||(!sideCol&&!noCol&&nCells>=3);
-    if(starts||!cur){cur={cells,src:`page ${pi+1}`};rows.push(cur)}else Object.entries(cells).forEach(([k,v])=>{const p=cur.cells[k];cur.cells[k]=!p?v:(/^[\d\-]+$/.test(p)&&/^[\d\-]+$/.test(v)&&noCol&&k===noCol.s)?p+v:p+" "+v})}));
+    const sideCol=cols.findIndex(c=>FIELDS[1][2].test(c.s)),noCol=cols.findIndex(c=>FIELDS[0][2].test(c.s));
+    const data=lines.filter((l,li)=>li>hi&&hi>=0&&!l.hdr||hi<0&&!l.hdr).map(l=>({y:l.y,items:l.items.map(it=>({...it,ci:nearest(it)}))}));
+    const isAnchor=l=>sideCol>=0?l.items.some(it=>it.ci===sideCol&&normSide(it.s)):(l.items.length>=3&&(noCol<0||l.items.some(it=>it.ci===noCol)));
+    const anchors=data.filter(isAnchor);if(!anchors.length)return;
+    const gaps=anchors.slice(1).map((a,i)=>Math.abs(anchors[i].y-a.y)).sort((a,b)=>a-b);const gap=gaps.length?gaps[gaps.length>>1]:30;
+    const bands=anchors.map(a=>({a,lines:[]}));
+    const colW=ci=>{const c=cols[ci],n=cols[ci+1];return n?n.x-c.x:Math.max(80,c.w*2)};
+    const top=anchors[0].y,orphans=[];
+    data.forEach(l=>{if(rows.length&&l.y>top+gap*0.45&&!isAnchor(l)){orphans.push(l);return}let best=null,bd=1e9;bands.forEach(b=>{const d=Math.abs(b.a.y-l.y);if(d<bd){bd=d;best=b}});if(best&&bd<=gap*0.75)best.lines.push(l)});
+    // lines above the first order of this page = end of the last order of the previous page
+    if(orphans.length){const pr=rows[rows.length-1];orphans.sort((p,q)=>q.y-p.y).forEach(l=>{const per={};l.items.forEach(it=>{(per[it.ci]=per[it.ci]||[]).push(it)});Object.entries(per).forEach(([ci,its])=>{its.sort((p,q)=>p.x-q.x);const k=cols[ci].s,t=its.map(i=>i.s).join(" ");const w=its[its.length-1].x+its[its.length-1].w-its[0].x;
+      const wrapped=+ci===noCol||(pr._w&&pr._w[k]||0)>=colW(+ci)*0.72;pr.cells[k]=pr.cells[k]?pr.cells[k]+(wrapped?"":" ")+t:t;pr._w=pr._w||{};pr._w[k]=w})})}
+    bands.forEach(b=>{const parts={};b.lines.sort((p,q)=>q.y-p.y).forEach(l=>{const per={};l.items.forEach(it=>{(per[it.ci]=per[it.ci]||[]).push(it)});
+        Object.entries(per).forEach(([ci,its])=>{its.sort((p,q)=>p.x-q.x);(parts[ci]=parts[ci]||[]).push({s:its.map(i=>i.s).join(" "),w:its[its.length-1].x+its[its.length-1].w-its[0].x})})});
+      const cells={},_w={};Object.entries(parts).forEach(([ci,frs])=>{let s="",prevW=0;frs.forEach(f=>{if(!s)s=f.s;else{const wrapped=+ci===noCol||prevW>=colW(+ci)*0.72;s+=(wrapped?"":" ")+f.s}prevW=f.w});cells[cols[ci].s]=s;_w[cols[ci].s]=prevW});
+      rows.push({cells,_w,src:`page ${pi+1}`})})});
   const all=pages.map(L=>L.map(l=>l.items.map(i=>i.s).join(" ")).join("\n")).join("\n");
   const ids=new Set((all.match(/\b\d{15,22}\b/g)||[]));
-  if(rows.length&&head.length){const map=impAutoMap(head);return[{name:file.name,head,rows,map,via:"pdf",note:ids.size&&ids.size!==rows.length?`${ids.size} order numbers seen in the PDF, ${rows.length} rows read. Check the list below.`:""}]}
+  if(rows.length&&head.length){const map=impAutoMap(head);return[{name:file.name,head,rows,map,via:"pdf",plat:impPlat(file.name+" "+all.slice(0,3000)),note:ids.size&&ids.size!==rows.length?`${ids.size} order numbers seen in the PDF, ${rows.length} rows read. Check the list below.`:""}]}
   // 2) AI reader, with a recount check against order numbers in the text
   if(!(sampleFn||(aiCfg.prov!=="builtin"&&aiCfg.prov!=="brain"&&aiCfg.key)))return[{name:file.name,head:[],rows:[],map:{},via:"pdf",note:"This PDF is not a table I can read offline. Download the Excel/CSV export from the exchange, or turn on AI."}];
   const chunks=[];let c0="";all.split("\n").forEach(l=>{if((c0+l).length>9000&&c0){chunks.push(c0);c0=""}c0+=l+"\n"});if(c0)chunks.push(c0);
@@ -2540,10 +2562,10 @@ function impBuild(){const plat=$("#i-plat").value,mode=$("#i-mode").value,tzo0=I
       const why=[!side&&"Buy/Sell missing",!(qty>0)&&"Quantity missing",!(rate>0)&&"Price missing",isNaN(time)&&"Date not readable"].filter(Boolean);
       if(why.length){out.push({st:"fix",row,f,key,why:why.join(" · "),side,qty,rate,tRaw});return}
       const rawNo=g("orderNo");const lossy=typeof rawNo==="number"&&!Number.isSafeInteger(rawNo);const no=lossy?"":String(rawNo||"").replace(/\s+/g,"").replace(/^#/,"").trim();
-      const id="imp_"+safeId(plat+"_"+(no||side+"_"+time+"_"+qty+"_"+rate));
+      const fp=f.plat||plat;const id="imp_"+safeId(fp+"_"+(no||side+"_"+time+"_"+qty+"_"+rate));
       if(seen.has(id)){out.push({st:"dupe",row,f,key,why:"Same order already in another file/row"});return}seen.add(id);
       const rawSt=String(g("status")??"").replace(/\s+/g," ").trim();let stv=IMP.smap[rawSt.toLowerCase()]||normStatusX(rawSt);if(!stv){IMP.unk[rawSt]=(IMP.unk[rawSt]||0)+1;stv="Pending"}
-      const o={id,side,coin:String(g("coin")||"USDT").trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,12)||"USDT",qty,rate,status:stv,mode,pay:mode==="Cash"?"Cash":String(g("pay")||"").slice(0,40),platform:mode==="P2P"?plat:"",cp:String(g("cp")||"").trim().slice(0,80),note:no?"#"+no:"",time};
+      const o={id,side,coin:String(g("coin")||"USDT").trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,12)||"USDT",qty,rate,status:stv,mode,pay:mode==="Cash"?"Cash":String(g("pay")||"").slice(0,40),platform:mode==="P2P"?fp:"",cp:String(g("cp")||"").trim().slice(0,80),note:no?"#"+no:"",time};
       if(impWhat==="client"){const hs=impHash(id);if(have.has(id)||cpSeen().has(hs)){out.push({st:"same",row,f,key,o});return}out.push({st:"new",row,f,key,o,hs});return}
       const ex=have.get(id);if(ex){const ch=["status","time","cp","qty","rate"].some(k=>String(ex[k]??"")!==String(o[k]??""));out.push({st:ch?"update":"same",row,f,key,o,ex});return}
       out.push({st:"new",row,f,key,o})})});
@@ -2559,6 +2581,8 @@ function impReport(){const R=IMP.rows;const c=k=>R.filter(r=>r.st===k).length;co
     ${Object.keys(IMP.unk||{}).length?`<div class="pcsec">Status words to check</div><div class="icard"><p class="note" style="margin:0 0 8px">Your file uses these status words. Tell me what each means:</p>${Object.entries(IMP.unk).map(([w,n])=>`<div class="abr"><span>“${esc(w||"(empty)")}” · ${n}</span><select data-smap="${esc(w.toLowerCase())}"><option value="">Choose…</option>${["Completed","Cancelled","Pending","Appeal"].map(x=>`<option>${x}</option>`).join("")}</select></div>`).join("")}</div>`:""}
     ${ok.length?`<p class="note">Status: ${["Completed","Cancelled","Pending","Appeal"].map(x=>[x,ok.filter(r=>r.o.status===x).length]).filter(x=>x[1]).map(([x,n])=>`<b>${n}</b> ${x}`).join(" · ")}</p>`:""}
     ${ok.length?`<div class="irt"><div><span>Buy</span><b>${fmtQ(+q(sum("BUY")).toFixed(2))}</b><small>${inr(Math.round(v(sum("BUY"))))}</small></div><div><span>Sell</span><b>${fmtQ(+q(sum("SELL")).toFixed(2))}</b><small>${inr(Math.round(v(sum("SELL"))))}</small></div><div><span>Dates</span><b>${ts.length?df(ts[0]):""}</b><small>to ${ts.length?df(ts[ts.length-1]):""}</small></div></div><p class="note">Totals leave out cancelled orders (${ok.filter(r=>r.o.status==="Cancelled").length}). Match them with your exchange to be sure.</p>`:""}
+    ${(()=>{const names=new Set(IMP.files.map(f=>f.name.split(" › ")[0]));const L=recs.filter(r=>r.kind==="implog"&&(r.files||[]).some(n=>names.has(String(n).split(" › ")[0])));const old=L.map(l=>({l,n:orders.filter(o=>o.impB===l.batch).length})).filter(x=>x.n);if(!old.length)return"";const tot=old.reduce((t,x)=>t+x.n,0);
+      return`<div class="icard irold"><b>This file was imported before</b><p class="note" style="margin:4px 0 8px">${tot} orders from the earlier import are still in the app. If that import was wrong, remove them first so nothing is doubled.</p><button type="button" class="mini ghost" id="i-rmold" data-b="${esc(old.map(x=>x.l.batch).join(","))}" style="color:var(--sell)">Remove ${tot} old orders</button></div>`})()}
     ${IMP.files.filter(f=>f.note).map(f=>`<p class="note irw">⚠ ${esc(f.name)}: ${esc(f.note)}</p>`).join("")}
     ${fix.length?`<div class="pcsec">Need your check <span class="note">${fix.length}</span><button type="button" class="link" id="i-ignall">Ignore all</button></div><div class="ifl">${fix.slice(0,40).map(r=>`<div class="ifi" data-key="${r.key}"><small>${esc(r.f.name)} · ${esc(r.row.src)}</small><p>${esc(Object.values(r.row.cells).filter(x=>String(x).trim()).map(x=>x instanceof Date?x.toLocaleString("en-IN"):String(x)).join(" | ").slice(0,220))}</p><em>${esc(r.why)}</em>
       <div class="ifx"><div class="seg ifs"><button type="button" data-fs="BUY" class="${r.side==="BUY"?"on":""}">Buy</button><button type="button" data-fs="SELL" class="${r.side==="SELL"?"on":""}">Sell</button></div><input data-ff="qty" type="number" inputmode="decimal" placeholder="Qty" value="${r.qty>0?r.qty:""}"><input data-ff="rate" type="number" inputmode="decimal" placeholder="Price" value="${r.rate>0?r.rate:""}"><input data-ff="time" type="datetime-local" value=""></div>
@@ -2568,7 +2592,7 @@ function impReport(){const R=IMP.rows;const c=k=>R.filter(r=>r.st===k).length;co
   if(CL&&nn)$("#i-rep").insertAdjacentHTML("beforeend",`<p class="note irw">${nn} orders have no client name, so they only count in totals, not for any client.</p>`);
   $("#i-list").innerHTML=ok.filter(r=>r.st==="new"||r.st==="update").slice(0,5).map(({o,st})=>`<div class="order"><span class="side ${o.side}">${o.side}</span><div class="o-main"><b>${fmtQ(o.qty)} ${esc(o.coin)}</b> @ <span class="num">₹${o.rate}</span><div class="o-meta">${new Date(o.time).toLocaleString("en-IN",{day:"numeric",month:"short",year:"2-digit",hour:"2-digit",minute:"2-digit"})} · ${esc(o.status)}${o.cp?" · "+esc(o.cp):""}${st==="update"?" · update":""}</div></div><span></span></div>`).join("");
   const cap=recs.length+c("new");$("#i-cap").hidden=CL||!(col&&cap>23000);$("#i-cap").textContent=`⚠ Your app would have ${cap.toLocaleString("en-IN")} records. The limit here is 25,000. Import in parts (one year at a time), or use the APK app (no limit).`}
-function impFilesUI(){$("#i-files").innerHTML=IMP.files.map((f,i)=>{const miss=IMP_REQ.filter(k=>!f.map[k]).concat(!f.map.rate&&!f.map.total?["rate"]:[]);return`<details class="iff ${miss.length&&f.via!=="ai"&&f.rows.length?"warn":""}" ${miss.length&&f.via!=="ai"&&f.rows.length?"open":""}><summary><b>${esc(f.name)}</b><span>${f.rows.length} rows · ${f.via==="ai"?"AI":f.via==="pdf"?"PDF table":"Excel/CSV"}${miss.length&&f.via!=="ai"&&f.rows.length?" · set columns":""}</span></summary>
+function impFilesUI(){$("#i-files").innerHTML=IMP.files.map((f,i)=>{const miss=IMP_REQ.filter(k=>!f.map[k]).concat(!f.map.rate&&!f.map.total?["rate"]:[]);return`<details class="iff ${miss.length&&f.via!=="ai"&&f.rows.length?"warn":""}" ${miss.length&&f.via!=="ai"&&f.rows.length?"open":""}><summary><b>${esc(f.name)}</b><span>${f.rows.length} rows · ${f.via==="ai"?"AI":f.via==="pdf"?"PDF table":"Excel/CSV"}${f.plat?" · "+f.plat:""}${miss.length&&f.via!=="ai"&&f.rows.length?" · set columns":""}</span></summary>
     ${f.via!=="ai"&&f.head.length?`<div class="imp-map">${FIELDS.map(([k,l])=>`<label>${l}${IMP_REQ.includes(k)?" *":""}<select data-fm="${i}" data-k="${k}"><option value="">— none —</option>${f.head.map(h=>`<option ${h===f.map[k]?"selected":""}>${esc(h)}</option>`).join("")}</select></label>`).join("")}</div>`:""}</details>`}).join("")}
 function impRefresh(){impBuild();impFilesUI();impReport()}
 $("#i-files").addEventListener("change",e=>{const s=e.target.closest("[data-fm]");if(!s)return;IMP.files[+s.dataset.fm].map[s.dataset.k]=s.value;impBuild();impReport()});
@@ -2577,6 +2601,10 @@ function impWhatUI(){document.querySelectorAll("#i-what button").forEach(b=>b.cl
 impWhatUI();$("#i-what").onclick=e=>{const b=e.target.closest("[data-w]");if(!b)return;impWhat=b.dataset.w;try{localStorage.setItem("p2p_impwhat",impWhat)}catch(err){}impWhatUI();if(IMP.files.length)impRefresh()};
 $("#i-tz").onchange=e=>{IMP.tz=e.target.value;if(IMP.files.length)impRefresh()};
 $("#i-rep").addEventListener("change",e=>{const sm=e.target.closest("[data-smap]");if(!sm||!sm.value)return;IMP.smap[sm.dataset.smap]=sm.value;impBuild();impReport()});
+$("#i-rep").addEventListener("click",async e=>{const rb=e.target.closest("#i-rmold");if(!rb)return;if(rb.dataset.c!=="1"){rb.dataset.c="1";rb.textContent="Tap again to remove";return}
+  const B=new Set(rb.dataset.b.split(","));const ids=orders.filter(o=>B.has(o.impB)).map(o=>o.id);rb.disabled=true;rb.textContent="Removing…";
+  if(col){let i=0;const w=async()=>{while(i<ids.length){const id=ids[i++];try{await col.doc(id).delete()}catch(err){}}};await Promise.all([w(),w(),w()])}else{const S=new Set(ids);recs=recs.filter(r=>!S.has(r.id));lsSave();splitRecs();render()}
+  toast(ids.length+" old orders removed");setTimeout(()=>{impBuild();impReport()},500)});
 $("#i-rep").addEventListener("click",e=>{
   const ia=e.target.closest("#i-ignall");if(ia){if(ia.dataset.c!=="1"){ia.dataset.c="1";ia.textContent="Tap again: ignore all";return}IMP.rows.filter(r=>r.st==="fix").forEach(r=>IMP.fix[r.key]={ignore:true});impBuild();impReport();return}
   const card=e.target.closest(".ifi");if(!card)return;const key=card.dataset.key;
@@ -4071,7 +4099,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=11;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=12;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4138,6 +4166,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00012","4 Oct 2026",["KuCoin PDF import fixed: every order ID, name and status read correctly (CHARGED = Completed)","Rows that continue on the next page are joined","Platform (KuCoin, Binance…) detected from the file","Button to remove a wrong earlier import of the same file"]],
   ["0.0.0.00011","4 Oct 2026",["Import: order status read correctly (Completed, Cancelled…); unknown status words are asked, never set to Pending silently","Re-import the same file to correct the status of orders already imported"]],
   ["0.0.0.00010","4 Oct 2026",["New version numbers: 0.0.0.00010 and up","Import from PDF: order numbers split over two lines are joined, so no row is lost","Import reads the time zone written in the file (e.g. UTC+08:00) and converts to India time"]],
   ["0.0.0.00009","4 Oct 2026",["Import: \"Crypto Quantity\" column is now read as quantity, not coin"]],
