@@ -12,7 +12,8 @@ src = args[0]
 repo = args[args.index("--repo") + 1] if "--repo" in args else ""
 notes = args[args.index("--notes") + 1] if "--notes" in args else ""
 app = open(src, encoding="utf-8").read()
-ver = re.search(r'const APP_VER="([0-9.]+)"', app).group(1)
+build = int(re.search(r'const APP_BUILD=(\d+)', app).group(1))
+ver = "0.%04d" % build  # number the phone updater compares (must only go up); shown to users as 0.0.0.000NN
 doc = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
        '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
        '<style>html,body{margin:0;padding:0}</style></head><body>' + app + '</body></html>')
@@ -26,9 +27,9 @@ for root, _, names in os.walk(web):
             continue
         files[rel] = hashlib.sha1(open(p, "rb").read()).hexdigest()
 props = dict(l.strip().split("=", 1) for l in open(os.path.join(here, "android/app/version.properties")) if "=" in l and not l.startswith("#"))
-out = {"web": ver, "files": files,
+out = {"web": ver, "build": build, "display": "0.0.0.%05d" % build, "files": files,
        "apk": {"code": int(props["versionCode"]), "name": props["versionName"],
                "url": f"https://github.com/{repo}/releases/latest/download/P2P-Order-Book.apk" if repo else "",
                "notes": notes}}
 json.dump(out, open(os.path.join(web, "version.json"), "w"), indent=1)
-print("web", ver, "·", len(files), "files")
+print("web", ver, "(display 0.0.0.%05d)" % build, "·", len(files), "files")
