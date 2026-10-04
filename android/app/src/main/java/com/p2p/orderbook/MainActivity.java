@@ -15,6 +15,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
@@ -62,6 +65,10 @@ public class MainActivity extends Activity {
     static final String HOST = "appassets.androidplatform.net";
     static final String START = "https://" + HOST + "/app/index.html";
     static final int FILE_REQ = 7;
+    static final int VOICE_REQ = 8;
+    TextToSpeech tts;
+    boolean ttsReady = false;
+    String pendingSpeak = null, pendingLang = "en-IN";
 
     WebView web;
     ValueCallback<Uri[]> fileCb;
@@ -155,6 +162,15 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onActivityResult(int req, int res, Intent data) {
+        if (req == VOICE_REQ) {
+            String text = "";
+            if (res == RESULT_OK && data != null) {
+                ArrayList<String> r = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                if (r != null && !r.isEmpty()) text = r.get(0);
+            }
+            js("P2PVoiceResult", text);
+            return;
+        }
         if (req == FILE_REQ && fileCb != null) {
             Uri[] result = null;
             if (res == RESULT_OK && data != null) {
@@ -169,6 +185,38 @@ public class MainActivity extends Activity {
             return;
         }
         super.onActivityResult(req, res, data);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (tts != null) { tts.stop(); tts.shutdown(); }
+        super.onDestroy();
+    }
+
+    static Locale localeOf(String tag) {
+        try { return Locale.forLanguageTag(tag == null || tag.isEmpty() ? "en-IN" : tag); } catch (Exception e) { return new Locale("en", "IN"); }
+    }
+
+    void doSpeak(String text, String lang) {
+        if (tts == null) {
+            pendingSpeak = text; pendingLang = lang;
+            tts = new TextToSpeech(this, status -> {
+                ttsReady = status == TextToSpeech.SUCCESS;
+                if (!ttsReady) { js("P2PSpeakDone", "error"); return; }
+                tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                    @Override public void onStart(String id) {}
+                    @Override public void onDone(String id) { js("P2PSpeakDone", ""); }
+                    @Override public void onError(String id) { js("P2PSpeakDone", "error"); }
+                });
+                if (pendingSpeak != null) { String t = pendingSpeak; pendingSpeak = null; doSpeak(t, pendingLang); }
+            });
+            return;
+        }
+        if (!ttsReady) { pendingSpeak = text; pendingLang = lang; return; }
+        int r = tts.setLanguage(localeOf(lang));
+        if (r == TextToSpeech.LANG_MISSING_DATA || r == TextToSpeech.LANG_NOT_SUPPORTED) tts.setLanguage(Locale.ENGLISH);
+        tts.setSpeechRate(1.05f);
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "p2p" + System.currentTimeMillis());
     }
 
     @Override
@@ -437,6 +485,29 @@ public class MainActivity extends Activity {
                         .toString();
             } catch (Exception e) { return "{}"; }
         }
+
+        @JavascriptInterface
+        public String hasVoice() { return "1"; }
+
+        @JavascriptInterface
+        public void listen(String lang) {
+            runOnUiThread(() -> {
+                try {
+                    Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                    i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                    i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang == null || lang.isEmpty() ? "en-IN" : lang);
+                    i.putExtra(RecognizerIntent.EXTRA_PROMPT, "Bolo…");
+                    i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+                    startActivityForResult(i, VOICE_REQ);
+                } catch (ActivityNotFoundException e) { js("P2PVoiceResult", "__ERR__:No voice app. Install or update the Google app."); }
+            });
+        }
+
+        @JavascriptInterface
+        public void speak(String text, String lang) { runOnUiThread(() -> doSpeak(text, lang)); }
+
+        @JavascriptInterface
+        public void stopSpeak() { runOnUiThread(() -> { if (tts != null) tts.stop(); }); }
 
         @JavascriptInterface
         public void checkUpdate() { new Thread(() -> checkUpdates(true)).start(); }

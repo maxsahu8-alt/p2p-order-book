@@ -1168,6 +1168,26 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 .abf{text-align:center;margin-top:16px!important;line-height:1.5}
 .ih{display:none!important}
 .apkup{position:fixed;left:12px;right:12px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:90;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--fg);color:var(--bg);border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.3);font-size:.86rem}.apkup button{border:0;border-radius:10px;padding:8px 14px;font:700 .82rem var(--body);background:#23c58f;color:#04130d;cursor:pointer}
+.thk{display:inline-flex;align-items:center;gap:10px;font-weight:600}
+.thk-orb{width:22px;height:22px;border-radius:50%;flex:none;background:conic-gradient(from 0deg,#8b5cf6,#3b82f6,#23c58f,#f2b441,#8b5cf6);animation:thkspin 1.1s linear infinite;-webkit-mask:radial-gradient(circle,transparent 5px,#000 6px);mask:radial-gradient(circle,transparent 5px,#000 6px);box-shadow:0 0 14px #8b5cf655}
+.thk-txt{background:linear-gradient(90deg,var(--muted) 0%,var(--fg) 45%,var(--muted) 90%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:thkshine 1.6s linear infinite}
+.thk-dots{display:inline-flex;gap:3px}.thk-dots i{width:5px;height:5px;border-radius:50%;background:#8b5cf6;animation:thkdot 1s ease-in-out infinite}.thk-dots i:nth-child(2){animation-delay:.15s;background:#3b82f6}.thk-dots i:nth-child(3){animation-delay:.3s;background:#23c58f}
+@keyframes thkspin{to{transform:rotate(360deg)}}@keyframes thkshine{from{background-position:120% 0}to{background-position:-120% 0}}@keyframes thkdot{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-4px);opacity:1}}
+.aphead{grid-template-columns:auto 1fr auto auto auto!important}.apvoice svg{stroke:#8b5cf6}
+.vabox{position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;justify-content:center;background:rgba(6,9,15,0);transition:background .2s}.vabox.open{background:rgba(6,9,15,.55)}
+.vacard{position:relative;width:100%;max-width:520px;background:linear-gradient(180deg,#141a24,#0b0f16);color:#fff;border-radius:28px 28px 0 0;padding:22px 20px calc(26px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:10px;transform:translateY(100%);transition:transform .25s ease}.vabox.open .vacard{transform:none}
+.vax{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:0;background:#ffffff14;color:#fff;font-size:1rem;cursor:pointer}
+.vasub{font:600 .76rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:#9aa4b2}
+.vaorb{position:relative;width:150px;height:150px;border:0;background:none;cursor:pointer;margin:14px 0 6px;display:grid;place-items:center}
+.vcore{position:relative;z-index:2;width:96px;height:96px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 30%,#a78bfa,#6d28d9 55%,#1e1b4b);box-shadow:0 0 40px #8b5cf688,inset 0 2px 8px #ffffff40;transition:transform .2s}
+.vcore svg{width:36px;height:36px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round}
+.vr1,.vr2{position:absolute;inset:18px;border-radius:50%;border:2px solid #8b5cf6;opacity:0}
+.vwave{position:absolute;z-index:3;bottom:-8px;display:none;gap:4px;align-items:flex-end;height:26px}.vwave i{width:5px;border-radius:3px;background:#23c58f;animation:vwav .9s ease-in-out infinite}.vwave i:nth-child(2){animation-delay:.1s}.vwave i:nth-child(3){animation-delay:.2s}.vwave i:nth-child(4){animation-delay:.3s}.vwave i:nth-child(5){animation-delay:.4s}
+.vabox[data-st=listen] .vr1{animation:vring 1.6s ease-out infinite}.vabox[data-st=listen] .vr2{animation:vring 1.6s ease-out .8s infinite}.vabox[data-st=listen] .vcore{transform:scale(1.04);background:radial-gradient(circle at 30% 30%,#6ee7b7,#059669 55%,#022c22);box-shadow:0 0 44px #23c58f88}
+.vabox[data-st=think] .vcore{background:conic-gradient(from 0deg,#8b5cf6,#3b82f6,#23c58f,#f2b441,#8b5cf6);animation:thkspin 1.4s linear infinite}.vabox[data-st=think] .vcore svg{opacity:0}
+.vabox[data-st=speak] .vwave{display:flex}.vabox[data-st=speak] .vcore{animation:vbeat 1s ease-in-out infinite}
+.vastate{font:700 1.05rem var(--display)}.vaheard{min-height:1.2em;color:#c4cbd6;font-size:.92rem;text-align:center}.vareply{color:#fff;font-size:.95rem;line-height:1.45;text-align:center;max-height:7.5em;overflow:hidden}.vahint{margin-top:6px;color:#6b7686;font-size:.74rem;text-align:center}
+@keyframes vring{0%{transform:scale(.8);opacity:.7}100%{transform:scale(1.5);opacity:0}}@keyframes vwav{0%,100%{height:6px}50%{height:24px}}@keyframes vbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 </style>
 
 <div class="wrap">
@@ -1508,7 +1528,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 </div>
 <button type="button" class="aifab" id="aiFab" aria-label="Ask AI"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button>
 <div class="ih aipop" id="aiPop"><div class="apbox" role="dialog" aria-label="Ask AI">
-  <div class="aphead"><span class="apic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg></span><div><b>Ask anything</b><small id="apSub">P2P Brain</small></div><button type="button" class="apx" id="apMax" aria-label="Open full chat"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button><button type="button" class="apx" id="apClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="aphead"><span class="apic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg></span><div><b>Ask anything</b><small id="apSub">P2P Brain</small></div><button type="button" class="apx apvoice ih" id="apVoice" aria-label="Voice assistant"><svg viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg></button><button type="button" class="apx" id="apMax" aria-label="Open full chat"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button><button type="button" class="apx" id="apClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <div class="apmsgs msgs" id="apMsgs"></div>
   <div class="apchips" id="apChips"></div>
   <form class="apform" id="apForm"><button type="button" class="ih apmic" id="apMic" aria-label="Speak"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><input id="apIn" placeholder="Ask, or tell me what happened…" autocomplete="off"><button type="submit" class="apsend" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2-7z"/></svg></button></form>
@@ -3287,7 +3307,7 @@ function laAnswer(q,out){if(brainMeta(q,out))return true;
 async function ask(q){
   q=q.trim();if(!q)return;
   addMsg("u",q);$("#askIn").value="";$("#askBtn").disabled=true;
-  const out=addMsg("a",LA.t("🧠 Thinking…","🧠 Soch raha hoon…"));
+  const out=addMsg("a","");out.innerHTML=thinkHTML(LA.t("Thinking","Soch raha hoon"));
   const online=aiOnline();
   if(pref("laFirst")!==false||!online){let done=false;try{done=laAnswer(q,out)}catch(e){console.error(e)}
     if(done){$("#askBtn").disabled=false;return}
@@ -3313,7 +3333,7 @@ MEMORY: ${JSON.stringify(aiMemory())}
 DATA: ${JSON.stringify(agentContext())}`;
   const turns=[...aiHistory.slice(-8),{role:"user",content:prompt+"\n\nUSER: "+q}];
   try{
-    out.textContent=LA.t(`🧠 This one is new for me. Asking ${aiName()}…`,`🧠 Ye mere liye naya hai, ${aiName()} se pooch raha hoon…`);
+    out.innerHTML=thinkHTML(LA.t(`New for me · asking ${aiName()}`,`Naya sawaal · ${aiName()} se pooch raha hoon`));
     const text=await Promise.race([aiCall(turns),new Promise((_,rej)=>setTimeout(()=>rej(aiErr("timeout",aiName()+" took too long.")),25000))]);
     let res=null;try{const m=text.match(/\{[\s\S]*\}/);res=m?JSON.parse(m[0]):null}catch(e){}
     const reply=res?String(res.reply||""):text;
@@ -3344,8 +3364,48 @@ $("#apMax").onclick=()=>{closeAiPop();goTo("ai")};
 $("#apForm").onsubmit=e=>{e.preventDefault();const q=$("#apIn").value.trim();if(!q)return;$("#apIn").value="";ask(q)};
 $("#apChips").onclick=e=>{const b=e.target.closest("[data-apq]");if(b)ask(b.dataset.apq)};
 document.addEventListener("click",e=>{if(e.target.closest("#apMsgs [data-go],#apMsgs [data-sheet]"))closeAiPop()});
-(function(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;const m=$("#apMic");m.hidden=false;let rec=null;
-  m.onclick=()=>{if(rec){rec.stop();return}try{rec=new SR();rec.lang="hi-IN";rec.interimResults=true;rec.onresult=ev=>{$("#apIn").value=[...ev.results].map(r=>r[0].transcript).join(" ")};rec.onend=()=>{m.classList.remove("on");rec=null;const q=$("#apIn").value.trim();if(q){$("#apIn").value="";ask(q)}};rec.onerror=ev=>{toast(ev.error==="not-allowed"?"Microphone not allowed here":"Couldn't hear. Try again")};rec.start();m.classList.add("on")}catch(e){toast("Voice not available here");rec=null}}})();
+// ================= VOICE ASSISTANT (talk to P2P Brain hands-free)
+const VOICE={native:!!(window.P2PNative&&window.P2PNative.hasVoice),on:false,stage:"",_res:null,_spk:null};
+VOICE.lang=()=>"en-IN";
+VOICE.listen=function(){return new Promise((ok,no)=>{
+  if(VOICE.native){VOICE._res=t=>{VOICE._res=null;if(String(t).startsWith("__ERR__:"))no(new Error(String(t).slice(8)));else ok(String(t||""))};try{window.P2PNative.listen(VOICE.lang())}catch(e){no(e)}return}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){no(new Error("Voice isn't available here. Use the phone app."));return}
+  let txt="",done=false;const rec=new SR();rec.lang=VOICE.lang();rec.interimResults=true;rec.maxAlternatives=1;VOICE._rec=rec;
+  rec.onresult=ev=>{txt=[...ev.results].map(r=>r[0].transcript).join(" ");const l=$("#vaHeard");if(l)l.textContent=txt};
+  rec.onerror=ev=>{if(done)return;done=true;ev.error==="no-speech"||ev.error==="aborted"?ok(""):no(new Error(ev.error==="not-allowed"?"Microphone not allowed. Allow it in phone settings.":"Couldn't hear. Try again."))};
+  rec.onend=()=>{if(done)return;done=true;ok(txt)};try{rec.start()}catch(e){no(e)}})};
+window.P2PVoiceResult=t=>{if(VOICE._res)VOICE._res(t)};
+VOICE.clean=t=>String(t||"").replace(/P2P Brain[^\n]*works offline|P2P Brain · partial answer|🧠 Kaise socha[\s\S]*$/g,"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,"").replace(/₹\s?([\d,]+(\.\d+)?)/g,"$1 rupees").replace(/[•·|*_#>]/g," ").replace(/\n+/g,". ").replace(/\s{2,}/g," ").trim().slice(0,600);
+VOICE.speak=function(t){return new Promise(ok=>{const s=VOICE.clean(t);if(!s){ok();return}
+  if(VOICE.native&&window.P2PNative.speak){VOICE._spk=()=>{VOICE._spk=null;ok()};try{window.P2PNative.speak(s,VOICE.lang())}catch(e){ok()}setTimeout(()=>{if(VOICE._spk)VOICE._spk()},Math.min(45000,4000+s.length*90));return}
+  if(!window.speechSynthesis){ok();return}try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang=VOICE.lang();u.rate=1.03;const v=speechSynthesis.getVoices().find(v=>/en[-_]IN/i.test(v.lang));if(v)u.voice=v;u.onend=u.onerror=()=>ok();speechSynthesis.speak(u)}catch(e){ok()}})};
+window.P2PSpeakDone=()=>{if(VOICE._spk)VOICE._spk()};
+VOICE.stop=function(){VOICE.on=false;try{VOICE._rec&&VOICE._rec.abort()}catch(e){}try{window.P2PNative&&window.P2PNative.stopSpeak&&window.P2PNative.stopSpeak()}catch(e){}try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}const o=$("#vaBox");if(o){o.classList.remove("open");setTimeout(()=>o.remove(),200)}if(VOICE._res)VOICE._res("")};
+function vaStage(st,txt){VOICE.stage=st;const o=$("#vaBox");if(!o)return;o.dataset.st=st;$("#vaState").textContent=txt||({listen:"Listening… bolo",think:"Soch raha hoon…",speak:"Bol raha hoon…",idle:"Tap the orb to talk"})[st]||""}
+async function voiceMode(){if(VOICE.on)return;VOICE.on=true;
+  const o=document.createElement("div");o.id="vaBox";o.className="vabox";o.innerHTML=`<div class="vacard"><button type="button" class="vax" id="vaX" aria-label="Close">✕</button>
+    <div class="vasub">${esc(isBrain()?(aiOnline()?(aiCfg.prov==="braingemini"&&!sampleFn?"P2P Brain + Gemini":"P2P Brain + Claude"):"P2P Brain"):PROV[aiCfg.prov]?PROV[aiCfg.prov].n:"AI")}</div>
+    <button type="button" class="vaorb" id="vaOrb" aria-label="Talk"><span class="vr1"></span><span class="vr2"></span><span class="vcore"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span class="vwave"><i></i><i></i><i></i><i></i><i></i></span></button>
+    <div class="vastate" id="vaState"></div><div class="vaheard" id="vaHeard"></div><div class="vareply" id="vaReply"></div>
+    <div class="vahint">Try: “aaj ka profit” · “Vineet ko kitna dena hai” · “500 USDT 93 pe becha Ravi ko”</div></div>`;
+  document.body.appendChild(o);requestAnimationFrame(()=>o.classList.add("open"));
+  $("#vaX").onclick=VOICE.stop;o.addEventListener("click",e=>{if(e.target===o)VOICE.stop()});
+  $("#vaOrb").onclick=()=>{if(VOICE.stage==="speak"){try{window.P2PNative&&window.P2PNative.stopSpeak&&window.P2PNative.stopSpeak()}catch(e){}try{speechSynthesis.cancel()}catch(e){}if(VOICE._spk)VOICE._spk();return}if(VOICE.stage==="idle")loop()};
+  let empty=0;
+  const loop=async()=>{while(VOICE.on){vaStage("listen");$("#vaHeard").textContent="";let q="";
+      try{q=(await VOICE.listen()).trim()}catch(e){vaStage("idle",e.message||"Couldn't hear");return}
+      if(!VOICE.on)return;if(!q){if(++empty>=2||VOICE.native&&empty>=1){vaStage("idle");return}continue}empty=0;
+      $("#vaHeard").textContent="“"+q+"”";if(/^(bas|stop|band karo|bye|ruk jao|thik hai bas|ok bye)\b/i.test(q)){await VOICE.speak("Theek hai, bye!");VOICE.stop();return}
+      vaStage("think");$("#vaReply").textContent="";const before=curMsgs().children.length;
+      try{await ask(q)}catch(e){}
+      let last=[...curMsgs().querySelectorAll(".msg.a")].pop();let tries=0;while(last&&last.querySelector(".thk")&&tries++<60){await new Promise(k=>setTimeout(k,500));last=[...curMsgs().querySelectorAll(".msg.a")].pop()}
+      if(!VOICE.on)return;const ans=last&&curMsgs().children.length>before?last.innerText:"";$("#vaReply").textContent=VOICE.clean(ans).slice(0,220);
+      vaStage("speak");await VOICE.speak(ans)}};
+  loop()}
+function thinkHTML(t){return`<span class="thk"><span class="thk-orb"></span><span class="thk-txt">${esc(t)}</span><span class="thk-dots"><i></i><i></i><i></i></span></span>`}
+(function(){const m=$("#apMic");if(!(VOICE.native||window.SpeechRecognition||window.webkitSpeechRecognition))return;m.hidden=false;
+  m.onclick=async()=>{if(m.classList.contains("on"))return;m.classList.add("on");try{const q=(await VOICE.listen()).trim();if(q){$("#apIn").value="";ask(q)}}catch(e){toast(e.message||"Couldn't hear. Try again")}m.classList.remove("on")};
+  const v=$("#apVoice");if(v){v.hidden=false;v.onclick=()=>voiceMode()}})();
 function apFabSync(){const pg=apPage();$("#aiFab").hidden=pg==="ai"||!$("#sheetBg").hidden||!$("#drawer").hidden}
 document.addEventListener("click",()=>setTimeout(apFabSync,0));setInterval(apFabSync,800);
 // ---------- automatic checks: runs by itself on every change, no AI cost ----------
@@ -4123,7 +4183,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=16;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=17;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4190,6 +4250,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00017","4 Oct 2026",["AI thinking animation","Voice assistant: tap the headphones in Ask anything, speak, and P2P Brain answers out loud","Mic button works in the phone app (needs app 0.0.0.00017)"]],
   ["0.0.0.00016","4 Oct 2026",["P2P Brain says Gemini (not Claude) when it asks Gemini","When Gemini is busy, another free Gemini model is tried, then the Brain answers itself","Brain replies to good night, kya kar rahe ho, kaise ho, thanks… by itself"]],
   ["0.0.0.00015","4 Oct 2026",["New free AI option: P2P Brain + Gemini. The Brain asks Google Gemini (free key) when it doesn't know, and learns the answer"]],
   ["0.0.0.00014","4 Oct 2026",["New AI option: P2P Brain + Claude. The Brain answers first; hard questions go to Claude with your key and the Brain learns the answer"]],
