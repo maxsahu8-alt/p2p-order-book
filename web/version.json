@@ -1,17 +1,17 @@
 {
- "web": "0.0018",
- "build": 18,
- "display": "0.0.0.00018",
+ "web": "0.0019",
+ "build": 19,
+ "display": "0.0.0.00019",
  "files": {
-  "index.html": "2375638568a71e56b9c35eb758a83435c6162a14",
+  "index.html": "0c33c513622976479556f798d392a3e7cd5b1073",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
  },
  "apk": {
-  "code": 3,
-  "name": "0.0.0.00017",
+  "code": 4,
+  "name": "0.0.0.00019",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Voice learns from your corrections; Update app button for old app"
+  "notes": "Voice listens inside the app \u2014 no Google popup"
  }
 }

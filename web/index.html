@@ -1188,6 +1188,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 .vabox[data-st=speak] .vwave{display:flex}.vabox[data-st=speak] .vcore{animation:vbeat 1s ease-in-out infinite}
 .vastate{font:700 1.05rem var(--display)}.vaheard{min-height:1.2em;color:#c4cbd6;font-size:.92rem;text-align:center}.vareply{color:#fff;font-size:.95rem;line-height:1.45;text-align:center;max-height:7.5em;overflow:hidden}.vahint{margin-top:6px;color:#6b7686;font-size:.74rem;text-align:center}
 @keyframes vring{0%{transform:scale(.8);opacity:.7}100%{transform:scale(1.5);opacity:0}}@keyframes vwav{0%,100%{height:6px}50%{height:24px}}@keyframes vbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.vaupd2{background:#ffffff14;color:#cbd5e1;font-size:.78rem;padding:9px 14px}
 .vaupd{border:0;border-radius:14px;padding:12px 22px;font:700 .9rem var(--body);background:#23c58f;color:#04130d;cursor:pointer}
 .vaheard{cursor:pointer}.vaheard small{color:#6b7686;font-size:.72rem}
 .vafix{display:flex;gap:8px;width:100%}.vafix[hidden]{display:none}.vafix input{flex:1;min-width:0;border:1px solid #ffffff22;background:#ffffff10;color:#fff;border-radius:12px;padding:11px 12px;font:500 .9rem var(--body)}.vafix button{border:0;border-radius:12px;padding:0 14px;background:#8b5cf6;color:#fff;font:700 .82rem var(--body);cursor:pointer}
@@ -3380,12 +3381,15 @@ VOICE.listen=function(){return new Promise((ok,no)=>{
   rec.onerror=ev=>{if(done)return;done=true;ev.error==="no-speech"||ev.error==="aborted"?ok(""):no(new Error(ev.error==="not-allowed"?"Microphone not allowed. Allow it in phone settings.":"Couldn't hear. Try again."))};
   rec.onend=()=>{if(done)return;done=true;ok(txt)};try{rec.start()}catch(e){no(e)}})};
 window.P2PVoiceResult=t=>{if(VOICE._res)VOICE._res(t)};
+window.P2PVoicePartial=t=>{const l=$("#vaHeard");if(l)l.textContent=t};
+window.P2PVoiceEvent=e=>{const o=$("#vaBox");if(o)o.dataset.ev=e};
+VOICE.popup=()=>VOICE.native&&String(window.P2PNative.hasVoice())==="1";
 VOICE.clean=t=>String(t||"").replace(/P2P Brain[^\n]*works offline|P2P Brain · partial answer|🧠 Kaise socha[\s\S]*$/g,"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,"").replace(/₹\s?([\d,]+(\.\d+)?)/g,"$1 rupees").replace(/[•·|*_#>]/g," ").replace(/\n+/g,". ").replace(/\s{2,}/g," ").trim().slice(0,600);
 VOICE.speak=function(t){return new Promise(ok=>{const s=VOICE.clean(t);if(!s){ok();return}
   if(VOICE.native&&window.P2PNative.speak){VOICE._spk=()=>{VOICE._spk=null;ok()};try{window.P2PNative.speak(s,VOICE.lang())}catch(e){ok()}setTimeout(()=>{if(VOICE._spk)VOICE._spk()},Math.min(45000,4000+s.length*90));return}
   if(!window.speechSynthesis){ok();return}try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang=VOICE.lang();u.rate=1.03;const v=speechSynthesis.getVoices().find(v=>/en[-_]IN/i.test(v.lang));if(v)u.voice=v;u.onend=u.onerror=()=>ok();speechSynthesis.speak(u)}catch(e){ok()}})};
 window.P2PSpeakDone=()=>{if(VOICE._spk)VOICE._spk()};
-VOICE.stop=function(){VOICE.on=false;try{VOICE._rec&&VOICE._rec.abort()}catch(e){}try{window.P2PNative&&window.P2PNative.stopSpeak&&window.P2PNative.stopSpeak()}catch(e){}try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}const o=$("#vaBox");if(o){o.classList.remove("open");setTimeout(()=>o.remove(),200)}if(VOICE._res)VOICE._res("")};
+VOICE.stop=function(){VOICE.on=false;try{VOICE._rec&&VOICE._rec.abort()}catch(e){}try{window.P2PNative&&window.P2PNative.stopListen&&window.P2PNative.stopListen()}catch(e){}try{window.P2PNative&&window.P2PNative.stopSpeak&&window.P2PNative.stopSpeak()}catch(e){}try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}const o=$("#vaBox");if(o){o.classList.remove("open");setTimeout(()=>o.remove(),200)}if(VOICE._res)VOICE._res("")};
 function vaStage(st,txt){VOICE.stage=st;const o=$("#vaBox");if(!o)return;o.dataset.st=st;$("#vaState").textContent=txt||({listen:"Listening… bolo",think:"Soch raha hoon…",speak:"Bol raha hoon…",idle:"Tap the orb to talk"})[st]||""}
 async function voiceMode(){if(VOICE.on)return;VOICE.on=true;
   const o=document.createElement("div");o.id="vaBox";o.className="vabox";o.innerHTML=`<div class="vacard"><button type="button" class="vax" id="vaX" aria-label="Close">✕</button>
@@ -3396,6 +3400,7 @@ async function voiceMode(){if(VOICE.on)return;VOICE.on=true;
     <div class="vachips" id="vaChips">${(voiceTop(4).length?voiceTop(4):["aaj ka profit","pending orders","kis party ko dena hai"]).map(t=>`<button type="button" data-vq="${esc(t)}">${esc(t)}</button>`).join("")}</div>
     <div class="vahint">${voiceStats().n?`I learn from you · ${voiceStats().n} voice questions · ${voiceStats().fixes||0} words corrected`:"Try: “aaj ka profit” · “Vineet ko kitna dena hai” · “500 USDT 93 pe becha Ravi ko”"}</div></div>`;
   document.body.appendChild(o);requestAnimationFrame(()=>o.classList.add("open"));
+  if(VOICE.popup()){$("#vaState").insertAdjacentHTML("afterend",'<button type="button" class="vaupd vaupd2" id="vaUpd">Update app · listen without Google popup</button>');$("#vaUpd").onclick=()=>{try{window.P2PNative.openUrl("https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk")}catch(err){}}}
   $("#vaX").onclick=VOICE.stop;o.addEventListener("click",e=>{if(e.target===o)VOICE.stop()});
   $("#vaOrb").onclick=()=>{if(VOICE.stage==="speak"){try{window.P2PNative&&window.P2PNative.stopSpeak&&window.P2PNative.stopSpeak()}catch(e){}try{speechSynthesis.cancel()}catch(e){}if(VOICE._spk)VOICE._spk();return}if(VOICE.stage==="idle")loop()};
   let empty=0,lastHeard="";
@@ -3405,13 +3410,13 @@ async function voiceMode(){if(VOICE.on)return;VOICE.on=true;
   const loop=async()=>{while(VOICE.on){vaStage("listen");$("#vaHeard").textContent="";let q="";
       try{q=(await VOICE.listen()).trim()}catch(e){vaStage("idle",e.message||"Couldn't hear");if(e.code==="old_apk"&&!$("#vaUpd")){$("#vaState").insertAdjacentHTML("afterend",'<button type="button" class="vaupd" id="vaUpd">Update app</button>');$("#vaUpd").onclick=()=>{try{window.P2PNative.openUrl("https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk")}catch(err){}}}return}
       q=voiceNorm(q);
-      if(!VOICE.on)return;if(!q){if(++empty>=2||VOICE.native&&empty>=1){vaStage("idle");return}continue}empty=0;
+      if(!VOICE.on)return;if(!q){if(++empty>=2||VOICE.popup()){vaStage("idle");return}continue}empty=0;
       lastHeard=q;voiceUse(q);$("#vaHeard").innerHTML="“"+esc(q)+"” <small>· wrong? tap to fix</small>";if(/^(bas|stop|band karo|bye|ruk jao|thik hai bas|ok bye)\b/i.test(q)){await VOICE.speak("Theek hai, bye!");VOICE.stop();return}
       vaStage("think");$("#vaReply").textContent="";const before=curMsgs().children.length;
       try{await ask(q)}catch(e){}
       let last=[...curMsgs().querySelectorAll(".msg.a")].pop();let tries=0;while(last&&last.querySelector(".thk")&&tries++<60){await new Promise(k=>setTimeout(k,500));last=[...curMsgs().querySelectorAll(".msg.a")].pop()}
       if(!VOICE.on)return;const ans=last&&curMsgs().children.length>before?last.innerText:"";$("#vaReply").textContent=VOICE.clean(ans).slice(0,220);
-      vaStage("speak");await VOICE.speak(ans)}};
+      vaStage("speak");await VOICE.speak(ans);if(VOICE.popup()){vaStage("idle","Tap the orb to talk again");return}}};
   loop()}
 // what the phone hears → what the user means (numbers, coin names, learned corrections)
 const VN_NUM={ek:1,do:2,teen:3,char:4,chaar:4,paanch:5,panch:5,chhe:6,che:6,saat:7,aath:8,nau:9,das:10,bees:20,pachas:50,pachaas:50};
@@ -4212,7 +4217,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=18;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=19;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4279,6 +4284,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00019","4 Oct 2026",["Voice listens inside the app — no Google popup (needs new app 0.0.0.00019)","Words show live while you speak"]],
   ["0.0.0.00018","4 Oct 2026",["Voice: if the app is old, an Update app button appears","Voice learns: tap what it heard to correct it, and P2P Brain remembers those words","Your most-used voice questions show as quick buttons","Better hearing of numbers (paanch sau = 500) and USDT"]],
   ["0.0.0.00017","4 Oct 2026",["AI thinking animation","Voice assistant: tap the headphones in Ask anything, speak, and P2P Brain answers out loud","Mic button works in the phone app (needs app 0.0.0.00017)"]],
   ["0.0.0.00016","4 Oct 2026",["P2P Brain says Gemini (not Claude) when it asks Gemini","When Gemini is busy, another free Gemini model is tried, then the Brain answers itself","Brain replies to good night, kya kar rahe ho, kaise ho, thanks… by itself"]],
