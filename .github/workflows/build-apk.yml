@@ -1,0 +1,39 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+    paths: ['android/**', '.github/workflows/build-apk.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.9' }
+      - name: Signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then echo "$KEYSTORE_B64" | base64 -d > $RUNNER_TEMP/release.jks; echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV; else echo "No KEYSTORE_B64 secret: using debug signing"; fi
+      - name: Build
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: gradle -p android :app:assembleRelease --no-daemon --stacktrace
+      - name: Collect APK
+        run: |
+          . android/app/version.properties
+          cp android/app/build/outputs/apk/release/app-release.apk P2P-Order-Book.apk
+          echo "VNAME=$versionName" >> $GITHUB_ENV
+          echo "VCODE=$versionCode" >> $GITHUB_ENV
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ env.VNAME }}-${{ github.run_number }}
+          name: P2P Order Book ${{ env.VNAME }} (build ${{ github.run_number }})
+          make_latest: true
+          files: P2P-Order-Book.apk

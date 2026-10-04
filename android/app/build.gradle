@@ -1,0 +1,50 @@
+plugins { id 'com.android.application' }
+
+def vp = new Properties()
+file('version.properties').withInputStream { vp.load(it) }
+// Repo that holds web/ (screens). Set automatically on GitHub; or pass -PupdateRepo=user/repo
+def repo = System.getenv('GITHUB_REPOSITORY') ?: (project.findProperty('updateRepo') ?: '')
+def updateBase = repo ? "https://raw.githubusercontent.com/${repo}/main/web/" : ''
+
+android {
+    namespace 'com.p2p.orderbook'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.p2p.orderbook'
+        minSdk 26
+        targetSdk 34
+        versionCode vp['versionCode'].toInteger()
+        versionName vp['versionName']
+        buildConfigField 'String', 'UPDATE_BASE', "\"${updateBase}\""
+    }
+    buildFeatures { buildConfig true }
+    signingConfigs {
+        release {
+            def ks = System.getenv('KEYSTORE_FILE') ?: 'keystore/release.jks'
+            storeFile file(ks)
+            storePassword System.getenv('KEYSTORE_PASSWORD') ?: ''
+            keyAlias System.getenv('KEY_ALIAS') ?: 'p2p'
+            keyPassword System.getenv('KEY_PASSWORD') ?: System.getenv('KEYSTORE_PASSWORD') ?: ''
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig file(System.getenv('KEYSTORE_FILE') ?: 'keystore/release.jks').exists() ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+    sourceSets { main { assets.srcDirs = ['src/main/assets', "$buildDir/webassets"] } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+
+// Ship the current web app inside the APK (first start works offline)
+tasks.register('copyWeb', Copy) {
+    from("${rootDir}/../web") { exclude 'README.md' }
+    into("$buildDir/webassets/web")
+}
+preBuild.dependsOn copyWeb
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+    implementation 'androidx.core:core:1.13.1'
+}

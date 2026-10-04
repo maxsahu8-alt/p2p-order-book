@@ -1,0 +1,15 @@
+{
+ "web": "0.0008",
+ "files": {
+  "index.html": "7654cdb92d06c1a7f343d955fa235ab1921486a4",
+  "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
+  "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
+  "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
+ },
+ "apk": {
+  "code": 1,
+  "name": "1.0",
+  "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
+  "notes": ""
+ }
+}
