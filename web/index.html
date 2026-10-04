@@ -1455,6 +1455,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
       <summary>AI connection · <span id="aiProvLbl">Built-in</span></summary>
       <div class="aigrid">
         <label class="full">Provider<select id="ai-prov">
+          <option value="brainclaude">P2P Brain + Claude (learns from Claude · your Claude key)</option>
           <option value="brain">P2P Brain (app's own brain · offline · no AI)</option>
           <option value="builtin">Built-in (Claude, inside this app link)</option>
           <option value="anthropic">Anthropic Claude (your API key)</option>
@@ -2539,7 +2540,7 @@ async function impReadPdf(file){await impPdfLib();
   const ids=new Set((all.match(/\b\d{15,22}\b/g)||[]));
   if(rows.length&&head.length){const map=impAutoMap(head);return[{name:file.name,head,rows,map,via:"pdf",plat:impPlat(file.name+" "+all.slice(0,3000)),note:ids.size&&ids.size!==rows.length?`${ids.size} order numbers seen in the PDF, ${rows.length} rows read. Check the list below.`:""}]}
   // 2) AI reader, with a recount check against order numbers in the text
-  if(!(sampleFn||(aiCfg.prov!=="builtin"&&aiCfg.prov!=="brain"&&aiCfg.key)))return[{name:file.name,head:[],rows:[],map:{},via:"pdf",note:"This PDF is not a table I can read offline. Download the Excel/CSV export from the exchange, or turn on AI."}];
+  if(!(sampleFn||((aiCfg.prov!=="builtin"&&aiCfg.prov!=="brain"&&aiCfg.key||aiOnline()))))return[{name:file.name,head:[],rows:[],map:{},via:"pdf",note:"This PDF is not a table I can read offline. Download the Excel/CSV export from the exchange, or turn on AI."}];
   const chunks=[];let c0="";all.split("\n").forEach(l=>{if((c0+l).length>9000&&c0){chunks.push(c0);c0=""}c0+=l+"\n"});if(c0)chunks.push(c0);
   const got=[];for(let i=0;i<chunks.length;i++){$("#i-status").textContent=`Reading ${file.name} with AI · part ${i+1} of ${chunks.length}…`;
     const ask=async extra=>{const r=await aiJson(`Extract EVERY P2P crypto order row from this exchange order-history text. Do not skip any row, including cancelled ones. Return JSON: {"orders":[{"orderNo":string,"side":"BUY"|"SELL","coin":string,"qty":number,"rate":number,"total":number,"status":string,"time":"YYYY-MM-DD HH:mm:ss","cp":string,"pay":string}]}. side is the user's side (BUY = user bought crypto). Numbers without commas or currency signs. If a field is unclear leave it "".${extra||""}\n\nTEXT:\n${chunks[i]}`);return(r&&r.orders)||[]};
@@ -2656,13 +2657,13 @@ sheets.imphist=function(){const L=recs.filter(r=>r.kind==="implog").sort((a,b)=>
 const AIK="p2p_ai_cfg_v1";
 let aiCfg={prov:"builtin",key:"",model:"",url:""};
 try{aiCfg=Object.assign(aiCfg,JSON.parse(localStorage.getItem(AIK)||"{}"))}catch(e){}
-const PROV={brain:{n:"P2P Brain",help:"The app's own brain. Answers from your data and records entries, works offline, and learns the words and phrases you teach it. No AI, no key, nothing leaves your phone."},builtin:{n:"Built-in",help:"Uses Claude through this app link. No key needed."},
+const PROV={brainclaude:{n:"P2P Brain + Claude",help:"Best of both. P2P Brain answers first, offline and free. Questions it can't answer go to Claude with your API key, and the Brain learns each answer so next time it replies by itself. Get a key at console.anthropic.com (pay per use, usually a few paise per question).",def:"claude-sonnet-5-5"},brain:{n:"P2P Brain",help:"The app's own brain. Answers from your data and records entries, works offline, and learns the words and phrases you teach it. No AI, no key, nothing leaves your phone."},builtin:{n:"Built-in",help:"Uses Claude through this app link. No key needed."},
   anthropic:{n:"Anthropic Claude",help:"Get a key at console.anthropic.com. Leave Model empty to use the default.",def:"claude-sonnet-5-5"},
   openai:{n:"OpenAI",help:"Get a key at platform.openai.com and type the model name you want to use."},
   gemini:{n:"Google Gemini",help:"Get a key at aistudio.google.com and type the model name you want to use."},
   custom:{n:"Custom",help:"Any OpenAI-compatible service. Enter its base URL, key and model."}};
 function aiFormSync(){const p=$("#ai-prov").value;
-  $("#ai-key-w").hidden=p==="builtin"||p==="brain";$("#ai-model-w").hidden=p==="builtin"||p==="brain";$("#ai-url-w").hidden=p!=="custom";
+  $("#ai-key-w").hidden=p==="builtin"||p==="brain";$("#ai-model-w").hidden=p==="builtin"||p==="brain"||p==="brainclaude";$("#ai-url-w").hidden=p!=="custom";
   $("#ai-help").textContent=PROV[p].help+(p!=="builtin"&&p!=="brain"?" Your key stays on this device.":"");}
 function aiErr(code,text){const e=new Error(text||code);e.code=code;e.text=text;return e}
 async function postJSON(url,headers,body){
@@ -2674,8 +2675,10 @@ async function postJSON(url,headers,body){
   if(!res.ok)throw aiErr("api",(j.error&&(j.error.message||j.error))||("AI service error "+res.status));
   return j;
 }
-async function aiCall(turns,onText,images){images=images||[];if(aiCfg.prov==="brain"&&!(pref("brainSmart")!==false&&sampleFn))throw aiErr("brain","P2P Brain is on. Turn on Smart mode or pick Built-in in Settings → AI.");
-  const c=aiCfg.prov==="brain"?{prov:"builtin"}:aiCfg;
+function isBrain(){return aiCfg.prov==="brain"||aiCfg.prov==="brainclaude"}
+function brainVia(){if(!isBrain()||pref("brainSmart")===false)return null;if(sampleFn)return{prov:"builtin"};if(aiCfg.prov==="brainclaude"&&aiCfg.key)return{prov:"anthropic",key:aiCfg.key,model:aiCfg.model||""};return null}
+async function aiCall(turns,onText,images){images=images||[];if(isBrain()&&!brainVia())throw aiErr("brain",aiCfg.prov==="brainclaude"?"Add your Claude API key in Settings → AI so P2P Brain can ask Claude.":"P2P Brain is on. Pick “P2P Brain + Claude” in Settings → AI to let it learn from Claude.");
+  const c=isBrain()?brainVia():aiCfg;
   if(c.prov==="builtin"){
     if(!sampleFn)throw aiErr("unavailable","Built-in AI isn't available here. Choose a provider and add your API key.");
     const o={cache:false,modelTier:"default",onText:onText?({text})=>onText(text):undefined};if(images.length)o.images=images;
@@ -2709,7 +2712,9 @@ async function aiJson(prompt){
 function setAiState(ok,msg){const e=$("#aiState");e.className="aistate"+(ok===true?" on":ok===false?" err":"");e.textContent=msg;$("#aiProvLbl").textContent=PROV[aiCfg.prov].n}
 async function testAi(){
   setAiState(null,"Connecting…");
-  if(aiCfg.prov==="brain"){setAiState(true,aiOnline()?"P2P Brain + Claude (smart)":"P2P Brain · offline");return true}
+  if(aiCfg.prov==="brainclaude"&&!sampleFn){if(!aiCfg.key){setAiState(false,"Add your Claude key");return aiErr("no_key","Paste your Claude API key (from console.anthropic.com).")}
+    try{await aiCall([{role:"user",content:"Reply with the single word: OK"}]);setAiState(true,"P2P Brain + Claude (smart)");return true}catch(e){setAiState(false,"Claude key not working");return e}}
+  if(isBrain()){setAiState(true,aiOnline()?"P2P Brain + Claude (smart)":"P2P Brain · offline");return true}
   try{await aiCall([{role:"user",content:"Reply with the single word: OK"}]);setAiState(true,PROV[aiCfg.prov].n+" connected");return true}
   catch(e){setAiState(false,"Not connected");return e}
 }
@@ -2928,7 +2933,7 @@ function actionCard(actions,host,files){host=host||curMsgs();files=files||[];let
   host.appendChild(card);card.scrollIntoView({block:"end",behavior:"smooth"});return card;
 }
 // ================= APP ASSISTANT (offline, no AI) =================
-function aiOnline(){return aiCfg.prov==="brain"?(pref("brainSmart")!==false&&!!sampleFn):aiCfg.prov==="builtin"?!!sampleFn:!!(aiCfg.key||aiCfg.prov==="custom")}
+function aiOnline(){return isBrain()?!!brainVia():aiCfg.prov==="builtin"?!!sampleFn:!!(aiCfg.key||aiCfg.prov==="custom")}
 const LA={
   hi:false,
   t(en,hi){return this.hi?hi:en},
@@ -3102,10 +3107,10 @@ function brCount(){const st=JSON.parse(JSON.stringify(brPending||brStats()));st.
 sheets.brain=function(){const st=brPending||brStats(),B=brainRecs(),al=B.filter(r=>r.type==="alias"),ph=B.filter(r=>r.type==="phrase");const fb=st.fb||{up:0,down:0},acc=fb.up+fb.down?Math.round(fb.up/(fb.up+fb.down)*100):null;
   const learnedWords=Object.values(st.tc||{}).reduce((t,m)=>t+Object.keys(m).length,0);const H=habits();
   const lvl=Math.min(100,Math.round(10+al.length*4+ph.length*5+learnedWords*0.4+(st.answered||0)*0.5+fb.up*2+(st.fromAi||0)*3));
-  openSheet(`<div class="insw"><div class="insh"><h3>P2P Brain</h3><span class="note">${aiCfg.prov==="brain"?"active":"backup when AI is off"}</span></div>
+  openSheet(`<div class="insw"><div class="insh"><h3>P2P Brain</h3><span class="note">${isBrain()?"active":"backup when AI is off"}</span></div>
     <div class="tgh">${ring(lvl,100,"#8b5cf6",lvl,"brain level")}<div class="tgk"><div><span>Questions answered</span><b>${st.answered||0}</b></div><div><span>Accuracy (your 👍/👎)</span><b>${acc==null?"—":acc+"%"}</b></div></div></div>
     <div class="msgr">${[["Words taught",al.length],["Phrases taught",ph.length],["Words learned",learnedWords],["Typos fixed",st.fuzzy||0],["Learned from Claude",st.fromAi||0],["👍 / 👎",fb.up+" / "+fb.down]].map(([l,v])=>`<div><span>${l}</span><b>${v}</b></div>`).join("")}</div>
-    <div class="rml" style="margin-bottom:12px"><div class="dqr"><span>Smart mode<small>${sampleFn?"Hard questions go to Claude, and I learn from its answers":"Needs the built-in Claude (open the app inside Claude)"}</small></span><label class="tog"><input type="checkbox" id="br-smart" ${pref("brainSmart")!==false?"checked":""} ${sampleFn?"":"disabled"}><span></span></label></div></div>
+    <div class="rml" style="margin-bottom:12px"><div class="dqr"><span>Smart mode<small>${sampleFn||aiCfg.prov==="brainclaude"&&aiCfg.key?"Hard questions go to Claude, and I learn from its answers":"Pick “P2P Brain + Claude” in Settings → AI and add your Claude key"}</small></span><label class="tog"><input type="checkbox" id="br-smart" ${pref("brainSmart")!==false?"checked":""} ${sampleFn||aiCfg.prov==="brainclaude"&&aiCfg.key?"":"disabled"}><span></span></label></div></div>
     <div class="pcsec">What I learned from your business</div>${insList(H.slice(0,10).map(h=>["ok",esc(h)]))}
     <div class="pcsec">Words & phrases you taught <span>${B.length}</span></div>
     <div class="rml">${B.length?B.sort((a,b)=>b.time-a.time).map(r=>`<div class="rmi" style="grid-template-columns:1fr auto"><div class="rmt"><b>"${esc(r.from)}"</b><small>${r.type==="alias"?"means":"answers as"} ${esc(r.to)}</small></div><button type="button" class="link del" data-brdel="${r.id}">Forget</button></div>`).join(""):'<p class="note" style="padding:10px 0">Nothing yet. In AI Agent type e.g. "sb matlab SBI".</p>'}</div>
@@ -3260,7 +3265,7 @@ function laAnswer(q,out){if(brainMeta(q,out))return true;
   if(!r.ok){const c=brClassify(ap.q);if(c&&c.p>=0.55&&c.cover>=0.34){intent=c.intent;r=laReply(BR_INTENTS[c.intent][0]);if(r.ok)note=`\n(${LA.t("understood as","samjha")}: ${BR_LABEL[c.intent]} · ${Math.round(c.p*100)}%)`}}
   if(r.ok){if(ap.learned)note+="\n("+LA.t("from what you taught me","aapke sikhaaye matlab se")+")";
     if(fz.length){note+=`\n(${fz.map(([w,n])=>w+" → "+n).join(", ")})`;fz.forEach(([w,n])=>brainTeach("alias",w,n).catch(()=>{}));const st=JSON.parse(JSON.stringify(brPending||brStats()));st.fuzzy=(st.fuzzy||0)+fz.length;brSave(st)}
-    out.textContent=r.text+note;out.insertAdjacentHTML("beforeend",`<span class="labadge">${aiCfg.prov==="brain"?"P2P Brain":"App assistant"} · works offline</span>`);
+    out.textContent=r.text+note;out.insertAdjacentHTML("beforeend",`<span class="labadge">${isBrain()?"P2P Brain":"App assistant"} · works offline</span>`);
     {const st=[];if(fz.length)st.push(LA.t("Fixed spelling: ","Spelling sudhari: ")+fz.map(([w,n])=>w+"→"+n).join(", "));if(ap.learned)st.push(LA.t(`Used a phrase you taught: "${ap.learned.from}"`,`Aapka sikhaya vaakya use kiya: "${ap.learned.from}"`));if(intent)st.push(LA.t(`Guessed the topic: ${BR_LABEL[intent]}`,`Topic ka andaza: ${BR_LABEL[intent]}`));const e=[LA.party(" "+ap.q+" "),LA.trader(" "+ap.q+" "),LA.bank(" "+ap.q+" ")].filter(Boolean).map(x=>x.name);if(e.length)st.push(LA.t("Names found: ","Naam mile: ")+[...new Set(e)].join(", "));const pr=LA.period(" "+ap.q+" ");if(pr)st.push(LA.t("Period: ","Samay: ")+LA.pname(pr));if(r.actions.length)st.push(LA.t("Prepared an entry for you to confirm","Entry taiyaar ki, aap confirm karo"));brShowThink(out,st)}if(r.actions.length)actionCard(r.actions);else brFeedback(out,intent,q);
     brCount();if(!r.actions.length)brRemember(ap.q);aiHistory.push({role:"user",content:q},{role:"assistant",content:r.text});return true}
   return false}
@@ -3315,7 +3320,7 @@ DATA: ${JSON.stringify(agentContext())}`;
 const AP_CHIPS={home:["aaj ka profit","is hafte kitna kamaya","pending orders","aaj ka report"],orders:["pending orders","kis time order zyada aate hain","loss kitna hua","mera score"],wallet:["balance","limit","agle hafte paisa kam padega","usdt kitna bacha"],direct:["kis kis ko dena baki hai","agle hafte paisa kam padega","is mahine ka profit"],coins:["kis rate pe ad lagau","usdt kitna bacha","is mahine ka profit"],add:["kis rate pe ad lagau","usdt kitna bacha","limit"],_:["aaj ka profit","kis kis ko dena baki hai","balance","help"]};
 function apPage(){return Object.keys(PAGE_NAMES).find(k=>{const el=$("#p-"+k);return el&&!el.hidden})||"home"}
 function openAiPop(){const pg=apPage();$("#apChips").innerHTML=(AP_CHIPS[pg]||AP_CHIPS._).map(q=>`<button type="button" data-apq="${esc(q)}">${esc(q)}</button>`).join("");
-  $("#apSub").textContent=aiCfg.prov==="brain"?(aiOnline()?"P2P Brain + Claude (smart)":"P2P Brain · offline"):aiOnline()?PROV[aiCfg.prov].n+" + P2P Brain":"P2P Brain · offline";
+  $("#apSub").textContent=isBrain()?(aiOnline()?"P2P Brain + Claude (smart)":"P2P Brain · offline"):aiOnline()?PROV[aiCfg.prov].n+" + P2P Brain":"P2P Brain · offline";
   if(!$("#apMsgs").children.length){const d=document.createElement("div");d.className="msg a";d.textContent=LA.t("Hi! Ask about profit, parties, banks, limits, stock or traders, or tell me what happened, like \"500 usdt 93 pe becha Ravi ko\".","Namaste! Profit, party, bank, limit, stock, trader kuch bhi poocho, ya bolo kya hua, jaise \"500 usdt 93 pe becha Ravi ko\".");$("#apMsgs").appendChild(d)}
   $("#aiPop").hidden=false;requestAnimationFrame(()=>$("#aiPop").classList.add("open"));setTimeout(()=>$("#apIn").focus(),150)}
 function closeAiPop(){const p=$("#aiPop");p.classList.remove("open");setTimeout(()=>p.hidden=true,180)}
@@ -3441,7 +3446,7 @@ function openDrawer(){
   const exT=exps.filter(x=>x.time>=t0.getTime()).reduce((t,x)=>t+(+x.amt||0),0);
   const coinsN=new Set(orders.map(o=>o.coin)).size;const blk=recs.filter(r=>r.kind==="cptag"&&r.tag==="block").length;
   const best=(()=>{try{return banks.filter(b=>b.type!=="Cash").sort((a,b)=>bal[b.id]-bal[a.id])[0]}catch(e){return null}})();
-  const M={intake:jobs?jobs+" in queue":"Auto save",ai:aiCfg.prov==="brain"?"P2P Brain":aiCfg.prov==="builtin"?(sampleFn?"Built-in":"Offline mode"):(PROV[aiCfg.prov]||{n:"Own"}).n,coins:coinsN?coinsN+" coin"+(coinsN>1?"s":""):"",import:"",expense:exT?H(inr(Math.round(exT)))+" today":"",which:best?best.name:"",report:"",cps:blk?blk+" blocked":"",ideas:"",settings:pinOn?"":"Set PIN",upiqr:"",coach:(()=>{const c=coachRecs.find(x=>x.week===weekStart());return c?"Ready":"New week"})(),cashflow:(()=>{try{const f=cashFlow(pref("cfProfit")!==false);return f.short?"Short "+new Date(f.short.t).toLocaleDateString("en-IN",{weekday:"short"}):f.totOut?"OK 7 days":""}catch(e){return""}})(),bankrisk:(()=>{try{const r=bankRisk();const h=r.filter(x=>x.lv==="bad").length,m=r.filter(x=>x.lv==="warn").length;return h?h+" high":m?m+" medium":r.length?"Low":""}catch(e){return""}})(),loss:(()=>{try{const d=lossData("30");return d.tot?"−"+inr(Math.round(d.tot)):""}catch(e){return""}})(),rules:(()=>{const n=arules.filter(r=>r.on!==false).length,h=evalRules().length;return h?h+" firing":n?n+" on":"Add"})(),besttime:(()=>{try{return bestTimeTop("30")}catch(e){return""}})(),bestrate:(()=>{const g=rateSuggest(pref("coin")||"USDT");return g.sell?"Sell ₹"+g.sell.toFixed(2):""})(),target:(()=>{const t=targetInfo();return t.T?Math.round(t.pct)+"%":"Set"})(),mscore:(()=>{const d=scoreData("30");return d.closed?d.score+" · "+grade(d.score)[0]:""})(),nightrep:pref("repAuto")===false?"Off":(()=>{const [h,m]=(pref("repAt")||"23:00").split(":").map(Number);return (h%12||12)+(m?":"+String(m).padStart(2,"0"):"")+(h<12?" AM":" PM")})(),conv:(()=>{const r=convRate();return r?"₹"+fmtR(r):""})(),gallery:(()=>{const n=allProofs().length;return n?n+" photo"+(n>1?"s":""):""})(),notes:(()=>{const d=reminds.filter(r=>!r.done&&r.at&&r.at<=Date.now()).length,u=reminds.filter(r=>!r.done).length;return d?d+" due":u?u+" open":""})()};
+  const M={intake:jobs?jobs+" in queue":"Auto save",ai:isBrain()?(aiOnline()?"Brain + Claude":"P2P Brain"):aiCfg.prov==="builtin"?(sampleFn?"Built-in":"Offline mode"):(PROV[aiCfg.prov]||{n:"Own"}).n,coins:coinsN?coinsN+" coin"+(coinsN>1?"s":""):"",import:"",expense:exT?H(inr(Math.round(exT)))+" today":"",which:best?best.name:"",report:"",cps:blk?blk+" blocked":"",ideas:"",settings:pinOn?"":"Set PIN",upiqr:"",coach:(()=>{const c=coachRecs.find(x=>x.week===weekStart());return c?"Ready":"New week"})(),cashflow:(()=>{try{const f=cashFlow(pref("cfProfit")!==false);return f.short?"Short "+new Date(f.short.t).toLocaleDateString("en-IN",{weekday:"short"}):f.totOut?"OK 7 days":""}catch(e){return""}})(),bankrisk:(()=>{try{const r=bankRisk();const h=r.filter(x=>x.lv==="bad").length,m=r.filter(x=>x.lv==="warn").length;return h?h+" high":m?m+" medium":r.length?"Low":""}catch(e){return""}})(),loss:(()=>{try{const d=lossData("30");return d.tot?"−"+inr(Math.round(d.tot)):""}catch(e){return""}})(),rules:(()=>{const n=arules.filter(r=>r.on!==false).length,h=evalRules().length;return h?h+" firing":n?n+" on":"Add"})(),besttime:(()=>{try{return bestTimeTop("30")}catch(e){return""}})(),bestrate:(()=>{const g=rateSuggest(pref("coin")||"USDT");return g.sell?"Sell ₹"+g.sell.toFixed(2):""})(),target:(()=>{const t=targetInfo();return t.T?Math.round(t.pct)+"%":"Set"})(),mscore:(()=>{const d=scoreData("30");return d.closed?d.score+" · "+grade(d.score)[0]:""})(),nightrep:pref("repAuto")===false?"Off":(()=>{const [h,m]=(pref("repAt")||"23:00").split(":").map(Number);return (h%12||12)+(m?":"+String(m).padStart(2,"0"):"")+(h<12?" AM":" PM")})(),conv:(()=>{const r=convRate();return r?"₹"+fmtR(r):""})(),gallery:(()=>{const n=allProofs().length;return n?n+" photo"+(n>1?"s":""):""})(),notes:(()=>{const d=reminds.filter(r=>!r.done&&r.at&&r.at<=Date.now()).length,u=reminds.filter(r=>!r.done).length;return d?d+" due":u?u+" open":""})()};
   M.wa=waApiOn()?"API on":"App";M.dbphone=typeof dbsCfg!=="undefined"&&dbsCfg.on?(dbsCfg.err?"Offline":"On"):"Off";{const FL=fbList();const pv=FL.filter(x=>x.status==="proposed").length,w=FL.filter(x=>x.status==="new").length;M.feedback=w?w+" waiting":"";M.about=pv?"Update ready":"v"+APP_VER}
   document.querySelectorAll("#drawer .dmeta").forEach(e=>{const v=M[e.dataset.m]||"";e.textContent=v;e.hidden=!v;e.classList.toggle("warn",e.dataset.m==="settings"||(e.dataset.m==="intake"&&jobs>0)||(e.dataset.m==="notes"&&/due/.test(v))||/Short|high|firing|Update ready/.test(v))});
   const cur=Object.keys(PAGE_NAMES).find(k=>{const el=$("#p-"+k);return el&&!el.hidden});
@@ -4103,7 +4108,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=13;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=14;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4170,6 +4175,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00014","4 Oct 2026",["New AI option: P2P Brain + Claude. The Brain answers first; hard questions go to Claude with your key and the Brain learns the answer"]],
   ["0.0.0.00013","4 Oct 2026",["Delete all data and Restore backup now work instantly in the phone app, even with thousands of orders"]],
   ["0.0.0.00012","4 Oct 2026",["KuCoin PDF import fixed: every order ID, name and status read correctly (CHARGED = Completed)","Rows that continue on the next page are joined","Platform (KuCoin, Binance…) detected from the file","Button to remove a wrong earlier import of the same file"]],
   ["0.0.0.00011","4 Oct 2026",["Import: order status read correctly (Completed, Cancelled…); unknown status words are asked, never set to Pending silently","Re-import the same file to correct the status of orders already imported"]],
@@ -4926,13 +4932,13 @@ applyTheme();if(devGet("p2p_hide_default","0")==="1")hideAmt=true;
 lsLoad();applyPrefs();applyFormDefaults();render();updateChrome();
 (async()=>{
   const C=window.claude;
-  if(!C||!C.use){($("#syncNote").classList.add("ok"),$("#syncNote").textContent="Saved on this device");if(aiCfg.prov==="builtin"||aiCfg.prov==="brain")setAiState(true,aiCfg.prov==="brain"?"P2P Brain · offline":"App assistant · offline");return}
+  if(!C||!C.use){($("#syncNote").classList.add("ok"),$("#syncNote").textContent="Saved on this device");if(aiCfg.prov==="builtin"||isBrain())setAiState(true,isBrain()?(aiOnline()?"P2P Brain + Claude (smart)":"P2P Brain · offline"):"App assistant · offline");return}
   const [db,user,sample]=await Promise.all([C.use("db"),C.use("user"),C.use("sample")]);
   sampleFn=sample;
   if(sample&&sample.limits)sample.limits().then(l=>{i2Max=l&&l.images?Math.min(5,l.images.maxCount):0}).catch(()=>{});
   C.use("mcp").then(m=>{mcp=m;$("#nowBtn").hidden=!m});
   C.use("assets").then(a=>{assetsApi=a});C.use("downloads").then(d=>{dlApi=d});
-  if(aiCfg.prov==="brain")setAiState(true,sample&&pref("brainSmart")!==false?"P2P Brain + Claude (smart)":"P2P Brain · offline");else if(aiCfg.prov==="builtin")setAiState(true,sample?"Built-in connected":"App assistant · offline");
+  if(isBrain())setAiState(true,aiOnline()?"P2P Brain + Claude (smart)":"P2P Brain · offline");else if(aiCfg.prov==="builtin")setAiState(true,sample?"Built-in connected":"App assistant · offline");
   else setAiState(null,PROV[aiCfg.prov].n+(aiCfg.key?" · key saved":" · add key"));
   if(db&&user){
     try{
