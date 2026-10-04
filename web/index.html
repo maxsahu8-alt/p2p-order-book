@@ -3583,10 +3583,14 @@ $("#csvExport").onclick=()=>{const head=["Date","Time","Mode","Side","Coin","Qua
 $("#bkImport").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;let data;try{data=JSON.parse(await f.text())}catch(err){$("#bkNote").textContent="This file isn't a valid backup.";return}
   const list=Array.isArray(data)?data:data&&Array.isArray(data.records)?data.records:null;if(!list){$("#bkNote").textContent="This file isn't a P2P Order Book backup.";return}
   const ok=list.filter(x=>x&&typeof x.id==="string"&&x.id.length<=200&&/^[A-Za-z0-9_\-.~]+$/.test(x.id));let n=0;
-  for(const x of ok){$("#bkNote").textContent=`Restoring ${++n} of ${ok.length}…`;try{await putRec(x)}catch(err){}}
+  if(col){let i=0;const w=async()=>{while(i<ok.length){const x=ok[i++];try{await col.doc(x.id).set(x)}catch(err){}n++;if(n%25===0)$("#bkNote").textContent=`Restoring ${n} of ${ok.length}…`}};await Promise.all([w(),w(),w(),w()])}
+  else{const idx=new Map(recs.map((r,k)=>[r.id,k]));ok.forEach(x=>{if(idx.has(x.id))recs[idx.get(x.id)]=x;else recs.push(x)});n=ok.length;lsSave();splitRecs();applyPrefs();render()}
   $("#bkNote").textContent=`Restored ${n} records. Existing records with the same id were updated.`;};
 $("#wipeBtn").onclick=()=>openSheet(`<h3>Delete all data?</h3><p class="note">This removes every order, bank, party, payment, expense, note and setting. It cannot be undone.</p><label style="margin-top:12px">Type DELETE to confirm<input id="wipeIn" autocomplete="off"></label><button type="button" class="primary" id="wipeGo" style="width:100%;margin-top:14px;background:var(--sell);color:#fff">Delete everything</button>`,el=>{
-  el.querySelector("#wipeGo").onclick=async()=>{if($("#wipeIn").value.trim()!=="DELETE"){toast("Type DELETE to confirm");return}const all=[...recs];let n=0;for(const x of all){try{await delRec(x.id);n++}catch(err){}}closeSheet();toast(`Deleted ${n} records`)}});
+  el.querySelector("#wipeGo").onclick=async e=>{if($("#wipeIn").value.trim().toUpperCase()!=="DELETE"){toast("Type DELETE to confirm");return}const b=e.currentTarget;b.disabled=true;const all=recs.map(r=>r.id);let n=0;
+    if(col){let i=0;const w=async()=>{while(i<all.length){const id=all[i++];try{await col.doc(id).delete();n++}catch(err){}if(n%25===0)b.textContent=`Deleting ${n} of ${all.length}…`}};await Promise.all([w(),w(),w(),w()])}
+    else{n=all.length;recs=[];lsSave();splitRecs();render()}
+    closeSheet();toast(`Deleted ${n} records`)}});
 
 // ---------- on-phone OCR (reads screenshots when the AI can't see images) ----------
 let ocrWorker=null,ocrPromise=null,ocrState="idle",ocrListeners=[];
@@ -4099,7 +4103,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=12;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=13;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4166,6 +4170,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00013","4 Oct 2026",["Delete all data and Restore backup now work instantly in the phone app, even with thousands of orders"]],
   ["0.0.0.00012","4 Oct 2026",["KuCoin PDF import fixed: every order ID, name and status read correctly (CHARGED = Completed)","Rows that continue on the next page are joined","Platform (KuCoin, Binance…) detected from the file","Button to remove a wrong earlier import of the same file"]],
   ["0.0.0.00011","4 Oct 2026",["Import: order status read correctly (Completed, Cancelled…); unknown status words are asked, never set to Pending silently","Re-import the same file to correct the status of orders already imported"]],
   ["0.0.0.00010","4 Oct 2026",["New version numbers: 0.0.0.00010 and up","Import from PDF: order numbers split over two lines are joined, so no row is lost","Import reads the time zone written in the file (e.g. UTC+08:00) and converts to India time"]],
