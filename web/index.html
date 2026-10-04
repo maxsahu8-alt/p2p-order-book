@@ -2468,7 +2468,7 @@ async function cbSave(m,hashes){
   else{recs=recs.filter(r=>!(r.kind==="cpbook"||r.kind==="cpseen"));recs.push(...docs);lsSave();splitRecs();render()}
   cbCache=null;csCache=null}
 // import
-const FIELDS=[["orderNo","Order number",/order.?(no|num|id)|^order$|^id$|order.?#/i],["side","Buy / Sell",/order.?type|side|^type$|direction|trade.?type|buy.?\/?.?sell/i],["coin","Coin",/asset|coin(?!.*amount)|crypto(?!.*amount)|token|^currency$/i],["qty","Quantity (coin)",/quantity|^qty|amount.*(crypto|coin|asset)|(crypto|coin|asset|usdt).?(amount|qty)|^amount$|^volume$/i],["rate","Price / rate",/^price|unit.?price|^rate$|rate.?\(|order.?price|^price.?\(/i],["total","Total (₹)",/total|fiat.?amount|inr|amount.?\(?(₹|inr|fiat)/i],["status","Status",/status|state/i],["time","Date / time",/time|date|created/i],["cp","Counterparty",/counter.?part|couterparty|nick|merchant|^user|buyer|seller/i],["pay","Payment method",/pay(ment)?.?(method|mode|type)?$|^pay/i]];
+const FIELDS=[["orderNo","Order number",/order.?(no|num|id)|^order$|^id$|order.?#/i],["side","Buy / Sell",/order.?type|side|^type$|direction|trade.?type|buy.?\/?.?sell/i],["coin","Coin",/^(?!.*(quantity|amount|qty|price|volume|value|total|fiat)).*(asset|coin|crypto|token|currency)/i],["qty","Quantity (coin)",/quantity|^qty|amount.*(crypto|coin|asset)|(crypto|coin|asset|usdt).?(amount|qty)|^amount$|^volume$/i],["rate","Price / rate",/^price|unit.?price|^rate$|rate.?\(|order.?price|^price.?\(/i],["total","Total (₹)",/total|fiat.?amount|inr|amount.?\(?(₹|inr|fiat)/i],["status","Status",/status|state/i],["time","Date / time",/time|date|created/i],["cp","Counterparty",/counter.?part|couterparty|nick|merchant|^user|buyer|seller/i],["pay","Payment method",/pay(ment)?.?(method|mode|type)?$|^pay/i]];
 const IMP_REQ=["side","qty","time"];
 let IMP={files:[],rows:[],tz:"ist",fix:{}};let impWhat=(()=>{try{return localStorage.getItem("p2p_impwhat")||"client"}catch(e){return"client"}})();let impOrders=[];
 const loadScript=src=>new Promise((ok,no)=>{if(document.querySelector(`script[src="${src}"]`))return ok();const t=document.createElement("script");t.src=src;t.onload=ok;t.onerror=()=>no(new Error("load"));document.head.appendChild(t)});
@@ -4066,7 +4066,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_VER="0.0008";
+const APP_VER="0.0009";
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4133,6 +4133,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0009","4 Oct 2026",["Import: \"Crypto Quantity\" column is now read as quantity, not coin"]],
   ["0.0008","4 Oct 2026",["Ready for the Android app (APK): data saved on the phone, downloads, screenshots, share","Database phone sync for the APK"]],
   ["0.0007","4 Oct 2026",["Fixed: app copies opened in a file viewer showed a PIN screen"]],
   ["0.0006","4 Oct 2026",["Backup copies opened from phone files no longer ask for a PIN"]],
