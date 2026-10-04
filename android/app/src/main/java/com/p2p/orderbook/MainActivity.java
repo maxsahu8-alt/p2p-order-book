@@ -15,7 +15,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Base64;
@@ -160,6 +164,80 @@ public class MainActivity extends Activity {
         if (m.equals("text/comma-separated-values") && !out.contains("text/csv")) out.add("text/csv");
     }
 
+    // ---- in-app listening (no Google popup): SpeechRecognizer + mic permission
+    static final int MIC_PERM_REQ = 7311;
+    SpeechRecognizer sr;
+    String micLang = null;
+
+    void startListen(String lang) {
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) { popupListen(lang); return; }
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            micLang = lang == null ? "en-IN" : lang;
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MIC_PERM_REQ);
+            return;
+        }
+        try {
+            if (sr == null) {
+                sr = SpeechRecognizer.createSpeechRecognizer(this);
+                sr.setRecognitionListener(new RecognitionListener() {
+                    boolean sent = false;
+                    public void onReadyForSpeech(Bundle b) { sent = false; js("P2PVoiceEvent", "ready"); }
+                    public void onBeginningOfSpeech() { js("P2PVoiceEvent", "speech"); }
+                    public void onRmsChanged(float v) { }
+                    public void onBufferReceived(byte[] b) { }
+                    public void onEndOfSpeech() { js("P2PVoiceEvent", "end"); }
+                    public void onError(int e) {
+                        if (sent) return; sent = true;
+                        if (e == SpeechRecognizer.ERROR_NO_MATCH || e == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) js("P2PVoiceResult", "");
+                        else if (e == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) js("P2PVoiceResult", "__ERR__:Microphone not allowed. Allow it in phone settings.");
+                        else if (e == SpeechRecognizer.ERROR_NETWORK || e == SpeechRecognizer.ERROR_NETWORK_TIMEOUT) js("P2PVoiceResult", "__ERR__:No internet for voice. Try again.");
+                        else js("P2PVoiceResult", "__ERR__:Couldn't hear. Tap the orb and try again.");
+                    }
+                    public void onResults(Bundle b) {
+                        if (sent) return; sent = true;
+                        ArrayList<String> r = b.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                        js("P2PVoiceResult", r != null && !r.isEmpty() ? r.get(0) : "");
+                    }
+                    public void onPartialResults(Bundle b) {
+                        ArrayList<String> r = b.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                        if (r != null && !r.isEmpty()) js("P2PVoicePartial", r.get(0));
+                    }
+                    public void onEvent(int t, Bundle b) { }
+                });
+            }
+            Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang == null || lang.isEmpty() ? "en-IN" : lang);
+            i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+            i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+            i.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getPackageName());
+            sr.cancel();
+            sr.startListening(i);
+        } catch (Exception e) { popupListen(lang); }
+    }
+
+    void popupListen(String lang) {
+        try {
+            Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang == null || lang.isEmpty() ? "en-IN" : lang);
+            i.putExtra(RecognizerIntent.EXTRA_PROMPT, "Bolo…");
+            i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+            startActivityForResult(i, VOICE_REQ);
+        } catch (ActivityNotFoundException e) { js("P2PVoiceResult", "__ERR__:No voice app. Install or update the Google app."); }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int req, String[] perms, int[] res) {
+        if (req == MIC_PERM_REQ) {
+            String lang = micLang; micLang = null;
+            if (res.length > 0 && res[0] == PackageManager.PERMISSION_GRANTED) startListen(lang);
+            else js("P2PVoiceResult", "__ERR__:Microphone not allowed. Allow it in phone settings.");
+            return;
+        }
+        super.onRequestPermissionsResult(req, perms, res);
+    }
+
     @Override
     protected void onActivityResult(int req, int res, Intent data) {
         if (req == VOICE_REQ) {
@@ -190,6 +268,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         if (tts != null) { tts.stop(); tts.shutdown(); }
+        if (sr != null) { try { sr.destroy(); } catch (Exception e) { } }
         super.onDestroy();
     }
 
@@ -487,21 +566,13 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public String hasVoice() { return "1"; }
+        public String hasVoice() { return "2"; }
 
         @JavascriptInterface
-        public void listen(String lang) {
-            runOnUiThread(() -> {
-                try {
-                    Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                    i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                    i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang == null || lang.isEmpty() ? "en-IN" : lang);
-                    i.putExtra(RecognizerIntent.EXTRA_PROMPT, "Bolo…");
-                    i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
-                    startActivityForResult(i, VOICE_REQ);
-                } catch (ActivityNotFoundException e) { js("P2PVoiceResult", "__ERR__:No voice app. Install or update the Google app."); }
-            });
-        }
+        public void listen(String lang) { runOnUiThread(() -> startListen(lang)); }
+
+        @JavascriptInterface
+        public void stopListen() { runOnUiThread(() -> { if (sr != null) try { sr.cancel(); } catch (Exception e) { } }); }
 
         @JavascriptInterface
         public void speak(String text, String lang) { runOnUiThread(() -> doSpeak(text, lang)); }
