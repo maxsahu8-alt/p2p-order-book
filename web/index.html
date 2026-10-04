@@ -1211,7 +1211,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
   <section id="p-home" class="chat">
     <section class="hero2">
       <div class="h2top"><span class="al">Net worth <button type="button" class="eye" id="eyeBtn" aria-label="Hide amounts"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></span><span class="h2chg" id="hNetChg"></span></div>
-      <div class="atot" id="hTotal">₹0</div>
+      <div class="atot" id="hTotal" role="button" tabindex="0" style="cursor:pointer">₹0</div>
       <div class="h2sub"><span><i class="lgd" style="background:var(--c1)"></i>Banks <b id="hBanks">₹0</b></span><span><i class="lgd" style="background:var(--c3)"></i><span id="hUsdt">0 USDT</span> <b id="hStock">≈ ₹0</b></span></div>
       <div class="bbar" id="hBar" data-go="wallet" role="button" tabindex="0"></div>
       <div class="bleg" id="hBarLeg"></div>
@@ -1579,7 +1579,7 @@ function stats(list){
   const agg=s=>{const a=done.filter(o=>o.side===s);const q=a.reduce((x,o)=>x+o.qty,0);const v=a.reduce((x,o)=>x+o.qty*o.rate,0);return{q,v,avg:q?v/q:0}};
   const b=agg("BUY"),s=agg("SELL");
   const matched=Math.min(b.q,s.q);
-  return{b,s,profit:matched&&b.avg&&s.avg?(s.avg-b.avg)*matched:0,count:list.length,pend:list.filter(o=>o.status==="Pending"||o.status==="Appeal").length};
+  return{b,s,profit:listProfit(list),spreadProfit:matched&&b.avg&&s.avg?(s.avg-b.avg)*matched:0,count:list.length,pend:list.filter(o=>o.status==="Pending"||o.status==="Appeal").length};
 }
 function renderSummary(){
   const st=stats(orders.filter(o=>isToday(o.time)));
@@ -1631,8 +1631,7 @@ function renderCoins(){
 let homeTab="all",searchQ="",hideAmt=false;
 try{hideAmt=localStorage.getItem("p2p_hide")==="1"}catch(e){}
 function renderHero(){
-  const {bal}=balances();const total=banks.reduce((t,b)=>t+bal[b.id],0);
-  $("#hTotal").textContent=inr(Math.round(total));
+  $("#hTotal").textContent=inr(Math.round(ACC().netWorth));
   const st=stats(orders.filter(o=>isToday(o.time)));const pe=$("#sProfit");pe.textContent=(st.profit>=0?"+":"")+inr(+st.profit.toFixed(2));pe.classList.toggle("neg",st.profit<0);
   const u=stockLeft().USDT||0;$("#hUsdt").textContent=fmtQ(+u.toFixed(2))+" USDT left";
   const days=[...Array(14)].map((_,i)=>{const k=new Date(Date.now()-(13-i)*DAY).toLocaleDateString("en-CA");return stats(orders.filter(o=>o.status==="Completed"&&new Date(o.time).toLocaleDateString("en-CA")===k)).profit});
@@ -1672,10 +1671,9 @@ function renderDash(){
   const col=dp.reduce((a,b)=>a+b,0)>=0?"var(--accent)":"var(--sell)";
   $("#kSpark").innerHTML=dp.some(v=>v)?`<path d="M${pts.map(p=>p.join(",")).join("L")}" fill="none" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${pts[pts.length-1][0]}" cy="${pts[pts.length-1][1]}" r="2.6" fill="${col}"/>`:"";
   // hero: net worth
-  const {bal}=balances();const bankTot=banks.reduce((t,b)=>t+bal[b.id],0);const u=stockLeft().USDT||0;
-  const lastBuy=[...orders].filter(o=>o.coin==="USDT"&&o.side==="BUY"&&o.status==="Completed").sort((a,b)=>b.time-a.time)[0];const px=lastBuy?lastBuy.rate:0;
-  const stockV=Math.max(0,u)*px;
-  $("#hTotal").textContent=inr(Math.round(bankTot+stockV));$("#hBanks").textContent=inr(Math.round(bankTot));
+  const A=ACC();const {bal}=A;const bankTot=A.money;const u=A.stock.USDT||0;const px=A.avgCost.USDT||0;
+  const stockV=A.stockVal.USDT||0;
+  $("#hTotal").textContent=inr(Math.round(A.netWorth));$("#hBanks").textContent=inr(Math.round(bankTot));
   $("#hUsdt").textContent=fmtQ(+u.toFixed(2))+" USDT";$("#hStock").textContent=px?"≈ "+inr(Math.round(stockV)):"";
   const ch=$("#hNetChg");ch.textContent=st.profit?`${st.profit>=0?"+":"−"}${inr(Math.abs(Math.round(st.profit)))} ${dashP==="today"?"today":dashP==="all"?"all time":dashP+"D"}`:"";ch.className="h2chg"+(st.profit<0?" neg":"");
   const C=["var(--c1)","var(--c2)","var(--c4)","var(--c5)","var(--muted)"];const pos=banks.map(b=>({n:b.name,v:Math.max(0,bal[b.id])})).sort((a,b)=>b.v-a.v);
@@ -1710,11 +1708,11 @@ function renderHome(){
 function render(){try{renderJobs();renderNight();cpDatalist()}catch(e){}renderSummary();renderList();renderCoins();renderWallet();renderDirect();renderHome();renderAlerts();try{renderCharts()}catch(e){console.error(e)}if(window.formSplit)formSplit.refresh()}
 
 // storage: one record list — orders (no kind), banks, expenses, transfers, settings
-let recs=[], banks=[], exps=[], moves=[], parties=[], ppays=[], pdues=[], assetsApi=null, settings={id:"s_main",kind:"setting",stock:{}};
+let recs=[], banks=[], exps=[], moves=[], parties=[], ppays=[], pdues=[], assetsApi=null, settings={id:"s_main",kind:"setting",stock:{}};let allBanks=[],accCache=null;
 function splitRecs(){
-  mvCache=null;cbCache=null;csCache=null;
+  mvCache=null;cbCache=null;csCache=null;accCache=null;
   orders=recs.filter(r=>!r.kind);
-  banks=recs.filter(r=>r.kind==="bank").sort((a,b)=>(a.time||0)-(b.time||0));
+  allBanks=recs.filter(r=>r.kind==="bank").sort((a,b)=>(a.time||0)-(b.time||0));banks=allBanks.filter(b=>!b.archived);
   exps=recs.filter(r=>r.kind==="expense");moves=recs.filter(r=>r.kind==="move");
   parties=recs.filter(r=>r.kind==="party").sort((a,b)=>(a.time||0)-(b.time||0));ppays=recs.filter(r=>r.kind==="ppay");pdues=recs.filter(r=>r.kind==="pdue");notes=recs.filter(r=>r.kind==="note");reminds=recs.filter(r=>r.kind==="remind");cpTagMap=new Map(recs.filter(r=>r.kind==="cptag").map(r=>[r.id,r]));arules=recs.filter(r=>r.kind==="arule").sort((a,b)=>a.time-b.time);coachRecs=recs.filter(r=>r.kind==="coach");
   settings=recs.find(r=>r.kind==="setting"&&r.id==="s_main")||{id:"s_main",kind:"setting",stock:{}};
@@ -1812,7 +1810,7 @@ $("#form").onsubmit=async e=>{
   o.splits=isDirect()?[]:sp.splits;
   if(isDirect()){o.party=$("#dir-party").value||"";o.dueLink=!!o.party&&$("#dir-due").checked;o.payAcc=o.side==="SELL"&&!$("#dirAccL").hidden?$("#dir-acc").value:""}else{delete o.party;delete o.dueLink}
   $("#saveBtn").disabled=true;
-  try{await saveOrder(o);await syncDirectLink(o);toast(old?"Order updated":(o.dueLink?(o.side==="BUY"?"Saved · added to dues of "+((parties.find(p=>p.id===o.party)||{}).name||"party"):"Saved · counted as payment to "+((parties.find(p=>p.id===o.party)||{}).name||"party")):"Order saved"));endEdit(true);$("#t-orders").click()}
+  try{await saveOrder(o);await syncDirectLink(o);const gap=isDirect()?0:r2(orderTotal(o)-allocated(o));toast(gap>=1&&o.status!=="Cancelled"?`${old?"Updated":"Saved"} · ${inr(Math.round(gap))} not yet in a bank`:old?"Order updated":(o.dueLink?(o.side==="BUY"?"Saved · added to dues of "+((parties.find(p=>p.id===o.party)||{}).name||"party"):"Saved · counted as payment to "+((parties.find(p=>p.id===o.party)||{}).name||"party")):"Order saved"));endEdit(true);$("#t-orders").click()}
   catch(err){toast("Couldn't save. Try again.")}
   $("#saveBtn").disabled=false;
 };
@@ -1833,7 +1831,7 @@ function upiNextFree(b,use){const log=((use[b.id]||{}).upiLog||[]).sort((p,q)=>p
 function limitLeft(b,m,use){if(m==="Cash")return Infinity;use=use||limitUse();const L=b.limits||{},u=use[b.id]||{};
   const one=+L[m]?L[m]-(u[m]||0):Infinity, all=+L.ALL?L.ALL-(u.ALL||0):Infinity;return Math.min(one,all)}
 const allocated=o=>(o.splits||[]).reduce((t,x)=>t+(+x.amt||0),0);
-const bankName=id=>(banks.find(b=>b.id===id)||{}).name||"Deleted bank";
+const bankName=id=>(allBanks.find(b=>b.id===id)||{}).name||"Deleted bank";
 let mvCache=null;
 function movements(){if(mvCache)return mvCache;return mvCache=movementsRaw()}
 function movementsRaw(){
@@ -1844,12 +1842,70 @@ function movementsRaw(){
   moves.forEach(x=>{m.push({bank:x.from,amt:-(+x.amt||0),time:x.time,label:"Transfer to "+bankName(x.to)+" · "+(x.method||"IMPS"),kind:"TR",method:x.method||"IMPS"});m.push({bank:x.to,amt:+x.amt||0,time:x.time,label:"Transfer from "+bankName(x.from),kind:"TR"})});
   return m;
 }
-function balances(){const mv=movements();const out={};banks.forEach(b=>out[b.id]=+b.opening||0);mv.forEach(x=>{if(x.bank in out)out[x.bank]+=x.amt});return{bal:out,mv}}
+function balances(){const mv=movements();const out={};allBanks.forEach(b=>out[b.id]=+b.opening||0);mv.forEach(x=>{if(x.bank in out)out[x.bank]+=x.amt});return{bal:out,mv}}
 function stockLeft(){
   const coins=new Set(["USDT",...Object.keys(settings.stock||{}),...orders.map(o=>o.coin)]);const out={};
   coins.forEach(c=>{let q=+(settings.stock||{})[c]||0;orders.forEach(o=>{if(o.coin===c&&o.status==="Completed")q+=o.side==="BUY"?+o.qty:-o.qty});out[c]=q});
   return out;
 }
+// ================= ACCOUNTING — one place for every money number (net worth, balances, stock, dues, profit)
+// Rules:
+//  • Bank/cash balance = opening + payments recorded on orders (not Cancelled) − expenses − party payments ± transfers
+//  • Coin stock = opening stock + Completed BUY − Completed SELL
+//  • Pending/Appeal order whose payment is already recorded = coins "in transit" (BUY: coming to you, SELL: owed to buyer)
+//  • Party dues = what you owe Direct parties (dues − payments); paid extra = advance (asset)
+//  • Profit = on each Completed SELL: (sell rate − average cost of your stock) × qty  (moving average cost, carries stock across days)
+//  • Net worth = banks + cash + stock value (at average cost) + coins in transit − dues + advances
+const r2=v=>Math.round((+v||0)*100)/100;
+const doneT=o=>o.doneAt||o.time||0;
+function ACC(){if(accCache)return accCache;
+  const {bal,mv}=balances();let bank=0,cash=0;allBanks.forEach(b=>{const v=bal[b.id]||0;if(b.type==="Cash")cash+=v;else bank+=v});
+  const known=new Set(allBanks.map(b=>b.id));const orphan=mv.filter(x=>!known.has(x.bank));
+  const stock=stockLeft();
+  // moving average cost per coin
+  const buys=orders.filter(o=>o.status==="Completed"&&o.side==="BUY"&&+o.qty>0);
+  const allAvg={};buys.forEach(o=>{const a=allAvg[o.coin]=allAvg[o.coin]||{q:0,v:0};a.q+=+o.qty;a.v+=o.qty*o.rate});
+  const fallback=c=>allAvg[c]&&allAvg[c].q?allAvg[c].v/allAvg[c].q:0;
+  const pos={},sellP={},sellCost={};let noCost=0;
+  orders.filter(o=>o.status==="Completed"&&+o.qty>0&&+o.rate>0).sort((a,b)=>doneT(a)-doneT(b)||(a.side==="BUY"?-1:1)).forEach(o=>{
+    const c=o.coin;let p=pos[c];if(!p){const q0=+((settings.stock||{})[c])||0;p=pos[c]={q:q0,cost:q0>0?(+((settings.stockCost||{})[c])||fallback(c)):0}}
+    const q=+o.qty;
+    if(o.side==="BUY"){const nq=p.q+q;p.cost=p.q>0&&nq>0?(p.q*p.cost+q*o.rate)/nq:o.rate;p.q=nq}
+    else{const fromStock=Math.max(0,Math.min(q,p.q));const extra=q-fromStock;const cExtra=fallback(c)||p.cost;
+      const cost=fromStock*p.cost+extra*cExtra;if(!(p.cost||cExtra))noCost++;
+      sellCost[o.id]=q?cost/q:0;sellP[o.id]=(p.cost||cExtra)?q*o.rate-cost:0;p.q-=q;if(p.q<=1e-9)p.q=Math.max(0,p.q)}});
+  const lastRate=c=>{const o=orders.filter(x=>x.coin===c&&x.status==="Completed"&&+x.rate>0).sort((a,b)=>doneT(b)-doneT(a))[0];return o?+o.rate:0};
+  const avgCost={},stockVal={};let stockValue=0;
+  Object.keys(stock).forEach(c=>{const q=stock[c];avgCost[c]=(pos[c]&&pos[c].cost)||fallback(c)||lastRate(c);stockVal[c]=Math.max(0,q)*avgCost[c];stockValue+=stockVal[c]});
+  // coins in transit (pending/appeal with payment recorded, partly or fully)
+  const transit={};let transitValue=0;const pend={inn:0,out:0,n:0};
+  orders.filter(o=>o.status==="Pending"||o.status==="Appeal").forEach(o=>{const tot=orderTotal(o);if(!tot)return;
+    const frac=noBank(o)?(o.dueLink?1:0):Math.min(1,allocated(o)/tot);pend.n++;
+    if(o.side==="SELL")pend.inn+=tot;else pend.out+=tot;if(!frac)return;
+    const dq=(o.side==="BUY"?1:-1)*o.qty*frac;transit[o.coin]=(transit[o.coin]||0)+dq;transitValue+=dq*(avgCost[o.coin]||o.rate)});
+  // party dues (grouped by party id, so dues of a deleted party still count)
+  const pid=new Set([...pdues.map(x=>x.party),...ppays.map(x=>x.party)]);let owe=0,adv=0;const perParty={};
+  pid.forEach(id=>{const net=pdues.filter(x=>x.party===id).reduce((t,x)=>t+(+x.amt||0),0)-ppays.filter(x=>x.party===id).reduce((t,x)=>t+(+x.amt||0),0);perParty[id]=net;if(net>0)owe+=net;else adv+=-net});
+  const money=bank+cash;
+  const netWorth=money+stockValue+transitValue-owe+adv;
+  return accCache={bal,bank:r2(bank),cash:r2(cash),money:r2(money),stock,avgCost,stockVal,stockValue:r2(stockValue),transit,transitValue:r2(transitValue),pend,owe:r2(owe),adv:r2(adv),perParty,
+    sellP,sellCost,noCost,orphan:{n:orphan.length,amt:r2(orphan.reduce((t,x)=>t+x.amt,0))},netWorth:r2(netWorth)}}
+// profit of a list of orders = sum of profit on its Completed SELL orders (cost from the running average)
+function listProfit(list){const P=ACC().sellP;return list.reduce((t,o)=>t+(o.status==="Completed"&&o.side==="SELL"?(P[o.id]||0):0),0)}
+function sheetNetWorth(){const A=ACC();const L=(k,v,c)=>`<div class="dqr"><span>${k}</span><b class="${c||""}">${v}</b></div>`;
+  const coins=Object.keys(A.stock).filter(c=>Math.abs(A.stock[c])>1e-6);
+  openSheet(`<div class="insw"><div class="insh"><h3>Net worth</h3></div>
+    <div class="rsug"><div><span>Net worth</span><b>${inr(Math.round(A.netWorth))}</b></div><div><span>Money</span><b>${inr(Math.round(A.money))}</b></div><div><span>Coins</span><b>${inr(Math.round(A.stockValue+A.transitValue))}</b></div></div>
+    <div class="pcsec">How it adds up</div><div class="rml">
+    ${L("Banks",inr(Math.round(A.bank)))}${A.cash?L("Cash",inr(Math.round(A.cash))):""}
+    ${coins.map(c=>L(`${esc(c)} ${fmtQ(+A.stock[c].toFixed(4))} × avg cost ₹${(A.avgCost[c]||0).toFixed(2)}`,inr(Math.round(A.stockVal[c]||0)))).join("")}
+    ${Object.keys(A.transit).filter(c=>Math.abs(A.transit[c])>1e-6).map(c=>L(`${esc(c)} ${A.transit[c]>0?"+":"−"}${fmtQ(Math.abs(+A.transit[c].toFixed(4)))} in transit (${A.transit[c]>0?"paid, not received yet":"money in, not released yet"})`,(A.transit[c]>0?"+":"−")+inr(Math.round(Math.abs(A.transit[c])*(A.avgCost[c]||0))),A.transit[c]<0?"neg":"")).join("")}
+    ${A.owe?L("You owe Direct parties","−"+inr(Math.round(A.owe)),"neg"):""}${A.adv?L("Advance paid to parties","+"+inr(Math.round(A.adv))):""}
+    ${L("<b>Net worth</b>",inr(Math.round(A.netWorth)))}</div>
+    ${A.pend.n?`<p class="note">${A.pend.n} pending/appeal order${A.pend.n>1?"s":""}: coins move only after Completed. Money already recorded on them is in the bank figures.</p>`:""}
+    ${A.orphan.n?`<p class="note neg">${A.orphan.n} payment${A.orphan.n>1?"s":""} (${inr(Math.round(A.orphan.amt))}) point to a deleted bank and are not counted. Edit those orders and pick a bank.</p>`:""}
+    ${A.noCost?`<p class="note">${A.noCost} sell${A.noCost>1?"s have":" has"} no buy cost yet, so profit on ${A.noCost>1?"them":"it"} is ₹0. Add your opening stock and its cost in Opening crypto stock.</p>`:""}
+    <p class="note">Coins are valued at your average buy cost, not today's market rate.</p></div>`)}
 function plans(amount,dir,cashOnly,method){
   const {bal}=balances();const use=limitUse();
   const avail=b=>{if(dir!=="pay"||!method)return bal[b.id];return Math.min(bal[b.id],limitLeft(b,method,use))};
@@ -1933,7 +1989,9 @@ const sheets={
     <button class="primary" type="submit">Save</button>${id?'<button class="primary" type="button" id="s-del" style="background:var(--soft);color:var(--sell)">Delete bank</button>':""}</form>`,el=>{
     el.querySelector("#sf").onsubmit=async e=>{e.preventDefault();const name=$("#s-name").value.trim();if(!name){toast("Enter a name");return}
       try{await putRec({...b,id:id||newId("b_"),kind:"bank",name:name.slice(0,40),type:$("#s-type").value,opening:+$("#s-open").value||0,note:$("#s-note").value.trim().slice(0,100),holder:$("#s-holder").value.trim().slice(0,80),bankName:$("#s-bname").value.trim().slice(0,80),accNo:$("#s-acc").value.replace(/\s+/g,"").slice(0,30),ifsc:$("#s-ifsc").value.trim().toUpperCase().slice(0,15),accType:$("#s-atype").value,branch:$("#s-branch").value.trim().slice(0,80),upi:$("#s-upi").value.trim().slice(0,80),phone:$("#s-phone").value.trim().slice(0,20),limits:{UPI:+$("#s-lupi").value||0,IMPS:+$("#s-limps").value||0,NEFT:+$("#s-lneft").value||0,ALL:+$("#s-lall").value||0},time:b.time||Date.now()});toast("Bank saved");closeSheet()}catch(err){toast("Couldn't save. Try again.")}};
-    if(id)twoTap(el.querySelector("#s-del"),async()=>{try{await delRec(id);toast("Bank deleted");closeSheet()}catch(err){toast("Couldn't delete")}});
+    if(id)twoTap(el.querySelector("#s-del"),async()=>{try{const A=ACC();const v=A.bal[id]||0;if(Math.abs(v)>=1){toast(`Balance is ${inr(Math.round(v))}. Move it out first, then delete.`);return}
+      const used=movements().some(x=>x.bank===id);const bk=allBanks.find(b=>b.id===id);
+      if(used&&bk){await putRec({...bk,archived:true,archivedAt:Date.now()});toast("Bank removed · its history is kept")}else{await delRec(id);toast("Bank deleted")}closeSheet()}catch(err){toast("Couldn't delete")}});
   })},
   transfer(){if(banks.length<2){toast("Add at least two banks first");return}
     openSheet(`<h3>Transfer between banks</h3><form id="sf" style="grid-template-columns:1fr">
@@ -1967,9 +2025,9 @@ const sheets={
       const ps=plans(amt,dir,false,meth);
       $("#s-plans").innerHTML=ps.length?ps.map(p=>`<div class="plan"><b>${p.title}</b><span class="note">${p.why}</span>${p.parts.map(x=>`<div class="pl"><span>${esc(x.name)}</span><span>${inr(x.amt)}</span></div>`).join("")}${p.left>0.5?`<div class="pl" style="color:var(--sell)"><span>Short by</span><span>${inr(p.left)}</span></div>`:""}</div>`).join(""):'<p class="note">Add your banks with their balances first.</p>'}})},
   stock(){const st=settings.stock||{};const coins=[...new Set(["USDT","BTC","ETH","USDC",...Object.keys(st),...orders.map(o=>o.coin)])];
-    openSheet(`<h3>Opening crypto stock</h3><p class="note" style="margin:-6px 0 12px">How much you held before you started tracking orders here.</p><form id="sf">${coins.map(c=>`<label>${esc(c)}<input data-c="${esc(c)}" type="number" inputmode="decimal" step="any" value="${st[c]??""}" placeholder="0"></label>`).join("")}<button class="primary" type="submit">Save</button></form>`,el=>{
-    el.querySelector("#sf").onsubmit=async e=>{e.preventDefault();const stock={};el.querySelectorAll("[data-c]").forEach(i=>{if(+i.value)stock[i.dataset.c]=+i.value});
-      try{await putRec({...settings,id:"s_main",kind:"setting",stock});toast("Stock saved");closeSheet()}catch(err){toast("Couldn't save")}}})},
+    openSheet(`<h3>Opening crypto stock</h3><p class="note" style="margin:-6px 0 12px">How much you held before you started tracking orders here.</p><form id="sf">${coins.map(c=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label>${esc(c)}<input data-c="${esc(c)}" type="number" inputmode="decimal" step="any" value="${st[c]??""}" placeholder="0"></label><label>Avg cost ₹<input data-k="${esc(c)}" type="number" inputmode="decimal" step="any" value="${(settings.stockCost||{})[c]??""}" placeholder="auto"></label></div>`).join("")}<p class="note" style="margin:-4px 0 12px">Avg cost is what you paid per coin for that opening stock. Leave empty to use your average buy rate.</p><button class="primary" type="submit">Save</button></form>`,el=>{
+    el.querySelector("#sf").onsubmit=async e=>{e.preventDefault();const stock={};el.querySelectorAll("[data-c]").forEach(i=>{if(+i.value)stock[i.dataset.c]=+i.value});const stockCost={};el.querySelectorAll("[data-k]").forEach(i=>{if(+i.value>0)stockCost[i.dataset.k]=+i.value});
+      try{await putRec({...settings,id:"s_main",kind:"setting",stock,stockCost});toast("Stock saved");closeSheet()}catch(err){toast("Couldn't save")}}})},
   assign(id){const o=orders.find(x=>x.id===id);if(!o)return;
     openSheet(`<h3>Assign banks</h3><p class="note" style="margin:-6px 0 12px">${o.side} ${fmtQ(o.qty)} ${esc(o.coin)} @ ₹${fmtR(o.rate)} = <b>${inr(orderTotal(o))}</b> · ${o.side==="BUY"?"paid from":"received in"}</p>
     <div class="splitwrap"><div id="a-rows"></div><div class="splitbar"><button type="button" class="link" id="a-add">+ Add bank</button><button type="button" class="link" id="a-sug">Suggest banks</button></div><p class="note" id="a-rem"></p></div>
@@ -2502,7 +2560,7 @@ let IMP={files:[],rows:[],tz:"ist",fix:{}};let impWhat=(()=>{try{return localSto
 const loadScript=src=>new Promise((ok,no)=>{if(document.querySelector(`script[src="${src}"]`))return ok();const t=document.createElement("script");t.src=src;t.onload=ok;t.onerror=()=>no(new Error("load"));document.head.appendChild(t)});
 const num=v=>{if(typeof v==="number")return v;let s=String(v??"").replace(/[₹$,\s]|INR|USDT|rs\.?/gi,"");const n=parseFloat(s.replace(/[^0-9.\-]/g,""));return isFinite(n)?n:0};
 function normSide(v){v=String(v||"").toLowerCase();return /sell|^s$|sold|बेच/.test(v)?"SELL":/buy|purchase|^b$|bought/.test(v)?"BUY":""}
-function normStatusX(v){v=String(v||"").toLowerCase().replace(/\s+/g," ").trim();if(!v)return"Completed";if(/cancel|expire|fail|reject|timeout|timed out|closed by|refund/.test(v))return"Cancelled";if(/appeal|dispute|complain/.test(v))return"Appeal";if(/^compl|complet|charged|success|done|finish|releas|paid|filled|settled|^ok$/.test(v))return"Completed";if(/pending|processing|in progress|unpaid|waiting|to be paid|ongoing|created|open/.test(v))return"Pending";return null}
+function normStatusX(v){v=String(v||"").toLowerCase().replace(/\s+/g," ").trim();if(!v)return"Completed";if(/cancel|expire|fail|reject|timeout|timed out|closed by|refund/.test(v))return"Cancelled";if(/appeal|dispute|complain/.test(v))return"Appeal";if(/^paid$|unpaid|not paid|buyer paid|marked paid|^paid,? ?(waiting|pending)/.test(v))return"Pending";if(/^compl|complet|charged|success|done|finish|releas|paid|filled|settled|^ok$/.test(v))return"Completed";if(/pending|processing|in progress|unpaid|waiting|to be paid|ongoing|created|open/.test(v))return"Pending";return null}
 function normStatus(v){v=String(v||"").toLowerCase();if(/cancel|expire|fail|reject|timeout/.test(v))return"Cancelled";if(/appeal|dispute/.test(v))return"Appeal";if(/complet|charged|success|done|finish|released|paid|filled/.test(v)||!v)return"Completed";return"Pending"}
 // date: decides day-first vs month-first from all samples, returns NaN when unreadable (never "now")
 function impDateMode(samples){let dmy=0,mdy=0;samples.forEach(s=>{const m=String(s||"").match(/^\s*(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);if(!m)return;if(+m[1]>12)dmy++;else if(+m[2]>12)mdy++});return mdy>dmy?"mdy":"dmy"}
@@ -3039,7 +3097,7 @@ function laReply(q0){const q=" "+q0.toLowerCase().replace(/\s+/g," ")+" ";LA.hi=
     return R(t("Limit left:","Bachi limit:")+"\n"+L.join("\n"))}
   // balance
   if(B||/(balance|bank me|account me|paisa kitna|kitna paisa|net worth|total paisa|money)/.test(q)&&!/(profit|kamaya)/.test(q)){const {bal}=balances();if(B)return R(`${B.name}: ${inr(Math.round(bal[B.id]))}`);
-    const tot=banks.reduce((t,b)=>t+bal[b.id],0);return R(t("Balances:","Balance:")+"\n"+banks.map(b=>`• ${b.name}: ${inr(Math.round(bal[b.id]))}`).join("\n")+`\n${t("Total","Kul")}: ${inr(Math.round(tot))}`)}
+    const tot=banks.reduce((t,b)=>t+bal[b.id],0);const A=ACC();return R(t("Balances:","Balance:")+"\n"+banks.map(b=>`• ${b.name}: ${inr(Math.round(bal[b.id]))}`).join("\n")+`\n${t("Total","Kul")}: ${inr(Math.round(tot))}`+`\n${t("Net worth (money + coins − dues)","Net worth (paisa + coin − udhaar)")}: ${inr(Math.round(A.netWorth))}`)}
   // stock
   if((coin||/stock|bacha|baki usdt|coin/.test(q))&&/(kitna|kitni|bacha|stock|left|hai|how much)/.test(q)&&!/(profit|rate|bhav)/.test(q)){const st=stockLeft();const L=Object.entries(st).filter(([c,v])=>!coin||c===coin);
     return R(L.length?L.map(([c,v])=>`${c}: ${fmtQ(+v.toFixed(4))}${v<0?" ⚠ "+t("below zero, check opening stock","zero se kam, opening stock check karo"):""}`).join("\n"):t("No stock data yet.","Abhi stock ka data nahi."))}
@@ -3518,6 +3576,7 @@ document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(!
   window.scrollTo({top:0});});
 // home interactions
 $("#htabs").onclick=e=>{const b=e.target.closest("[data-h]");if(!b)return;homeTab=b.dataset.h;document.querySelectorAll("#htabs [data-h]").forEach(x=>x.classList.toggle("on",x===b));renderHome()};
+$("#hTotal").onclick=()=>{if(!hideAmt)sheetNetWorth()};
 $("#eyeBtn").onclick=()=>{hideAmt=!hideAmt;try{localStorage.setItem("p2p_hide",hideAmt?"1":"0")}catch(e){}renderHero()};
 let sqT;$("#hq").addEventListener("input",e=>{clearTimeout(sqT);sqT=setTimeout(()=>{searchQ=e.target.value.trim();renderList()},250)});
 $("#searchBtn").onclick=()=>openUS();
@@ -3536,7 +3595,7 @@ function openDrawer(){
   const ini=n.split(/\s+/).map(w=>w[0]||"").join("").slice(0,2).toUpperCase()||"P2";
   const t0=new Date();t0.setHours(0,0,0,0);const td=orders.filter(o=>o.time>=t0.getTime());
   const st=stats(td.filter(o=>o.status==="Completed"));const pend=orders.filter(o=>o.status==="Pending"||o.status==="Appeal").length;
-  const {bal}=balances();const nw=banks.reduce((t,b)=>t+bal[b.id],0);const H=v=>hideAmt?"₹ •••••":v;
+  const nw=ACC().netWorth;const H=v=>hideAmt?"₹ •••••":v;
   const sync=$("#syncNote").textContent||"";const cloud=/cloud/i.test(sync);
   const A=lastAlerts||[],hi=A.filter(a=>a.hi).length;
   const pinOn=pinHas();
@@ -4217,7 +4276,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=19;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=20;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4284,6 +4343,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00020","5 Oct 2026",["Net worth is now one figure everywhere: money + coins at average cost + coins in transit − what you owe parties","Tap Net worth to see how it adds up","Profit now uses your average buy cost, so selling old stock shows real profit","Exchange status \"Paid\" is now Pending (not Completed)","A bank with history is hidden, not erased, when deleted","Saving an order tells you if part of the money isn't in a bank yet"]],
   ["0.0.0.00019","4 Oct 2026",["Voice listens inside the app — no Google popup (needs new app 0.0.0.00019)","Words show live while you speak"]],
   ["0.0.0.00018","4 Oct 2026",["Voice: if the app is old, an Update app button appears","Voice learns: tap what it heard to correct it, and P2P Brain remembers those words","Your most-used voice questions show as quick buttons","Better hearing of numbers (paanch sau = 500) and USDT"]],
   ["0.0.0.00017","4 Oct 2026",["AI thinking animation","Voice assistant: tap the headphones in Ask anything, speak, and P2P Brain answers out loud","Mic button works in the phone app (needs app 0.0.0.00017)"]],

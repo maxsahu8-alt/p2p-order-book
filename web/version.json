@@ -1,9 +1,9 @@
 {
- "web": "0.0019",
- "build": 19,
- "display": "0.0.0.00019",
+ "web": "0.0020",
+ "build": 20,
+ "display": "0.0.0.00020",
  "files": {
-  "index.html": "0c33c513622976479556f798d392a3e7cd5b1073",
+  "index.html": "25d8a44daf0de3eee4fdefdfdf72f770c869fc4d",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 4,
   "name": "0.0.0.00019",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Voice listens inside the app \u2014 no Google popup"
+  "notes": "One accurate net worth, average-cost profit, Paid = Pending, safer bank delete"
  }
 }
