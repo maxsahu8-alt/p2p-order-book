@@ -2673,9 +2673,11 @@ async function postJSON(url,headers,body){
   const j=await res.json().catch(()=>({}));
   if(res.status===401||res.status===403)throw aiErr("bad_key","The API key was rejected. Check it in AI connection.");
   if(res.status===429)throw aiErr("rate_limited","Too many requests or no credit left on this key.");
+  const em=String(j.error&&(j.error.message||j.error)||"");if([500,502,503,504,529].includes(res.status)||/high demand|overloaded|try again later|unavailable/i.test(em))throw aiErr("busy",em||"The AI service is busy. Try again later.");
   if(!res.ok)throw aiErr("api",(j.error&&(j.error.message||j.error))||("AI service error "+res.status));
   return j;
 }
+function aiName(){return aiCfg.prov==="braingemini"&&!sampleFn?"Gemini":aiCfg.prov==="openai"?"ChatGPT":aiCfg.prov==="gemini"?"Gemini":"Claude"}
 function isBrain(){return aiCfg.prov==="brain"||aiCfg.prov==="brainclaude"||aiCfg.prov==="braingemini"}
 const brainKeyMode=()=>(aiCfg.prov==="brainclaude"||aiCfg.prov==="braingemini")&&!!aiCfg.key;
 function brainVia(){if(!isBrain()||pref("brainSmart")===false)return null;if(sampleFn)return{prov:"builtin"};if(aiCfg.prov==="brainclaude"&&aiCfg.key)return{prov:"anthropic",key:aiCfg.key,model:aiCfg.model||""};if(aiCfg.prov==="braingemini"&&aiCfg.key)return{prov:"gemini",key:aiCfg.key,model:aiCfg.model||"",auto:true};return null}
@@ -2699,7 +2701,7 @@ async function aiCall(turns,onText,images){images=images||[];if(isBrain()&&!brai
     // free-tier models change names over time: try the saved one, then known free Flash models, and remember what works
     const tryM=c.auto?[...new Set([c.model,"gemini-flash-latest","gemini-3.8-flash","gemini-3.5-flash","gemini-3.5-flash-lite","gemini-3.1-flash-lite"].filter(Boolean))]:[c.model];let j=null,last=null;
     for(const m of tryM){try{j=await postJSON("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(m)+":generateContent",{"x-goog-api-key":c.key},body);if(c.auto&&aiCfg.model!==m){aiCfg.model=m;try{localStorage.setItem(AIK,JSON.stringify(aiCfg))}catch(e){}}break}
-      catch(e){last=e;if(!c.auto||e.code==="bad_key"||e.code==="network"||!/not found|not supported|404|unknown|no longer|deprecat/i.test(String(e.text||e.message)))throw e}}
+      catch(e){last=e;if(!c.auto||e.code==="bad_key"||e.code==="network"||!(e.code==="busy"||e.code==="rate_limited"||/not found|not supported|404|unknown|no longer|deprecat/i.test(String(e.text||e.message))))throw e}}
     if(!j)throw last||aiErr("api","No Gemini model available on this key.");
     text=((j.candidates||[])[0]?.content?.parts||[]).map(x=>x.text||"").join("");
   }else{
@@ -3131,7 +3133,7 @@ sheets.brain=function(){const st=brPending||brStats(),B=brainRecs(),al=B.filter(
 // ---- P2P Brain v3: conversation, context, maths, compare, multi-ask, dates
 LA.ctx={party:null,trader:null,bank:null,lastQ:null};
 const BR_GREET=/^(hi+|hello+|hey+|helo|namaste|namaskar|ram ram|jai shree ram|good (morning|evening|afternoon|night)|gm|salam|hii+)\b/;
-function brGreetBrief(){const n=(pref("owner")||"").split(" ")[0];const h=new Date().getHours();const g=h<12?LA.t("Good morning","Good morning"):h<17?LA.t("Good afternoon","Namaste"):LA.t("Good evening","Good evening");
+function brGreetBrief(q){const n=(pref("owner")||"").split(" ")[0];const h=new Date().getHours();const said=String(q||"").match(/good (morning|afternoon|evening|night)|\bgm\b|\bgn\b/);const g=said?(said[0]==="gm"?"Good morning":said[0]==="gn"?"Good night":said[0].replace(/^g/,"G")):h<12?LA.t("Good morning","Good morning"):h<17?LA.t("Good afternoon","Namaste"):LA.t("Good evening","Good evening");
   const st=stats(orders.filter(o=>isToday(o.time)));const pend=orders.filter(o=>o.status==="Pending"||o.status==="Appeal").length;const dues=parties.map(p=>[p.name,partyOwed(p.id)-partyPaid(p.id)]).filter(x=>x[1]>0.5).sort((a,b)=>b[1]-a[1]);
   const urg=(lastAlerts||[]).filter(a=>a.hi).length;const L=[`${g}${n?" "+n:""}! 👋`,LA.t(`Today: profit ${sgn(st.profit)}, ${orders.filter(o=>isToday(o.time)).length} orders.`,`Aaj: profit ${sgn(st.profit)}, ${orders.filter(o=>isToday(o.time)).length} orders.`)];
   if(pend)L.push(LA.t(`${pend} order${pend>1?"s":""} still open.`,`${pend} order abhi khule hain.`));if(dues[0])L.push(LA.t(`Biggest due: ${dues[0][0]} ${inr(Math.round(dues[0][1]))}.`,`Sabse bada baki: ${dues[0][0]} ${inr(Math.round(dues[0][1]))}.`));if(urg)L.push(LA.t(`${urg} urgent alert${urg>1?"s":""} on Home.`,`Home pe ${urg} zaroori alert.`));
@@ -3156,7 +3158,13 @@ function brClock(q){if(/(order|profit|trade|ad\b|cancel|kamaya|rate|kab tak|pay|
   if(/(kon sa din|konsa din|kaun sa din|kaunsa din|kon sa day|konsa day|kaunsa day|which day|what day|day hai|din hai|vaar|aaj kya hai)/.test(q))return LA.t(`Today is ${day}, ${dt}.`,`Aaj ${day} hai · ${dt}.`);
   if(/(date|tarikh|tareekh|taarikh)/.test(q)&&!/\d/.test(q))return LA.t(`Today's date: ${dt} (${day}).`,`Aaj ki tarikh: ${dt} (${day}).`);
   return null}
-function brSmall(q){if(BR_GREET.test(q))return brGreetBrief();const ck=brClock(q);if(ck)return ck;
+function brSmall(q){if(BR_GREET.test(q)||/^gn\b/.test(q))return brGreetBrief(q);
+  const n=(pref("owner")||"").split(" ")[0];
+  if(/^(kya|kia) ?(kar|kr) ?(rahe|rhe|raha|rha) ?(ho|h)\b|what are you doing|wyd\b/.test(q))return LA.t("Keeping an eye on your orders, dues and banks 🙂 Ask me anything about your business.","Aapke orders, dues aur banks pe nazar rakh raha hoon 🙂 Business ka kuch bhi poocho.");
+  if(/^(kaise|kese|kaisa) ?(ho|h|hai)\b|how are you|kya haal|kaisa chal/.test(q))return LA.t("All good! Ready to help"+(n?", "+n:"")+".","Ekdum badhiya! Batao"+(n?" "+n:"")+", kya madad karun?");
+  if(/^(tum|aap|tu) ?(kaun|kon) ?(ho|h|hai)|who are you|tumhara naam|your name/.test(q))return LA.t("I'm P2P Brain, this app's own assistant. I learn from your data and from the words you teach me.","Main P2P Brain hoon, is app ka apna dimaag. Aapke data se aur aapke sikhaye shabdon se seekhta hoon.");
+  if(/^(thanks|thank you|thx|shukriya|dhanyavad|dhanyawad|ty)\b/.test(q))return LA.t("Anytime! 🙌","Koi baat nahi! 🙌");
+  if(/^(ok|okay|acha|accha|achha|thik hai|theek hai|hmm+|k)\s*$/.test(q))return LA.t("👍","👍");const ck=brClock(q);if(ck)return ck;
   if(BR_VAGUE.test(q.replace(/[?!.]+$/,"").trim()))return brActivity();
   if(/^(thanks|thank you|thx|shukriya|dhanyavad|dhanyawad|ok thanks|thnx|tq)\b/.test(q))return LA.t("You're welcome 🙏","Koi baat nahi 🙏 Aur kuch?");
   if(/(kaun ho|who are you|tum kya ho|apna naam|your name)/.test(q))return LA.t("I'm P2P Brain, this app's own brain. I read your orders, banks and parties, answer in seconds without internet, and learn the words you teach me.","Main P2P Brain hoon, is app ka apna dimaag. Aapke orders, bank aur parties padh ke turant jawab deta hoon, bina internet ke, aur jo sikhao wo yaad rakhta hoon.");
@@ -3305,8 +3313,8 @@ MEMORY: ${JSON.stringify(aiMemory())}
 DATA: ${JSON.stringify(agentContext())}`;
   const turns=[...aiHistory.slice(-8),{role:"user",content:prompt+"\n\nUSER: "+q}];
   try{
-    out.textContent=LA.t("🧠 This one is new for me. Asking Claude…","🧠 Ye mere liye naya hai, Claude se pooch raha hoon…");
-    const text=await Promise.race([aiCall(turns),new Promise((_,rej)=>setTimeout(()=>rej(aiErr("timeout","Claude took too long.")),25000))]);
+    out.textContent=LA.t(`🧠 This one is new for me. Asking ${aiName()}…`,`🧠 Ye mere liye naya hai, ${aiName()} se pooch raha hoon…`);
+    const text=await Promise.race([aiCall(turns),new Promise((_,rej)=>setTimeout(()=>rej(aiErr("timeout",aiName()+" took too long.")),25000))]);
     let res=null;try{const m=text.match(/\{[\s\S]*\}/);res=m?JSON.parse(m[0]):null}catch(e){}
     const reply=res?String(res.reply||""):text;
     out.textContent=reply||"Done.";
@@ -3317,7 +3325,7 @@ DATA: ${JSON.stringify(agentContext())}`;
     setAiState(true,PROV[aiCfg.prov].n+" connected");
   }catch(err){
     try{if(laAnswer(q,out)){$("#askBtn").disabled=false;return}}catch(e){}
-    if(err&&(err.code==="timeout"||err.code==="brain"||err.code==="unavailable")){out.textContent="";brainAsk(q,out);if(out.firstChild&&out.firstChild.nodeType===3)out.firstChild.textContent=LA.t("Claude didn't answer in time. Pick what you meant and I'll remember it:","Claude ne time pe jawab nahi diya. Aapka matlab chuno, main yaad rakhunga:");$("#askBtn").disabled=false;return}
+    if(err&&(err.code==="timeout"||err.code==="brain"||err.code==="unavailable"||(isBrain()&&(err.code==="busy"||err.code==="rate_limited")))){out.textContent="";brainAsk(q,out);const nm=aiName();const why=err.code==="busy"?LA.t(`${nm} is busy right now.`,`${nm} abhi busy hai.`):err.code==="rate_limited"?LA.t(`Today's free ${nm} limit is used up.`,`${nm} ki aaj ki free limit poori ho gayi.`):LA.t(`${nm} didn't answer in time.`,`${nm} ne time pe jawab nahi diya.`);if(out.firstChild&&out.firstChild.nodeType===3)out.firstChild.textContent=why+" "+LA.t("Pick what you meant and I'll remember it:","Aapka matlab chuno, main yaad rakhunga:");$("#askBtn").disabled=false;return}
     out.textContent=err&&err.code==="not_granted"?"AI permission was not granted. Allow it and ask again.":err&&err.code==="rate_limited"?(err.text&&aiCfg.prov!=="builtin"?err.text:"Too many requests. Wait a moment and ask again."):(err&&err.text)||"Couldn't get an answer. Try again.";
     if(err&&["bad_key","no_key","no_model","no_url","unavailable","network"].includes(err.code)){setAiState(false,"Not connected");$("#aiSet").open=true}
   }
@@ -4115,7 +4123,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=15;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=16;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4182,6 +4190,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00016","4 Oct 2026",["P2P Brain says Gemini (not Claude) when it asks Gemini","When Gemini is busy, another free Gemini model is tried, then the Brain answers itself","Brain replies to good night, kya kar rahe ho, kaise ho, thanks… by itself"]],
   ["0.0.0.00015","4 Oct 2026",["New free AI option: P2P Brain + Gemini. The Brain asks Google Gemini (free key) when it doesn't know, and learns the answer"]],
   ["0.0.0.00014","4 Oct 2026",["New AI option: P2P Brain + Claude. The Brain answers first; hard questions go to Claude with your key and the Brain learns the answer"]],
   ["0.0.0.00013","4 Oct 2026",["Delete all data and Restore backup now work instantly in the phone app, even with thousands of orders"]],
