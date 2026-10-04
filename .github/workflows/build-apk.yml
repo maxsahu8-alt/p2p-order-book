@@ -18,9 +18,11 @@ jobs:
         with: { gradle-version: '8.9' }
       - name: Signing key
         env:
-          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_B64" ]; then echo "$KEYSTORE_B64" | base64 -d > $RUNNER_TEMP/release.jks; echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV; else echo "No KEYSTORE_B64 secret: using debug signing"; fi
+          if [ -z "$KEYSTORE_PASSWORD" ]; then echo "::error::Add the KEYSTORE_PASSWORD secret (Settings > Secrets and variables > Actions). Not building, so updates keep working."; exit 1; fi
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in android/keystore/release.jks.enc -out $RUNNER_TEMP/release.jks -pass env:KEYSTORE_PASSWORD
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV
       - name: Build
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}

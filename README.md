@@ -17,8 +17,8 @@ Personal P2P / Direct / Cash order book for Indian crypto merchants.
 
 ## Signing key (keep it safe)
 The APK must always be signed with the same key, otherwise Android refuses to update it.
-Repo secrets: `KEYSTORE_B64` (base64 of release.jks) and `KEYSTORE_PASSWORD`.
-Never commit the .jks file.
+The key is stored encrypted in `android/keystore/release.jks.enc`; its password is the repo secret `KEYSTORE_PASSWORD`.
+Never commit the plain .jks file.
 
 ## Release a screen update
 ```
