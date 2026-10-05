@@ -1,9 +1,9 @@
 {
- "web": "0.0032",
- "build": 32,
- "display": "0.0.0.00032",
+ "web": "0.0033",
+ "build": 33,
+ "display": "0.0.0.00033",
  "files": {
-  "index.html": "ca5f17b4900153984cd69e183cda027e491eb5cc",
+  "index.html": "f1494e914eb4ae5e5da8963cb59ee918d76a1059",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 5,
   "name": "0.0.0.00029",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Smart Intake UI redesign: progress rail, big dropzone, colour-coded recent intake cards"
+  "notes": "Smart Intake: BUY/SELL own-account check, money-flow result card, confidence ring"
  }
 }
