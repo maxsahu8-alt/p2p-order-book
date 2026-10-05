@@ -1,0 +1,10 @@
+Binance P2P
+Order Completed
+Order Number 22998877665544332211
+Buyer Anita Verma
+Seller Shiv Sahu
+Total Price ₹9,000.00
+Price ₹90.00
+Quantity 100.00 USDT
+Payment Method IMPS
+2026-10-05 20:10

@@ -9,7 +9,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.Text;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -130,6 +137,19 @@ public class MainActivity extends Activity {
             public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams p) {
                 if (fileCb != null) fileCb.onReceiveValue(null);
                 fileCb = cb;
+                if (p.isCaptureEnabled()) {
+                    try {
+                        java.io.File dir = new java.io.File(getCacheDir(), "share");
+                        dir.mkdirs();
+                        java.io.File f = new java.io.File(dir, "cam_" + System.currentTimeMillis() + ".jpg");
+                        camUri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".files", f);
+                        Intent c = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        c.putExtra(MediaStore.EXTRA_OUTPUT, camUri);
+                        c.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivityForResult(c, CAM_REQ);
+                        return true;
+                    } catch (Exception e) { camUri = null; }
+                }
                 Intent i = p.createIntent();
                 i.addCategory(Intent.CATEGORY_OPENABLE);
                 String[] types = p.getAcceptTypes();
@@ -144,6 +164,7 @@ public class MainActivity extends Activity {
             }
         });
         web.addJavascriptInterface(new Bridge(), "P2PNative");
+        web.addJavascriptInterface(new OcrBridge(), "P2POcr");
         setContentView(web);
         web.loadUrl(START);
     }
@@ -249,6 +270,14 @@ public class MainActivity extends Activity {
             js("P2PVoiceResult", text);
             return;
         }
+        if (req == CAM_REQ) {
+            if (fileCb != null) {
+                fileCb.onReceiveValue(res == RESULT_OK && camUri != null ? new Uri[]{camUri} : null);
+                fileCb = null;
+            }
+            camUri = null;
+            return;
+        }
         if (req == FILE_REQ && fileCb != null) {
             Uri[] result = null;
             if (res == RESULT_OK && data != null) {
@@ -270,6 +299,47 @@ public class MainActivity extends Activity {
         if (tts != null) { tts.stop(); tts.shutdown(); }
         if (sr != null) { try { sr.destroy(); } catch (Exception e) { } }
         super.onDestroy();
+    }
+
+    static final int CAM_REQ = 7301;
+    Uri camUri = null;
+
+    /** On-device text recognition (Google ML Kit, bundled model: works offline, nothing leaves the phone). */
+    class OcrBridge {
+        @JavascriptInterface
+        public void recognize(final String id, final String b64) {
+            new Thread(() -> {
+                try {
+                    byte[] raw = Base64.decode(b64, Base64.DEFAULT);
+                    Bitmap bmp = BitmapFactory.decodeByteArray(raw, 0, raw.length);
+                    if (bmp == null) { ocrOut(id, "", 0, "decode"); return; }
+                    final TextRecognizer rec = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+                    rec.process(InputImage.fromBitmap(bmp, 0))
+                        .addOnSuccessListener(t -> {
+                            StringBuilder sb = new StringBuilder();
+                            double sum = 0; int n = 0;
+                            for (Text.TextBlock b : t.getTextBlocks()) {
+                                for (Text.Line l : b.getLines()) {
+                                    sb.append(l.getText()).append('\n');
+                                    try { sum += l.getConfidence(); n++; } catch (Throwable ignore) { }
+                                }
+                                sb.append('\n');
+                            }
+                            ocrOut(id, sb.toString(), n > 0 ? Math.round(sum / n * 100) : 90, null);
+                            rec.close();
+                        })
+                        .addOnFailureListener(e -> { ocrOut(id, "", 0, "mlkit"); rec.close(); });
+                } catch (Throwable e) {
+                    ocrOut(id, "", 0, "error");
+                }
+            }).start();
+        }
+    }
+
+    void ocrOut(String id, String text, long conf, String err) {
+        final String js = "window.P2POcrResult&&P2POcrResult(" + JSONObject.quote(id) + "," + JSONObject.quote(text) + "," + conf + ","
+            + (err == null ? "null" : JSONObject.quote(err)) + ")";
+        runOnUiThread(() -> web.evaluateJavascript(js, null));
     }
 
     static Locale localeOf(String tag) {

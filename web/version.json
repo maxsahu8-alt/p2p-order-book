@@ -1,17 +1,17 @@
 {
- "web": "0.0028",
- "build": 28,
- "display": "0.0.0.00028",
+ "web": "0.0029",
+ "build": 29,
+ "display": "0.0.0.00029",
  "files": {
-  "index.html": "d9dd7c8d28a5f6c6c87f5e2e670f2b80800881c9",
+  "index.html": "d333765d638e566b3d2c9cc56863503f277d74f9",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
  },
  "apk": {
-  "code": 4,
-  "name": "0.0.0.00019",
+  "code": 5,
+  "name": "0.0.0.00029",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Verify screenshots"
+  "notes": "Smart Intake rebuilt: on-device ML Kit OCR, auto classify, pairing, risk, history, camera"
  }
 }

@@ -1,0 +1,12 @@
+KuCoin P2P
+Order Completed
+Order No. 1851234567890123456
+Buyer
+Shiv Sahu
+Seller
+Ravi Kumar
+Total Price ₹2,500.00
+Price ₹90.91
+Quantity 27.50 USDT
+Payment Method UPI
+Created 2026-10-05 21:30
