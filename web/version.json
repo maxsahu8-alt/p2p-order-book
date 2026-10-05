@@ -1,9 +1,9 @@
 {
- "web": "0.0034",
- "build": 34,
- "display": "0.0.0.00034",
+ "web": "0.0035",
+ "build": 35,
+ "display": "0.0.0.00035",
  "files": {
-  "index.html": "9f6a432d95fe20638b54c4198c8cb7ee33b66943",
+  "index.html": "5ba96bd87d28966f97a3b74cdb3a8cd5b183c65a",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 5,
   "name": "0.0.0.00029",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Smart Intake: counterparty name, wrapped order id, payee-handle bank bug, date order, teach-my-account"
+  "notes": "Smart Intake memory: learns names, screen layouts and accounts on-device to need AI less"
  }
 }

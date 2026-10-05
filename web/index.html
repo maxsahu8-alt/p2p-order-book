@@ -578,7 +578,7 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .ixown{display:flex;gap:8px;margin-top:6px;align-items:center}.ixown select{flex:1;min-width:0;min-height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:0 8px}.ixown .mini{white-space:nowrap}
 .ixmine b{font-size:.76rem;color:var(--muted)}.ixmine ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
 .ixmine li{font-size:.82rem;line-height:1.35;padding-left:22px;position:relative}.ixmine li::before{position:absolute;left:0;font-weight:800}
-.ixmine li.ok::before{content:"✓";color:var(--accent)}.ixmine li.warn::before{content:"⚠";color:var(--warn)}.ixmine li.bad::before{content:"✕";color:var(--sell)}
+.ixmine li.na::before{content:"•";color:var(--muted)}.ixmine li.na{color:var(--muted)}.ixmemchip{cursor:pointer}.ixmine li.ok::before{content:"✓";color:var(--accent)}.ixmine li.warn::before{content:"⚠";color:var(--warn)}.ixmine li.bad::before{content:"✕";color:var(--sell)}
 .ixr .sd{font:800 .62rem var(--body);padding:2px 6px;border-radius:6px;margin-right:6px;color:var(--primary-fg);vertical-align:2px}.ixr .sd.BUY{background:var(--buy)}.ixr .sd.SELL{background:var(--sell)}
 @media (prefers-reduced-motion:reduce){.ixring .rg,.ixline span{animation:none}}
 
@@ -1552,6 +1552,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
     <div class="sgroup"><h3>Business</h3>
       <div class="srow2"><div><b>Business name</b></div><input id="st-biz" class="sinp" placeholder="Shown on Home" maxlength="40"></div>
       <div class="srow2"><div><b>Your name</b></div><input id="st-owner" class="sinp" placeholder="Used by AI" maxlength="40"></div>
+      <div class="srow2"><div><b>Intake memory</b><small>What Smart Intake has learned</small></div><button type="button" class="mini" id="st-ixmem">Open</button></div>
     </div>
     <div class="sgroup"><h3>New order defaults</h3>
       <div class="srow2"><div><b>Deal type</b></div><select id="st-mode" class="ssel"><option value="P2P">P2P</option><option value="Direct">Direct</option><option value="Cash">Cash</option></select></div>
@@ -2178,7 +2179,8 @@ function verParse(raw){let j=null;try{const m=String(raw||"").match(/\{[\s\S]*\}
 // ---- name compare: M match · U unclear · X mismatch · NF not found (handles reordered / masked / initial-only names)
 const verTok=n=>String(n||"").toLowerCase().replace(/[^a-z\s]/g," ").split(/\s+/).filter(t=>t&&!/^(mr|mrs|ms|shri|smt|sri|dr|m)$/.test(t));
 function verLev(a,b){const d=[];for(let i=0;i<=a.length;i++){d[i]=[i];for(let j=1;j<=b.length;j++)d[i][j]=i?0:j}for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
-function verName(a,b){const A=verTok(a),B=verTok(b);if(!A.length||!B.length)return"NF";let hit=0,typo=0;const used=new Set();
+function verName(a,b){const r=verNameBase(a,b);return r!=="M"&&r!=="NF"&&ixlAlias(a,b)?"M":r}
+function verNameBase(a,b){const A=verTok(a),B=verTok(b);if(!A.length||!B.length)return"NF";let hit=0,typo=0;const used=new Set();
   A.forEach(t=>{let j=B.findIndex((u,i)=>!used.has(i)&&(u===t||(t.length>=3&&u.length>=3&&(u.startsWith(t)||t.startsWith(u)))||(t.length===1&&u[0]===t)||(u.length===1&&t[0]===u)));
     if(j<0)j=B.findIndex((u,i)=>!used.has(i)&&t.length>=5&&u.length>=5&&verLev(t,u)<=1&&(typo++,true));
     if(j>=0){used.add(j);hit++}});
@@ -2284,6 +2286,58 @@ const IX_LABELISH=/\b(transaction|txn|utr|debited|credited|banking|reference|ref
 function ixNameClean(v){v=String(v||"").replace(/\(.*$/,"").replace(/\S+@\S+/g," ").replace(/[^A-Za-z .'\-]/g," ").replace(/\s+/g," ").trim();
   let w=v.split(" ").filter(Boolean);while(w.length>2&&/^[a-z]{1,2}$/.test(w[0]))w.shift();while(w.length>1&&/^[^A-Za-z]$|^[A-Za-z]$/.test(w[w.length-1])&&w.length>2)w.pop();
   v=w.join(" ").replace(/^[.'\-\s]+|[.'\-\s]+$/g,"");if(v.length<2||IX_LABELISH.test(v)||!w.some(x=>x.replace(/[^A-Za-z]/g,"").length>=3))return null;return v.slice(0,40)}
+// ================= INTAKE MEMORY: what Smart Intake learns. Kept on this phone only; every item can be forgotten.
+var IXL;
+const ixlH=x=>{let h=5381;x=String(x);for(let i=0;i<x.length;i++)h=((h<<5)+h+x.charCodeAt(i))|0;return(h>>>0).toString(36)};
+const ixlN=n=>String(n||"").toLowerCase().replace(/[^a-z\s]/g," ").split(/\s+/).filter(t=>t&&!/^(mr|mrs|ms|shri|smt|sri|dr|m)$/.test(t)).sort().join(" ");
+function ixlGet(){const R=typeof recs!=="undefined"&&Array.isArray(recs)?recs:[];
+  if(IXL&&!IXL.dirty&&IXL.rl===R.length)return IXL;
+  IXL={alias:new Map(),lab:{ord:{},pay:{}},acct:{},n:0,dirty:false,rl:R.length};
+  R.filter(r=>r.kind==="ixl").forEach(r=>{IXL.n++;
+    if(r.t==="alias"){[[r.a,r.b],[r.b,r.a]].forEach(([x,y])=>{let st=IXL.alias.get(x);if(!st){st=new Set();IXL.alias.set(x,st)}st.add(y)})}
+    else if(r.t==="lab"){const o=(IXL.lab[r.s]=IXL.lab[r.s]||{});(o[r.f]=o[r.f]||[]).push({l:r.l,n:r.n||1})}
+    else if(r.t==="acct"){IXL.acct[r.l4]=r.bank}});
+  ["ord","pay"].forEach(k=>Object.keys(IXL.lab[k]).forEach(f=>IXL.lab[k][f].sort((a,b)=>b.n-a.n)));return IXL}
+function ixlAlias(a,b){const A=ixlN(a),B=ixlN(b);if(!A||!B||A===B)return false;const st=ixlGet().alias.get(A);return!!(st&&st.has(B))}
+async function ixlSet(id,obj){try{const old=recs.find(r=>r.id===id);if(old)await patchRec(id,{n:(old.n||1)+1,last:Date.now()});else await putRec({id,kind:"ixl",...obj,n:1,time:Date.now(),last:Date.now()});if(IXL)IXL.dirty=true;return!old}catch(e){return false}}
+// the label that sits in front of a value on the screen ("Counterparty", "Total Amount", "Banking Name" …)
+function ixlFindLabel(text,val,kind){if(val==null||val==="")return null;const lines=String(text||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  const okLab=x=>{x=String(x||"").replace(/[₹$]|INR|Rs\.?/gi," ").replace(/[:：\-–(]+\s*$/,"").replace(/\s+/g," ").trim();return/^[A-Za-z][A-Za-z .\/'\-]{2,30}$/.test(x)&&!/^(buyer|seller)$/i.test(x)?x.toLowerCase():null};
+  let re=null,tok=null;
+  if(kind==="num"){const sv=String(val),[ip,fp]=sv.split(".");if(!/^\d+$/.test(ip))return null;re=new RegExp("(?<![\\d.,])"+ip.replace(/\B(?=(\d{3})+(?!\d))/g,",?")+(fp?"\\."+fp:"")+"(?![\\d])")}
+  else{const tk=String(val).toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>=3);tok=tk[0]||String(val).slice(0,10).toLowerCase();if(tok.length<3)return null}
+  for(let i=0;i<lines.length;i++){const L=lines[i];let idx=-1;
+    if(re){const m=L.match(re);if(m)idx=m.index}else idx=L.toLowerCase().indexOf(tok);
+    if(idx<0)continue;const before=L.slice(0,idx);let l=okLab(before);
+    if(l)return{l,m:"in"};
+    if(!before.replace(/[₹$:：\-\s]|INR|Rs\.?/gi,"")&&i>0){const l2=okLab(lines[i-1]);if(l2)return{l:l2,m:"below"}}}
+  return null}
+// read a value using a label that was learned earlier (only used when the built-in reader found nothing)
+function ixlGrab(text,labs,shape){if(!labs||!labs.length)return null;const lines=String(text||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  for(const {l} of labs){const re=new RegExp("^"+l.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/\s+/g,"\\s*")+"\\b\\s*[:：\\-]?\\s*(.*)$","i");
+    for(let i=0;i<lines.length;i++){const m=lines[i].match(re);if(!m)continue;let v=(m[1]||"").trim();if(!v&&lines[i+1])v=lines[i+1];
+      if(shape==="num"){const x=v.match(/[0-9][0-9,]*(?:\.\d+)?/);if(x){const n=parseFloat(x[0].replace(/,/g,""));if(isFinite(n))return n}}
+      else if(shape==="name"){const c=ixNameClean(v);if(c)return c}
+      else{const x=v.match(/[0-9A-Za-z]{8,40}/);if(x){let id=x[0];const nx=lines[i+1];if((m[1]||"").trim()&&nx&&/^[0-9A-Za-z]{2,8}$/.test(nx)&&/\d/.test(nx)&&!IX_LABELISH.test(nx)&&id.length>=14)id+=nx;return id}}}}
+  return null}
+// after the AI filled something the phone could not read: remember WHERE it sits, but only if the value really is in the phone's text
+async function ixlLearnLayout(g){try{const F=g.aiFilled;if(!F||!F.size)return 0;let n=0;
+  const ordT=g.order&&g.order.ocr&&g.order.ocr.text,payIt=g.pays.find(x=>!x.support)||g.pays[0],payT=payIt&&payIt.ocr&&payIt.ocr.text;
+  const jobs=[["ord","id","str",ordT],["ord","buyer","str",ordT],["ord","seller","str",ordT],["ord","fiat","num",ordT],["ord","price","num",ordT],["ord","crypto","num",ordT],["pay","receiver","str",payT],["pay","sender","str",payT],["pay","utr","str",payT],["pay","amount","num",payT]];
+  for(const [sc,k,kind,txt] of jobs){if(!txt||!F.has(sc+"."+k))continue;const v=(sc==="ord"?g.aiOrd:g.aiPay||{})[k];if(v==null)continue;const hit=ixlFindLabel(txt,v,kind);if(!hit)continue;
+    const f=(k==="buyer"||k==="seller")?"cp":k;if(await ixlSet("ixl_lab_"+sc+"_"+f+"_"+ixlH(hit.l),{t:"lab",s:sc,f,l:hit.l,m:hit.m}))n++}
+  const l4=String((payIt&&payIt.pay&&payIt.pay.last4)||"").replace(/\D/g,"");
+  if(l4.length===4&&g.aiPay&&g.aiPay.bank&&F.has("pay.bank")){const B=PAY_BANKS.find(([,re])=>re.test(g.aiPay.bank));if(B&&await ixlSet("ixl_acct_"+l4,{t:"acct",l4,bank:B[0]}))n++}
+  return n}catch(e){return 0}}
+// on save: two similar names in the same deal (every word of the shorter name is in the longer one) are the same person from now on
+async function ixlOnSave(g){try{let n=0;const M=[];
+  for(const f of g.cmp.fields){if(!(f.k==="buyer"||f.k==="seller")||f.res!=="UNCLEAR"||!f.pay||!f.ord||f.pay==="—"||f.ord==="—")continue;
+    const A=verTok(f.pay),B=verTok(f.ord),[S,Lg]=A.length<=B.length?[A,B]:[B,A];
+    if(S.length<2||!S.every(t=>Lg.some(u=>u===t||(t.length>=3&&u.startsWith(t))||(u.length>=3&&t.startsWith(u)))))continue;
+    const a=ixlN(f.pay),b=ixlN(f.ord);if(!a||!b||a===b||ixlAlias(f.pay,f.ord))continue;const [x,y]=a<b?[a,b]:[b,a];
+    if(await ixlSet("ixl_alias_"+ixlH(x+"|"+y),{t:"alias",a:x,b:y,da:f.pay,db:f.ord})){n++;M.push(f.pay+" = "+f.ord)}}
+  return n?`Learned ${n} name${n>1?"s":""}: ${M.join(", ")}`:""}catch(e){return""}}
+function ixlKnown(name,side){if(!name)return 0;return orders.filter(o=>o.status!=="Cancelled"&&o.side===side&&o.cp&&verName(o.cp,name)==="M").length}
 const ixMs=ms=>{if(!ms)return null;const d=new Date(ms),p=n=>String(n).padStart(2,"0");return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
 // payment text → same shape verParse() gives
 function ixPayFrom(text,conf){const p=payParse(text),d=ixMs(p.time);
@@ -2296,14 +2350,15 @@ function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," "
   if(!id)id=(flat.match(/(?:order\s*(?:no\.?|number|id|#)|订单号?)\s*[:：#]?\s*([0-9A-Za-z]{8,30})/i)||[])[1]||(flat.match(/#\s*(\d{10,24})/)||[])[1]||(flat.match(/\b(\d{16,24})\b/)||[])[1]||null;
   let fiat=null;{const lab=flat.match(new RegExp("(?:total\\s*price|fiat\\s*amount|you\\s*(?:pay|will\\s*receive|receive)|amount)\\D{0,14}"+CUR+"?\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)","i"));if(lab)fiat=num(lab[1]);
     if(fiat==null){const all=[...flat.matchAll(new RegExp(CUR+"\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)","g"))].map(m=>num(m[1])).filter(v=>v>=10);if(all.length)fiat=Math.max(...all)}}
-  const cm=flat.match(/([0-9][0-9,]*(?:\.\d{1,8})?)\s*(USDT|USDC|BTC|ETH|BNB|TRX)\b/i);const crypto=cm?num(cm[1]):null,coin=cm?cm[2].toUpperCase():null;
+  const cm=flat.match(/([0-9][0-9,]*(?:\.\d{1,8})?)\s*(USDT|USDC|BTC|ETH|BNB|TRX)\b/i);let crypto=cm?num(cm[1]):null,coin=cm?cm[2].toUpperCase():null;
   let price=null;{const pm=flat.match(new RegExp("(?:unit\\s*)?(?:price|rate)\\D{0,14}"+CUR+"?\\s*([0-9]{2,3}(?:\\.\\d{1,4})?)","i"));if(pm)price=num(pm[1]);if(price==null&&fiat&&crypto)price=+(fiat/crypto).toFixed(2)}
   const nm=(lab)=>{const m=flat.match(new RegExp(lab+"\\s*(?:name)?\\s*[:：]?\\s*([A-Za-z][A-Za-z.' ]{2,36}?)(?=\\s{2,}|\\s(?:order|price|amount|total|quantity|status|payment|seller|buyer|time|date)\\b|$|[0-9])","i"));return m?m[1].trim():null};
-  const ixn=v=>v?ixNameClean(v):null;const buyer=ixn(nm("buyer")),seller=ixn(nm("seller"));
+  const ixn=v=>v?ixNameClean(v):null;let buyer=ixn(nm("buyer")),seller=ixn(nm("seller"));
   let cp=null;{const Ls=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<Ls.length&&!cp;i++){const m=Ls[i].match(/^(?:counter\s*-?\s*party|merchant|advertiser|trader)\b\s*[:：]?\s*(.*)$/i);if(m)cp=ixNameClean(m[1])||(Ls[i+1]&&!IX_LABELISH.test(Ls[i+1])?ixNameClean(Ls[i+1]):null)}}
   const st=(flat.match(/\b(completed|released|paid|unpaid|to be paid|waiting for payment|cancell?ed|appeal|dispute|pending|processing)\b/i)||[])[1];
   let whenAlt=null;{const dm=t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(dm&&+dm[1]<=12&&+dm[2]<=12&&dm[1]!==dm[2]){const sw=payTime(t.replace(dm[0],dm[2]+"/"+dm[1]+"/"+dm[3]));if(sw)whenAlt=ixMs(sw)}}
   let ts=payTime(t);if(!ts){const m=flat.match(/(\d{4})-(\d{2})-(\d{2})[ T]+(\d{1,2}):(\d{2})/);if(m)ts=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).getTime()}
+  {const LB=ixlGet().lab.ord||{};if(!id&&LB.id)id=ixlGrab(t,LB.id,"id");if(fiat==null&&LB.fiat)fiat=ixlGrab(t,LB.fiat,"num");if(price==null&&LB.price)price=ixlGrab(t,LB.price,"num");if(crypto==null&&LB.crypto)crypto=ixlGrab(t,LB.crypto,"num");if(!cp&&LB.cp)cp=ixlGrab(t,LB.cp,"name");if(price==null&&fiat&&crypto)price=+(fiat/crypto).toFixed(2)}
   return{id,status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,conf:conf}}
 // ---- OCR: on-phone ML Kit when the app has it, otherwise the tesseract engine; one result per picture, never throws
 const ixOcrCache=new Map();let ixNative=0;
@@ -2435,6 +2490,7 @@ function ixMine(g){try{const X=g.X,P=X.pay,O=X.ord;const side=ixSide(g);if(!side
     if(P.receiver){if((g.inferred||[]).includes("receiver"))add("ok","Receiver is you (credited to your own bank)");else if(isMe(P.receiver))add("ok","Receiver name is you");else if(notMe(P.receiver))add("bad",`Receiver “${P.receiver}” is not you. The money did not go to your account.`,"Money went to someone else's account")}
     if(P.sender&&O.buyer&&verName(P.sender,O.buyer)==="M")add("ok","Sender is the buyer on the order");
   }
+  {const other=side==="BUY"?(O.seller||O.cp):(O.buyer||O.cp),role=side==="BUY"?"seller":"buyer";if(other){const k=ixlKnown(other,side);if(k)add("ok",`Known ${role}: ${k} earlier deal${k>1?"s":""} with ${other}`);else add("na",`New ${role}: first deal with ${other}`)}else if(g.order)add("na",`The ${role}'s name was not found on the order. Tap DEEP AI CHECK once and I will learn where it sits on this screen.`)}
   return{side,verdict:L.length?w:"na",lines:L,bank:bk,acct}}catch(e){return{side:null,verdict:"na",lines:[],bank:null}}}
 // ---- risk: LOW / MEDIUM / HIGH with the reasons
 function ixRisk(g){const F=g.cmp.fields,hi=[],me=[],fl=g.cmp.flags;const f=k=>F.find(x=>x.k===k)||{};
@@ -2493,6 +2549,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   const nm="([A-Za-z][A-Za-z .'\\-]{2,40}?)(?=\\s+(?:VPA|UPI|IMPS|NEFT|on|ref|via|a\\/c|\\()|[.,;(]|\\s*$)";
   if(!P.receiver){const m=flat.match(new RegExp("(?:credited to|paid to|sent to|transferred to)\\s+"+nm,"i"));if(m)P.receiver=nameOf(m[1])}
   if(!P.sender){const m=flat.match(new RegExp("(?:received from|credited by|by a\\/c of|from)\\s+"+nm,"i"));if(m)P.sender=nameOf(m[1])}
+  {const LB=ixlGet().lab.pay||{};if(!P.receiver&&LB.receiver)P.receiver=ixlGrab(raw,LB.receiver,"name")||"";if(!P.sender&&LB.sender)P.sender=ixlGrab(raw,LB.sender,"name")||"";if(!P.utr&&LB.utr){const u=ixlGrab(raw,LB.utr,"id");if(u&&(u.match(/\d/g)||[]).length>=6)P.utr=u}if(!P.amount&&LB.amount)P.amount=ixlGrab(raw,LB.amount,"num")||0;if(!P.bank&&P.last4){const lb=ixlGet().acct[P.last4];if(lb)P.bank=lb}}
   P.ok=P.amount>0&&!!P.utr;return P}
 const fileHash=async f=>{try{const b=await f.arrayBuffer();if(window.crypto&&crypto.subtle){const h=await crypto.subtle.digest("SHA-256",b);return[...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,32)}return"f"+impHash(String.fromCharCode(...new Uint8Array(b.slice(0,60000))))}catch(e){return""}};
 function payBank(p){const mine=banks.filter(b=>b.type!=="Cash");let b=null;if(p.last4)b=mine.find(x=>x.accNo&&String(x.accNo).replace(/\D/g,"").endsWith(p.last4));
@@ -4667,9 +4724,10 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       const no={id:newId("o"),side,coin:O.coin||"USDT",qty,rate,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:"",splits:split,proofs,shots,pv,time:Date.now(),src:"ai"};
       if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
       await putRec(no);await auditLog(no,"create",{by:"intake",result:g.cmp.overall,risk:g.risk.level});g.savedId=no.id}
+    try{const ln=await ixlOnSave(g);if(ln)notes.push(ln)}catch(e){}
     g.saved=true;ixHistUpdate(g);return{state:"saved",msg:notes.join(" · ")||"Saved"}
   }catch(e){console.error(e);return{state:"failed",msg:"Couldn't save: "+(e&&e.message||"unknown error")}}}
-async function ixHistAdd(g){try{const P=g.X.pay,O=g.X.ord;const key=g.items.map(x=>x.hash).sort().join("");const old=recs.find(r=>r.kind==="ix"&&r.key===key);if(old){g.histId=old.id;await patchRec(old.id,{overall:g.cmp.overall,risk:g.risk.level,side:ixSide(g)||"",amount:P.amount!=null?P.amount:O.fiat,time:Date.now()});return}const rec={id:newId("ix_"),kind:"ix",key,amount:P.amount!=null?P.amount:O.fiat,name:(ixSide(g)==="BUY"?(O.seller||P.receiver):ixSide(g)==="SELL"?(O.buyer||P.sender):null)||O.buyer||O.seller||P.sender||P.receiver||"",orderRef:O.id||"",overall:g.cmp.overall,risk:g.risk.level,side:ixSide(g)||"",types:g.items.map(x=>x.cls.type),saved:false,orderId:null,time:Date.now()};g.histId=rec.id;await putRec(rec)}catch(e){}}
+async function ixHistAdd(g){try{const P=g.X.pay,O=g.X.ord;const key=g.items.map(x=>x.hash).sort().join("");const old=recs.find(r=>r.kind==="ix"&&r.key===key);if(old){g.histId=old.id;await patchRec(old.id,{overall:g.cmp.overall,risk:g.risk.level,ai:g.ai==="ok",side:ixSide(g)||"",amount:P.amount!=null?P.amount:O.fiat,time:Date.now()});return}const rec={id:newId("ix_"),kind:"ix",key,amount:P.amount!=null?P.amount:O.fiat,name:(ixSide(g)==="BUY"?(O.seller||P.receiver):ixSide(g)==="SELL"?(O.buyer||P.sender):null)||O.buyer||O.seller||P.sender||P.receiver||"",orderRef:O.id||"",overall:g.cmp.overall,risk:g.risk.level,ai:g.ai==="ok",side:ixSide(g)||"",types:g.items.map(x=>x.cls.type),saved:false,orderId:null,time:Date.now()};g.histId=rec.id;await putRec(rec)}catch(e){}}
 async function ixHistUpdate(g){try{if(g.histId)await patchRec(g.histId,{saved:true,orderId:g.savedId||null})}catch(e){}}
 function ixChip(l,s,t){const ic={ok:"✓",warn:"⚠",bad:"✕",na:"—"}[s];return`<span class="ixc ${s}" title="${esc(t||"")}">${ic} ${l}</span>`}
 function ixStatuses(g){const its=g.items;
@@ -4742,7 +4800,7 @@ async function ixAct(g,a,btn){
   if(a.startsWith("type:")){const [,h,t]=a.split(":");const it=g.unknown.find(u=>u.hash===h);if(it){ixItem(it,t);ixS.groups=ixGroup(ixS.items);await ixFinish(ixS.groups,false);ixDraw()}return}
   if(a==="save"){btn.disabled=true;btn.textContent="Saving…";g.save=await ixSave(g);if(g.save.state==="saved"){toast("Recorded 1 of 1");try{navigator.vibrate&&navigator.vibrate(18)}catch(e){}}ixDraw();renderIxHist();return}
   if(a==="recheck"){btn.disabled=true;btn.textContent="Rechecking…";g.aiPay=g.aiOrd=null;g.conflicts=null;g.ai=null;g.items.forEach(it=>{ixOcrCache.delete(it.hash);it.ocr=null});await ixOcrAll(g.items);g.items.forEach(it=>ixItem(it));ixReconcile(ixS.items);ixS.groups=ixGroup(ixS.items);await ixFinish(ixS.groups,false);ixDraw();return}
-  if(a==="deep"){btn.disabled=true;btn.textContent="Asking AI…";await ixDeep(g);ixDraw();return}}
+  if(a==="deep"){btn.disabled=true;btn.textContent="Asking AI…";await ixDeep(g);try{if(g.histId&&g.ai==="ok")await patchRec(g.histId,{ai:true})}catch(e){}ixDraw();renderIxHist();return}}
 async function ixSaveAll(){const msg=document.querySelector("[data-ixallmsg]");let ok=0,skip=0,fail=0;const b=document.querySelector('[data-ixall="save"]');if(b){b.disabled=true;b.textContent="Saving…"}
   for(const g of ixS.groups){if(g.saved){ok++;continue}
     if(g.risk.level==="HIGH"||g.dups.length||(!g.target&&!ixSide(g))||(!g.order&&!g.target)){skip++;g.save={state:"skipped",msg:"Left for you to review"};continue}
@@ -4753,7 +4811,7 @@ async function ixDeep(g){const pay=(g.pays.find(x=>!x.support)||g.pays[0]),ord=g
   if(!files.length)return;
   try{const out=await Promise.race([verExtract(files.map(f=>f.blob)),new Promise((_,no)=>setTimeout(()=>no(aiErr("busy","slow")),85000))]);
     const m1=ixMerge(g.pays[0]?g.pays[0].pay:{},out.X.pay,pay&&pay.ocr?pay.ocr.conf/100:null),m2=ixMerge(ord?ord.ord:{},out.X.ord,ord&&ord.ocr?ord.ocr.conf/100:null);
-    g.aiPay=m1.v;g.aiOrd=m2.v;g.aiFlags=out.X.flags;g.aiFilled=new Set([...m1.filled.map(k=>"pay."+k),...m2.filled.map(k=>"ord."+k)]);g.conflicts=[...m1.diffs.map(k=>"payment "+k),...m2.diffs.map(k=>"order "+k)];g.ai="ok";ixVerify(g)}
+    g.aiPay=m1.v;g.aiOrd=m2.v;g.aiFlags=out.X.flags;g.aiFilled=new Set([...m1.filled.map(k=>"pay."+k),...m2.filled.map(k=>"ord."+k)]);g.conflicts=[...m1.diffs.map(k=>"payment "+k),...m2.diffs.map(k=>"order "+k)];g.ai="ok";await ixlLearnLayout(g);ixVerify(g)}
   catch(e){g.ai="unavailable";g.aiErr=e&&e.code;ixVerify(g)}}
 async function ixOcrAll(items,prog){let n=0;const skip=new Promise((_,no)=>{ixS.skip=()=>no(new Error("skip"))});skip.catch(()=>{});
   for(const it of items){if(prog)prog(n,items.length);it.ocr=await ixOcr(it,skip);n++;await new Promise(r=>setTimeout(r,0))}}
@@ -4797,7 +4855,8 @@ function renderIxHist(){const el=$("#i2-hist");if(!el)return;const L=recs.filter
   const d0=new Date();d0.setHours(0,0,0,0);const t0=d0.getTime(),sec=[["Today",x=>x.time>=t0],["Yesterday",x=>x.time<t0&&x.time>=t0-DAY],["This week",x=>x.time<t0-DAY&&x.time>=t0-6*DAY]];
   const cls=x=>(x.saved?"sv ":"")+({VERIFIED:"v",REVIEW:"r",MISMATCH:"m"}[x.overall]||""),pill=x=>x.saved?"✓ Saved":((VER_TXT[x.overall]||[])[1]||"Checked"),tm=x=>new Date(x.time).toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"});
   const td=L.filter(x=>x.time>=t0),nv=td.filter(x=>x.overall==="VERIFIED").length,nr=td.filter(x=>x.overall&&x.overall!=="VERIFIED").length,ns=td.filter(x=>x.saved).length;
-  const sum=td.length?`<div class="ixhsum"><span><b>${td.length}</b>checked today</span><span><b>${nv}</b>verified</span>${nr?`<span><b>${nr}</b>to review</span>`:""}<span><b>${ns}</b>saved</span></div>`:"";
+  const aiK=td.filter(x=>x.ai===true).length,aiM=td.filter(x=>typeof x.ai==="boolean").length;
+  const sum=td.length?`<div class="ixhsum"><span><b>${td.length}</b>checked today</span><span><b>${nv}</b>verified</span>${nr?`<span><b>${nr}</b>to review</span>`:""}<span><b>${ns}</b>saved</span>${aiM?`<span><b>${aiK}/${aiM}</b>used AI</span>`:""}${ixlGet().n?`<span data-ixmem class="ixmemchip"><b>🧠 ${ixlGet().n}</b>learned</span>`:""}</div>`:"";
   el.innerHTML=`<div class="pcsec">Recent intakes</div>${sum}`+sec.map(([n,f])=>{const a=L.filter(f);return a.length?`<div class="ixhl">${n}</div><div class="ixrc">${a.map(x=>`<div class="ixr ${cls(x)}"><div><div>${x.side?`<span class="sd ${x.side}">${x.side}</span>`:""}<span class="a">${x.amount!=null?inr(x.amount):"—"}</span><span class="n">${esc(x.name||"No name")}</span></div><div class="t">${x.orderRef?"<span>Order …"+esc(String(x.orderRef).slice(-6))+"</span>":""}<span>${tm(x)}</span>${x.risk?`<i class="${esc(String(x.risk).toLowerCase())}">${esc(x.risk)} risk</i>`:""}</div></div><span class="p">${pill(x)}</span></div>`).join("")}</div>`:""}).join("")}
 
 
@@ -5159,7 +5218,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=34;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=35;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5226,6 +5285,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00035","6 Oct 2026",["New Intake memory: Smart Intake now learns on this phone, so the AI is needed less and less","Learns that two similar names are the same person (for example Likith Shetty = Likith Rajesh Shetty) when you save a deal","Learns where details sit on an exchange or payment screen after the AI reads something the phone missed, and uses that next time without the AI","Learns your bank from its last 4 digits when the AI recognises the logo","Shows known sellers and buyers (earlier deals) and how many intakes needed the AI today","Settings > Intake memory lists everything learned, and each item can be forgotten"]],
   ["0.0.0.00034","6 Oct 2026",["Fixed: the counterparty name on exchange orders (Counterparty Name(email)) is now read, and a wrapped Order Number is joined back together","Fixed: wrong names such as PhonePe Transaction ID or Order Number Created At are never used as a person name","Fixed: the payee UPI handle (for example @okhdfcbank) is no longer taken as your bank","Fixed: payment time written before the date, and 10/05/2026 order dates (month first) are read correctly","New: if a payment comes from an account not in your bank list, tap Yes, it's mine to save its last 4 digits on one of your banks"]],
   ["0.0.0.00033","6 Oct 2026",["Smart Intake now knows your side: a BUY is paid from your account, a SELL lands in your account","New Your account check: flags a BUY paid from an account that is not yours or not in your bank list, money received on a BUY, and third-party payers","Result shows the money flow (who pays whom, which bank), a confidence ring and a BUY / SELL badge you can tap to switch","Recent intakes show BUY / SELL"]],
   ["0.0.0.00032","6 Oct 2026",["Smart Intake has a new look: a live Add > Check > Save progress rail and a large drop area with Camera and Paste buttons","Bigger screenshot previews, and SMS paste tucked away until you need it","Recent intakes are now colour-coded cards with a status pill, risk dot and a daily summary (checked, verified, to review, saved)"]],
@@ -5418,6 +5478,20 @@ function verAttach(){const R=verS.res;if(!R)return;const P=R.X.pay,O=R.X.ord;con
       try{await patchRec(o.id,{shots:next.shots,utr:next.utr,exId:next.exId,pv:R.cmp.overall==="VERIFIED"?"verified":"ai"});await patchRec(R.rec.id,{orderId:o.id});auditLog(o,"verify_attach",{result:R.cmp.overall,conf:R.cmp.confidence});toast("Attached to the order");sheetVerify()}catch(e){toast("Couldn't save")}})})}
 
 sheets.auditlog=sheetAuditLog;sheets.verify=sheetVerify;sheets.risk=sheetRisk;
+sheets.ixmem=function(){const R=recs.filter(r=>r.kind==="ixl").sort((a,b)=>(b.last||0)-(a.last||0)),al=R.filter(r=>r.t==="alias"),lb=R.filter(r=>r.t==="lab"),ac=R.filter(r=>r.t==="acct");
+  const FN={id:"Order ID",cp:"The other person's name",fiat:"Total amount",price:"Price",crypto:"Coin amount",receiver:"Receiver name",sender:"Sender name",utr:"UTR",amount:"Amount"};
+  const row=(r,t,sm)=>`<div class="dqr"><span>${t}<small>${sm}</small></span><button type="button" class="mini ghost" data-ixdel="${esc(r.id)}" aria-label="Forget this">Forget</button></div>`;
+  const empty=m=>`<div class="dqr"><span class="note" style="margin:0">${m}</span></div>`,seen=r=>`Seen ${r.n||1} time${(r.n||1)>1?"s":""}`;
+  openSheet(`<div class="insw"><div class="insh"><h3>Intake memory</h3><span class="note">What Smart Intake learned. It stays on this phone, and every item can be forgotten.</span></div>
+    <div class="pcsec">Same person, different spelling (${al.length})</div><div class="rml">${al.length?al.map(r=>row(r,`${esc(r.da||r.a)} = ${esc(r.db||r.b)}`,seen(r))).join(""):empty("Nothing yet. Save a deal where the payment name and the order name are similar and I will learn them.")}</div>
+    <div class="pcsec">Where details sit on a screen (${lb.length})</div><div class="rml">${lb.length?lb.map(r=>row(r,`${esc(FN[r.f]||r.f)} comes ${r.m==="below"?"under":"after"} “${esc(r.l)}”`,`${r.s==="ord"?"Exchange order":"Payment"} · ${seen(r).toLowerCase()}`)).join(""):empty("Nothing yet. When the AI reads something the phone missed, I remember where it was.")}</div>
+    <div class="pcsec">Your accounts (${ac.length})</div><div class="rml">${ac.length?ac.map(r=>row(r,`••${esc(r.l4)} is ${esc(r.bank)}`,seen(r))).join(""):empty("Nothing yet. A bank the AI recognises from a logo is remembered by its last 4 digits.")}</div>
+    ${R.length?'<button type="button" class="mini ghost" id="ixl-all" style="margin-top:10px">Forget everything</button>':""}</div>`,()=>{
+    $("#sheetBody").onclick=async e=>{const d=e.target.closest("[data-ixdel]");if(d){await delRec(d.dataset.ixdel);if(IXL)IXL.dirty=true;sheets.ixmem();renderIxHist();return}
+      const all=e.target.closest("#ixl-all");if(all){if(all.dataset.sure!=="1"){all.dataset.sure="1";all.textContent="Tap again to forget everything";return}
+        for(const r of recs.filter(x=>x.kind==="ixl"))await delRec(r.id);if(IXL)IXL.dirty=true;toast("Intake memory cleared");sheets.ixmem();renderIxHist()}}})}
+{const b=$("#st-ixmem");if(b)b.onclick=()=>sheets.ixmem();const h=$("#i2-hist");if(h)h.addEventListener("click",e=>{if(e.target.closest("[data-ixmem]"))sheets.ixmem()})}
+
 sheets.cashflow=function(wp){wp=wp===undefined?pref("cfProfit")!==false:wp;const F=cashFlow(wp);const mn=Math.min(...F.days.map(d=>d.bal));
   const lv=F.short?"bad":mn<F.money*0.15?"warn":"ok";
   openSheet(`<div class="insw"><div class="insh"><h3>Cash flow · next 7 days</h3></div>
