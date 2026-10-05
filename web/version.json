@@ -1,9 +1,9 @@
 {
- "web": "0.0020",
- "build": 20,
- "display": "0.0.0.00020",
+ "web": "0.0021",
+ "build": 21,
+ "display": "0.0.0.00021",
  "files": {
-  "index.html": "25d8a44daf0de3eee4fdefdfdf72f770c869fc4d",
+  "index.html": "cd9dbaaaf7ee5d89b2a3df806c01450d5c3d61a0",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 4,
   "name": "0.0.0.00019",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "One accurate net worth, average-cost profit, Paid = Pending, safer bank delete"
+  "notes": "Order ID, UTR, fee; duplicate warnings with override; status rules; activity log"
  }
 }
