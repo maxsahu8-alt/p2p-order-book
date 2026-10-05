@@ -509,6 +509,55 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .composer textarea{flex:1;min-width:0}
 .plusbtn{position:relative;flex:none;width:46px;height:46px;border-radius:50%;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;font-size:1.4rem;color:var(--fg);cursor:pointer}
 .plusbtn.drag{border-color:var(--accent)}
+/* smart intake v2 */
+.ixrail{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px;position:relative}
+.ixst{display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;padding:10px 4px 9px;border-radius:11px;min-width:0;color:var(--muted);transition:background .25s,color .25s}
+.ixst i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 .74rem var(--body);font-style:normal;border:1.5px solid var(--line-strong);background:var(--bg)}
+.ixst b{display:block;font-size:.84rem;color:inherit;line-height:1.15}.ixst small{display:block;font-size:.68rem;color:var(--muted);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.ixst>div{min-width:0;max-width:100%}
+.ixst.on{background:var(--raised);color:var(--fg)}.ixst.on i{border-color:var(--fg);color:var(--fg)}
+.ixst.on i::after{content:"";position:absolute}
+.ixst.done{color:var(--fg)}.ixst.done i{background:var(--accent);border-color:var(--accent);color:var(--primary-fg);font-size:0}
+.ixst.done i::before{content:"✓";font-size:.8rem;font-weight:800}
+.ixst.busy i{border-color:var(--accent);border-top-color:transparent;animation:ixspin .9s linear infinite}
+@keyframes ixspin{to{transform:rotate(360deg)}}
+.ixdz{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:30px 18px 26px;border-radius:22px;border:1.5px dashed var(--line-strong);background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 7%,var(--surface)),var(--surface));cursor:pointer;transition:border-color .2s,background .2s}
+.ixdz.drag{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
+.ixdz-ic{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:var(--primary);color:var(--primary-fg);margin-bottom:4px}
+.ixdz b{font-size:1.08rem;letter-spacing:-.01em}.ixdz small{color:var(--muted);font-size:.78rem;line-height:1.45;max-width:26ch}
+.ixalt{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ixbtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:600 .86rem var(--body);cursor:pointer}
+.ixbtn:active{background:var(--raised)}
+.ixprev{display:flex;gap:10px;flex-wrap:wrap}.ixprev:empty{display:none}
+.ixprev .pv img{font-size:.6rem;width:84px;height:112px;border-radius:12px;object-fit:cover;box-shadow:0 1px 0 var(--line)}
+.ixprev .pv button{top:-7px;right:-7px;width:24px;height:24px}
+.ixready{margin:0;font-size:.74rem;color:var(--muted);display:flex;align-items:center;gap:7px}.ixready:empty{display:none}
+.ixready::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+.ixtxt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 12px}
+.ixtxt summary{cursor:pointer;padding:12px 0;font:600 .84rem var(--body);color:var(--muted);list-style:none}.ixtxt summary::-webkit-details-marker{display:none}
+.ixtxt[open] summary{color:var(--fg)}.ixtxt textarea{width:100%;margin:0 0 12px;box-sizing:border-box}
+.ixact{display:grid;grid-template-columns:1fr auto;gap:10px}
+.ixact .primary{grid-column:auto;width:auto;min-height:50px;border-radius:14px;font-size:.98rem}
+.ixclear{min-height:50px;padding:0 18px;border-radius:14px;border:1px solid var(--line);background:transparent;color:var(--muted);font:600 .86rem var(--body);cursor:pointer}
+.ixtips{font-size:.8rem;color:var(--muted)}.ixtips summary{cursor:pointer;padding:6px 2px;font-weight:600}
+.ixhsum{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 10px}
+.ixhsum span{font:600 .74rem var(--body);padding:5px 10px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.ixhsum span b{color:var(--fg);margin-right:3px}
+.ixrc{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.ixr{display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px 12px 11px 0;overflow:hidden}
+.ixr::before{content:"";align-self:stretch;background:var(--ixc,var(--line-strong));border-radius:0 4px 4px 0}
+.ixr.v{--ixc:var(--accent)}.ixr.r{--ixc:var(--warn)}.ixr.m{--ixc:var(--sell)}
+.ixr .a{font:700 1rem var(--body);letter-spacing:-.01em}.ixr .n{font-size:.82rem;color:var(--fg);margin-left:6px;font-weight:500}
+.ixr .t{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin-top:3px}
+.ixr .t i{font-style:normal;display:inline-flex;align-items:center;gap:4px}.ixr .t i::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.ixr .t i.low::before{background:var(--accent)}.ixr .t i.medium::before{background:var(--warn)}.ixr .t i.high::before{background:var(--sell)}
+.ixr .p{font:700 .7rem var(--body);padding:5px 10px;border-radius:99px;white-space:nowrap;background:var(--raised);color:var(--muted)}
+.ixr.v .p{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.ixr.r .p{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.ixr.m .p{color:var(--sell);background:color-mix(in srgb,var(--sell) 14%,transparent)}
+.ixr.sv .p{background:var(--accent);color:var(--primary-fg)}
+@media (prefers-reduced-motion:reduce){.ixst.busy i{animation:none}}
+
+
 .o-actions{gap:4px}
 .cpb{font:700 .6rem var(--body);letter-spacing:.05em;text-transform:uppercase;padding:1px 5px;border-radius:4px;margin-left:4px}
 .cpb.star{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
@@ -1447,20 +1496,30 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
     <p class="note" id="aiNote">AI answers only from your order data. Double-check before making money decisions.</p>
   </section>
   <section id="p-intake" class="ih chat">
-    <div class="ihero"><b>SMART INTAKE</b><span>Drop screenshots. I'll identify, verify and organize the transaction. Add up to 10 at once. Nothing is saved until you tap Save.</span></div>
-    <div class="pvs" id="i2-prev"></div>
-    <p class="note" id="i2-ready" style="margin:0"></p>
-    <div class="composer">
-      <div class="plusbtn" id="idrop" title="Add screenshots">＋<input id="i2-file" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.heic" multiple aria-label="Add screenshots" class="cover-input"></div>
-      <textarea id="i2-text" rows="3" placeholder="Tap + for screenshots. Or paste an SMS / message here and tap Add from text"></textarea>
+    <div class="ixrail" id="ix-rail" role="list" aria-label="Intake progress">
+      <div class="ixst" data-s="add" role="listitem"><i>1</i><div><b>Add</b><small>Order + payment</small></div></div>
+      <div class="ixst" data-s="check" role="listitem"><i>2</i><div><b>Check</b><small>Match and verify</small></div></div>
+      <div class="ixst" data-s="save" role="listitem"><i>3</i><div><b>Save</b><small>You confirm</small></div></div>
     </div>
-    <div class="row2"><label class="mini ghost ixcam">📷 Camera<input id="i2-cam" type="file" accept="image/*" capture="environment" class="cover-input" aria-label="Take a photo"></label><button type="button" class="mini ghost" id="i2-pastebtn">📋 Paste image</button></div>
-    <div class="row2"><button type="button" class="primary" id="i2-go">Add from text</button><button type="button" class="primary" id="i2-clear" style="background:var(--raised);color:var(--fg)">Clear</button></div>
+    <div class="ixdz" id="idrop">
+      <span class="ixdz-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg></span>
+      <b>Add screenshots</b>
+      <small>Exchange order and bank payment together become one transaction. Up to 10.</small>
+      <input id="i2-file" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.heic" multiple aria-label="Add screenshots" class="cover-input">
+    </div>
+    <div class="ixalt">
+      <label class="ixbtn ixcam">📷 Camera<input id="i2-cam" type="file" accept="image/*" capture="environment" class="cover-input" aria-label="Take a photo"></label>
+      <button type="button" class="ixbtn" id="i2-pastebtn">📋 Paste image</button>
+    </div>
+    <div class="ixprev" id="i2-prev"></div>
+    <p class="ixready" id="i2-ready"></p>
+    <details class="ixtxt" id="ix-txt"><summary>Paste an SMS or message instead</summary><textarea id="i2-text" rows="3" placeholder="Paste the bank SMS or the deal message here"></textarea></details>
+    <div class="ixact"><button type="button" class="primary" id="i2-go">Add from text</button><button type="button" class="ixclear" id="i2-clear">Clear</button></div>
     <div id="i2-ix" class="chat"></div>
     <div id="i2-out" class="chat"></div>
     <div id="i2-hist"></div>
     <div id="i2-jobs" class="chat"></div>
-    <div class="note"><button type="button" class="link" id="i2-legacy" style="color:var(--primary)">Not a P2P order? Let the AI agent sort these screenshots</button><br>Tips: one screenshot per payment works best. If a payment matches an order that has no bank yet, AI will link them. Screenshots of payments are saved as proof.</div>
+    <details class="ixtips"><summary>Tips</summary><div class="note">One screenshot per payment works best. If a payment matches an order that has no bank yet, AI will link them. Payment screenshots are kept as proof.<br><button type="button" class="link" id="i2-legacy" style="color:var(--primary)">Not a P2P order? Let the AI agent sort these screenshots</button></div></details>
   </section>
 
   <section id="p-settings" class="ih chat">
@@ -4401,7 +4460,14 @@ function renderJobs(){
 }
 // ---------- smart intake ----------
 let i2Files=[],i2Max=0;
-function i2Draw(){try{$("#i2-go").textContent=i2Files.length?"Analyze":"Add from text"}catch(e){}if(i2Files.length&&!ocrWorker&&!ocrPromise&&!(window.P2POcr&&P2POcr.recognize)){try{ocrInit().catch(()=>{})}catch(e){}}$("#i2-prev").innerHTML=i2Files.map((f,i)=>`<span class="pv"><img src="${URL.createObjectURL(f)}" alt=""><button type="button" data-ri="${i}" aria-label="Remove">×</button></span>`).join("");}
+function ixRail(){try{const R=document.getElementById("ix-rail");if(!R)return;const G=(typeof ixS!=="undefined"&&ixS.groups)||[],busy=typeof ixS!=="undefined"&&ixS.busy;
+  const saved=G.some(g=>g.save&&g.save.state==="saved");const add=i2Files.length>0||G.length>0,chk=G.length>0&&!busy;
+  const set=(k,cls,sub)=>{const e=R.querySelector('[data-s="'+k+'"]');if(!e)return;e.className="ixst "+cls;if(sub)e.querySelector("small").textContent=sub};
+  set("add",add?"done":"on",i2Files.length?i2Files.length+(i2Files.length===1?" screenshot":" screenshots"):(G.length?"Added":"Order + payment"));
+  set("check",busy?"on busy":chk?"done":(add?"on":""),busy?"Reading…":chk?(G.length+(G.length===1?" transaction":" transactions")):"Match and verify");
+  set("save",saved?"done":(chk?"on":""),saved?"Saved":(chk?"Your turn":"You confirm"));
+ }catch(e){}}
+function i2Draw(){try{const n=i2Files.length;$("#i2-go").textContent=n?(n>1?"Analyze "+n+" screenshots":"Analyze"):"Add from text"}catch(e){}if(i2Files.length&&!ocrWorker&&!ocrPromise&&!(window.P2POcr&&P2POcr.recognize)){try{ocrInit().catch(()=>{})}catch(e){}}$("#i2-prev").innerHTML=i2Files.map((f,i)=>`<span class="pv"><img src="${URL.createObjectURL(f)}" alt="Screenshot ${i+1}"><button type="button" data-ri="${i}" aria-label="Remove screenshot ${i+1}">×</button></span>`).join("");ixRail();}
 function i2Add(list){const all=[...(list||[])];const imgs=all.filter(f=>/^image\//.test(f.type)||(!f.type&&/\.(png|jpe?g|webp|heic|heif|gif|bmp)$/i.test(f.name||""))||(!f.type&&f.size>0));
   if(!all.length)return;if(!imgs.length){toast("That file isn't a picture. Choose a screenshot.");return}const max=10;
 
@@ -4413,8 +4479,9 @@ let i2Auto=null;
 {const cam=$("#i2-cam");if(cam){let b2=false;const t2=e=>{if(b2)return;b2=true;const fl=e.target.files;if(fl&&fl.length)i2Add(fl);setTimeout(()=>{e.target.value="";b2=false},300)};cam.addEventListener("change",t2)}}
 $("#i2-pastebtn").onclick=async()=>{try{const items=await navigator.clipboard.read();const fl=[];for(const it of items){const ty=it.types.find(t=>/^image\//.test(t));if(ty){const bl=await it.getType(ty);fl.push(new File([bl],"pasted.png",{type:ty}))}}if(fl.length)i2Add(fl);else toast("No image on the clipboard")}catch(e){toast("Couldn't read the clipboard. Long-press in the box below and choose Paste.")}};
 $("#i2-legacy").onclick=()=>{if(i2Files.length||$("#i2-text").value.trim())legacyIntake();else toast("Add screenshots first")};
+try{document.getElementById("ix-txt").addEventListener("toggle",()=>{try{$("#i2-text").focus()}catch(e){}})}catch(e){}
 $("#i2-prev").onclick=e=>{const b=e.target.closest("[data-ri]");if(b){i2Files.splice(+b.dataset.ri,1);i2Draw()}};
-const dz=$("#idrop");["dragenter","dragover"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add("drag")}));["dragleave","drop"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove("drag")}));
+const dz=$("#idrop");try{ixRail()}catch(e){}["dragenter","dragover"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add("drag")}));["dragleave","drop"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove("drag")}));
 dz.addEventListener("drop",e=>i2Add(e.dataTransfer.files));
 document.addEventListener("paste",e=>{if($("#p-intake").hidden)return;const f=[...(e.clipboardData||{}).files||[]];if(f.length){e.preventDefault();i2Add(f)}});
 $("#i2-clear").onclick=()=>{i2Files=[];i2Draw();$("#i2-text").value="";$("#i2-out").innerHTML="";$("#i2-ix").innerHTML="";ixS.groups=[];ixS.run++};
@@ -4578,7 +4645,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     <div class="row2" style="margin-top:10px">${g.order||g.target?`<button class="primary" type="button" data-ix="save" ${g.saved?"disabled":""}>${saveLbl}</button>`:""}<button class="mini ghost" type="button" data-ix="recheck">RECHECK</button></div>${!g.order&&!g.target?`<div class="note" style="margin-top:6px">Payment only: choose the order it belongs to below, then confirm.</div><div data-paycard></div>`:""}
     <div class="row2" style="margin-top:6px"><button class="mini ${g.cmp.overall!=="VERIFIED"&&g.ai!=="ok"?"":"ghost"}" type="button" data-ix="deep">${g.ai==="ok"?"DEEP AI CHECK AGAIN":"DEEP AI CHECK"}</button><button class="mini ghost" type="button" data-ix="raw">VIEW RAW DATA</button></div>
     <div class="ixraw" hidden><pre>${esc(JSON.stringify({ocr:g.items.map(x=>({type:x.cls.type,engine:x.ocr&&x.ocr.engine,conf:x.ocr&&x.ocr.conf,text:x.ocr&&x.ocr.text})),payment:P,order:O,flags:g.cmp.flags,risk:g.risk,duplicates:g.dups.map(d=>d.msg),aiReasons:g.reasonsAI,aiConflicts:g.conflicts||[]},null,1))}</pre></div>`}
-function ixDraw(){const out=$("#i2-ix");if(!out)return;out.innerHTML="";const G=ixS.groups;
+function ixDraw(){try{ixRail()}catch(e){}const out=$("#i2-ix");if(!out)return;out.innerHTML="";const G=ixS.groups;
   if(G.length>1){const h=document.createElement("div");h.className="acard ixhead";h.innerHTML=`<div class="ah">${G.length} TRANSACTIONS DETECTED</div><div class="row2"><button class="primary" type="button" data-ixall="save">SAVE ALL</button><button class="mini ghost" type="button" data-ixall="review">REVIEW INDIVIDUALLY</button></div><div class="note" data-ixallmsg></div>`;
     h.querySelector('[data-ixall="save"]').onclick=ixSaveAll;h.querySelector('[data-ixall="review"]').onclick=()=>{out.querySelectorAll(".ixg").forEach((e,i)=>{e.open=i===0});h.querySelector("[data-ixallmsg]").textContent="Open each transaction below and check it before saving."};out.appendChild(h)}
   G.forEach((g,i)=>{const d=document.createElement(G.length>1?"details":"div");d.className="acard ixg";d.dataset.gid=g.id;if(G.length>1){d.open=ixS.open===g.id||G.length<=2;d.innerHTML=`<summary><b>TRANSACTION ${i+1}</b> · ${g.items.length} screenshot${g.items.length>1?"s":""} · ${g.X.pay.amount!=null?inr(g.X.pay.amount):g.X.ord.fiat!=null?inr(g.X.ord.fiat):"?"} · ${VER_TXT[g.cmp.overall][1]}${g.saved?" · saved":""}</summary><div class="ixb">${ixCardHtml(g,true)}</div>`}else d.innerHTML=`<div class="ixb"><div class="pcsec" style="margin-top:0">TRANSACTION 1 · ${g.items.length} screenshot${g.items.length>1?"s":""}</div>${ixCardHtml(g,false)}</div>`;
@@ -4610,7 +4677,7 @@ async function ixFinish(groups,useAI){for(const g of groups){ixVerify(g);
     else if(g.reasonsAI.length&&!ixAiReady())g.ai="na";
     if(!g.histId)await ixHistAdd(g)}}
 // the whole run
-async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;ixS.busy=true;ixS.groups=[];
+async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
   const out=$("#i2-ix");out.innerHTML="";const card=document.createElement("div");card.className="acard ixprog";out.appendChild(card);const t0=Date.now();let msg="Getting your screenshots ready…";let skipShown=false;
   const paint=()=>{const sec=Math.round((Date.now()-t0)/1000);card.innerHTML=`<div class="ah">ANALYSING ${files.length} SCREENSHOT${files.length>1?"S":""}</div><div class="ires">${esc(msg)} ${sec}s</div>${sec>=15&&!ixS.ocrReady&&!skipShown?"":""}`+(sec>=15&&ixS.stage==="ocr"?`<div class="note">${ixAiReady()?"The phone reader is slow to start. You can skip it and let your AI read the pictures.":"The phone reader is still starting (first use downloads about 10 MB). Please keep this page open."}</div>${ixAiReady()?'<button class="mini ghost" type="button" data-skipocr>Skip phone reader</button>':""}`:"");const sb=card.querySelector("[data-skipocr]");if(sb)sb.onclick=()=>ixS.skip&&ixS.skip()};
   const tick=setInterval(paint,1000);paint();
@@ -4639,11 +4706,14 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
     clearInterval(tick);card.remove();ixDraw();renderIxHist();
     try{const first=out.querySelector(".ixg, .ixhead");if(first)first.scrollIntoView({block:"start",behavior:"smooth"})}catch(e){}
   }catch(e){console.error(e);clearInterval(tick);card.innerHTML=`<div class="ah">ANALYSIS INTERRUPTED</div><div class="note">${esc(e&&e.code==="busy"?"The AI is busy or slow right now.":e&&e.code==="bad_json"?e.text:"Something went wrong while reading. Your screenshots are kept.")}</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ixS.busy=false;ixRun()}}
-  finally{clearInterval(tick);ixS.busy=false;ocrListeners=[];if(ixS.again){ixS.again=false;setTimeout(()=>ixRun(),60)}}}
+  finally{clearInterval(tick);ixS.busy=false;try{ixRail()}catch(e){}ocrListeners=[];if(ixS.again){ixS.again=false;setTimeout(()=>ixRun(),60)}}}
 // ---- Recent intakes
 function renderIxHist(){const el=$("#i2-hist");if(!el)return;const L=recs.filter(r=>r.kind==="ix").sort((a,b)=>b.time-a.time).slice(0,40);if(!L.length){el.innerHTML="";return}
   const d0=new Date();d0.setHours(0,0,0,0);const t0=d0.getTime(),sec=[["Today",x=>x.time>=t0],["Yesterday",x=>x.time<t0&&x.time>=t0-DAY],["This week",x=>x.time<t0-DAY&&x.time>=t0-6*DAY]];
-  el.innerHTML=`<div class="pcsec">Recent intakes</div>`+sec.map(([n,f])=>{const a=L.filter(f);return a.length?`<div class="ixhl">${n}</div><div class="rml">${a.map(x=>`<div class="dqr"><span>${x.amount!=null?inr(x.amount):"—"} · ${esc(x.name||"No name")}<small style="display:block;color:var(--muted)">${x.orderRef?"Order "+esc(String(x.orderRef).slice(-8))+" · ":""}${new Date(x.time).toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})} · ${esc(x.risk||"")} risk</small></span><b>${x.saved?"✓ Saved":(VER_TXT[x.overall]||[])[1]||""}</b></div>`).join("")}</div>`:""}).join("")}
+  const cls=x=>(x.saved?"sv ":"")+({VERIFIED:"v",REVIEW:"r",MISMATCH:"m"}[x.overall]||""),pill=x=>x.saved?"✓ Saved":((VER_TXT[x.overall]||[])[1]||"Checked"),tm=x=>new Date(x.time).toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"});
+  const td=L.filter(x=>x.time>=t0),nv=td.filter(x=>x.overall==="VERIFIED").length,nr=td.filter(x=>x.overall&&x.overall!=="VERIFIED").length,ns=td.filter(x=>x.saved).length;
+  const sum=td.length?`<div class="ixhsum"><span><b>${td.length}</b>checked today</span><span><b>${nv}</b>verified</span>${nr?`<span><b>${nr}</b>to review</span>`:""}<span><b>${ns}</b>saved</span></div>`:"";
+  el.innerHTML=`<div class="pcsec">Recent intakes</div>${sum}`+sec.map(([n,f])=>{const a=L.filter(f);return a.length?`<div class="ixhl">${n}</div><div class="ixrc">${a.map(x=>`<div class="ixr ${cls(x)}"><div><div><span class="a">${x.amount!=null?inr(x.amount):"—"}</span><span class="n">${esc(x.name||"No name")}</span></div><div class="t">${x.orderRef?"<span>Order …"+esc(String(x.orderRef).slice(-6))+"</span>":""}<span>${tm(x)}</span>${x.risk?`<i class="${esc(String(x.risk).toLowerCase())}">${esc(x.risk)} risk</i>`:""}</div></div><span class="p">${pill(x)}</span></div>`).join("")}</div>`:""}).join("")}
 
 
 // ---------- order edit / repeat ----------
@@ -5004,7 +5074,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=31;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=32;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5071,6 +5141,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00032","6 Oct 2026",["Smart Intake has a new look: a live Add > Check > Save progress rail and a large drop area with Camera and Paste buttons","Bigger screenshot previews, and SMS paste tucked away until you need it","Recent intakes are now colour-coded cards with a status pill, risk dot and a daily summary (checked, verified, to review, saved)"]],
   ["0.0.0.00031","6 Oct 2026",["Smart Intake reads dark-theme screenshots much better (the phone reader now inverts dark images and keeps full resolution)","When the result is not clean, AI vision double-checks automatically, so a reading error is not shown as a mismatch","New WHY box says exactly what caused the status; each field shows whether the phone or AI read it","Clear AI status line (checked by AI, unavailable, or not connected)"]],
   ["0.0.0.00030","6 Oct 2026",["Fixed: an order screenshot and its payment screenshot are now ONE transaction, not two","All pictures are classified first, then grouped by order ID, amount, names, method, time, UTR and crypto amount","If you add one order and one payment they are always combined; an amount difference shows as Mismatch inside the same transaction","Missing details in one screenshot are filled from the other when saving"]],
   ["0.0.0.00029","6 Oct 2026",["Smart Intake rebuilt: add screenshots (gallery, camera or paste) and they are read, identified, matched and verified automatically","Payments and orders are paired by amount, name, method, time and order ID, then grouped; \"N transactions detected\" with Save all or review one by one","Separate statuses for reading, type, extraction, AI, verification and saving. A save problem no longer shows the whole analysis as failed","Low / Medium / High risk with reasons, duplicate check before saving, and Recent intakes (Today, Yesterday, This week)","AI is used only when the phone reading is unclear, or when you tap Deep AI check"]],
