@@ -1,0 +1,11 @@
+Payment Successful
+~2,500
+Paid to
+
+RAVI KUMAR
+
+Oct 5, 2026 at 09:41 PM
+Transaction ID T2610052141123456789
+UTR 628151234567
+Debited from XXXXXX1234 (HDFC
+Bank)

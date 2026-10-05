@@ -1195,6 +1195,9 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 .vachips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px}.vachips button{border:1px solid #ffffff22;background:#ffffff0d;color:#e5e7eb;border-radius:99px;padding:8px 12px;font:600 .78rem var(--body);cursor:pointer}
 .pdet{border:1px dashed var(--line);border-radius:12px;padding:10px 12px}.pdet summary{cursor:pointer;font-size:.78rem;font-weight:600;color:var(--muted);list-style:none}.pdet summary::-webkit-details-marker{display:none}
 .pdet[open] summary{margin-bottom:12px}.pdg{display:grid;grid-template-columns:1fr 1fr;gap:12px}.dupwarn{color:var(--sell);font-size:.78rem;font-weight:700}.mtag.risk{background:rgba(240,89,107,.14);color:var(--sell)}
+.payg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.payg label{font-size:.72rem;min-width:0}.payg input,.payg select{font-size:.88rem;padding:9px 10px;min-height:42px}
+.paycard .dirchk{flex-direction:row;align-items:center;gap:10px;font-size:.82rem;color:var(--fg)}.paycard .dirchk input{width:auto;min-height:0;flex:none}
+.paywarn{color:var(--sell);font-size:.78rem;font-weight:600;white-space:pre-line}.paywarn:empty{display:none}.paycard .ah small{text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted)}
 </style>
 
 <div class="wrap">
@@ -1299,7 +1302,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
         <label class="full">Exchange order ID<input id="f-exid" type="text" inputmode="text" autocomplete="off" placeholder="Order number from the exchange"></label>
         <label class="full">UTR / payment reference<input id="f-utr" type="text" autocomplete="off" placeholder="Reference number from the bank"></label>
         <label>Fee ₹<input id="f-fee" type="number" inputmode="decimal" step="any" placeholder="Counted in profit"></label>
-        <label>Payment check<select id="f-pv"><option value="">Not checked</option><option value="received">Received</option><option value="verified">Verified</option></select></label>
+        <label>Payment check<select id="f-pv"><option value="">Not checked</option><option value="ai">AI-read, not checked</option><option value="received">Received</option><option value="verified">Verified</option></select></label>
         <div class="full dupwarn" id="dupWarn" hidden></div></div></details>
       <div class="calc"><span>Total amount</span><b class="num" id="f-total">₹0</b></div>
       <div class="ih full dirbox" id="dirBox">
@@ -1431,7 +1434,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
     <p class="note" id="aiNote">AI answers only from your order data. Double-check before making money decisions.</p>
   </section>
   <section id="p-intake" class="ih chat">
-    <div class="ihero"><b>Add screenshots, orders save themselves</b><span>Tap + and pick exchange order and payment screenshots (up to 10 at once). They are read and saved automatically: orders, bank payments, party payments and expenses, linked together. Anything wrong? Tap Undo.</span></div>
+    <div class="ihero"><b>Add screenshots, check, then save</b><span>Tap + and pick exchange order and payment screenshots (up to 10 at once). They are read on your phone, and you see what was found before anything is saved or marked verified. Want it saved right away? Turn on automatic saving in Settings.</span></div>
     <div class="pvs" id="i2-prev"></div>
     <p class="note" id="i2-ready" style="margin:0"></p>
     <div class="composer">
@@ -1506,7 +1509,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
     </details>
       <div class="srow2"><div><b>AI reply language</b></div><select id="st-lang" class="ssel"><option value="English">English</option><option value="Hinglish">Hinglish</option><option value="Hindi">Hindi</option></select></div>
       <div class="srow2"><div><b>Answer style</b></div><select id="st-len" class="ssel"><option value="Short">Short</option><option value="Detailed">Detailed</option></select></div>
-      <div class="srow2"><div><b>Smart intake saves automatically</b><small>Screenshots are saved right away, with Undo. Turn off to check first.</small></div><label class="tog"><input type="checkbox" id="st-auto"><span></span></label></div>
+      <div class="srow2"><div><b>Smart intake saves automatically</b><small>Off by default: you check what was read, then apply. Turn on to save right away, with Undo.</small></div><label class="tog"><input type="checkbox" id="st-auto"><span></span></label></div>
       <div class="srow2"><div><b>Learn from my data</b><small>AI studies your orders, parties and banks to find your habits</small></div><label class="tog"><input type="checkbox" id="st-learn"><span></span></label></div>
       <div class="srow2"><div><b>Let AI save what it learns</b><small>AI suggests notes from chat; you confirm before saving</small></div><label class="tog"><input type="checkbox" id="st-mem"><span></span></label></div>
     </div>
@@ -1820,10 +1823,11 @@ $("#form").onsubmit=async e=>{
   if(isDirect()){o.party=$("#dir-party").value||"";o.dueLink=!!o.party&&$("#dir-due").checked;o.payAcc=o.side==="SELL"&&!$("#dirAccL").hidden?$("#dir-acc").value:""}else{delete o.party;delete o.dueLink}
   {const ex=$("#f-exid").value.trim(),ut=$("#f-utr").value.trim(),fe=+$("#f-fee").value||0,pv=$("#f-pv").value;
    if(ex)o.exId=ex;else delete o.exId;if(ut)o.utr=ut;else delete o.utr;if(fe>0)o.fee=fe;else delete o.fee;if(pv)o.pv=pv;else delete o.pv}
-  const rule=old?statusRule(old.status,o.status):{ok:true};if(!rule.ok){toast(rule.why);return}
+  const rule=old?statusRule(old.status,o.status):{ok:true};if(formProof&&!old){o.shots=[...(o.shots||[]),...formProof.hashes]}if(!rule.ok){toast(rule.why);return}
   const WR=[...(rule.confirm?[{k:"rev",msg:rule.confirm}]:[]),...orderWarn(o)];let ovrWhy="";
   if(WR.length){const c=await confirmRisk(WR,"Check this order","Save anyway");if(!c)return;ovrWhy=c.why;if(WR.some(w=>w.k!=="rev"))o.ovr=true}else delete o.ovr;
   if(old&&old.status==="Completed"&&o.status!=="Completed")o.doneAt=null;
+  if(formProof&&!old){o.proofs=[...(o.proofs||[]),...formProof.ids];o.shots=[...(o.shots||[]),...formProof.hashes];if(formProof.time)o.payAt=formProof.time;if(o.pv!=="verified")o.pv="verified"}
   $("#saveBtn").disabled=true;
   try{await saveOrder(o);
     {const T=[["status","status"],["qty","qty"],["rate","rate"],["cp","name"],["exId","order ID"],["utr","UTR"],["fee","fee"],["pv","payment check"],["platform","platform"],["mode","mode"]];
@@ -1929,18 +1933,22 @@ function sheetNetWorth(){const A=ACC();const L=(k,v,c)=>`<div class="dqr"><span>
 // ================= ORDER IDS · RISK CHECKS · STATUS RULES · AUDIT LOG
 const normRef=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
 const exIdOf=o=>o.exId||(String(o.id).startsWith("imp_")&&/^#(\w{6,})$/.test(o.note||"")?RegExp.$1:"");
-function riskIdx(){if(riskCache)return riskCache;const u=new Map(),e=new Map();
+function riskIdx(){if(riskCache)return riskCache;const u=new Map(),e=new Map(),sh=new Map();
   orders.forEach(o=>{const a=normRef(o.utr);if(a.length>=8&&o.status!=="Cancelled"){if(!u.has(a))u.set(a,[]);u.get(a).push(o)}
-    const b=normRef(exIdOf(o));if(b.length>=8){if(!e.has(b))e.set(b,[]);e.get(b).push(o)}});
-  return riskCache={u,e}}
+    const b=normRef(exIdOf(o));if(b.length>=8){if(!e.has(b))e.set(b,[]);e.get(b).push(o)}
+    (o.shots||[]).forEach(h=>{if(!sh.has(h))sh.set(h,[]);sh.get(h).push(o)})});
+  return riskCache={u,e,s:sh}}
+function shotUsed(hs,exceptId){const I=riskIdx();for(const h of hs||[]){const m=(I.s.get(h)||[]).filter(x=>x.id!==exceptId);if(m.length)return m[0]}return null}
+const pvOf=o=>o.pv||(o.src==="ai"?"ai":"");
 const shortO=o=>`${o.side} ${fmtQ(o.qty)} ${o.coin}${o.cp?" · "+o.cp:""} · ${new Date(o.time).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}`;
 // same UTR / same exchange order ID found in another order
 function dupFlags(o){const I=riskIdx(),out=[];const u=normRef(o.utr),e=normRef(exIdOf(o));
   if(u.length>=8){const m=(I.u.get(u)||[]).filter(x=>x.id!==o.id);if(m.length)out.push({k:"utr",o:m[0],n:m.length})}
   if(e.length>=8){const m=(I.e.get(e)||[]).filter(x=>x.id!==o.id);if(m.length)out.push({k:"ex",o:m[0],n:m.length})}
+  {const m=shotUsed(o.shots,o.id);if(m)out.push({k:"shot",o:m,n:1})}
   return out}
 // things to confirm before saving / completing an order
-function orderWarn(o){const W=dupFlags(o).map(d=>({k:d.k,msg:d.k==="utr"?`This UTR was already used in another order: ${shortO(d.o)}.`:`This exchange order ID is already saved: ${shortO(d.o)}.`}));
+function orderWarn(o){const W=dupFlags(o).map(d=>({k:d.k,msg:d.k==="utr"?`This UTR was already used in another order: ${shortO(d.o)}.`:d.k==="shot"?`This payment screenshot was already used for another order: ${shortO(d.o)}.`:`This exchange order ID is already saved: ${shortO(d.o)}.`}));
   if(o.status!=="Cancelled"&&!noBank(o)&&o.via!=="ex"&&banks.length){const tot=orderTotal(o),al=allocated(o);
     if(al>0&&Math.abs(tot-al)>=1)W.push({k:"amt",msg:`Bank amounts add up to ${inr(Math.round(al))} but the order total is ${inr(Math.round(tot))} (difference ${inr(Math.round(Math.abs(tot-al)))}).`});
     if(o.status==="Completed"&&al===0)W.push({k:"nopay",msg:"Marked Completed but no bank payment is recorded."})}
@@ -1968,22 +1976,114 @@ async function changeStatus(id,to,opt){opt=opt||{};const o=orders.find(x=>x.id==
   await patchRec(id,{status:to,doneAt:to==="Completed"?(from==="Completed"?o.doneAt:Date.now()):null,...(ovr&&W.some(w=>w.k!=="rev")?{ovr:true}:{})});
   const oo=orders.find(x=>x.id===id);if(oo&&oo.party)await syncDirectLink({...oo,status:to});
   await auditLog(o,"status",{from,to,why,warn:ovr?W.map(w=>w.msg):[],by:opt.ai?"ai":"you"});return true}
-const auTxt=a=>(a.act==="create"?"Created"+(a.by==="ai"?" by AI":""):a.act==="status"?`Status ${a.from} → ${a.to}${a.by==="ai"?" (AI)":""}`:a.act==="edit"?"Edited · "+(a.chg||""):a.act==="override"?"Saved despite warning":a.act==="delete"?"Deleted"+(a.sum?" · "+a.sum:""):a.act)+(a.why?` · “${a.why}”`:"");
-const idTag=o=>{const x=exIdOf(o);const D=dupFlags(o);if(D.length)return`<span class="mtag risk" data-detail="${o.id}" style="cursor:pointer">⚠ ${D.some(d=>d.k==="utr")?"Dup UTR":"Dup ID"}</span>`;
-  const t=[x?"ID …"+String(x).slice(-4):"",o.utr?"UTR":"",o.pv==="verified"?"✓":""].filter(Boolean).join(" · ");return t?`<span class="mtag" data-detail="${o.id}" style="cursor:pointer">${esc(t)}</span>`:""};
+const auTxt=a=>(a.act==="create"?"Created"+(a.by==="ai"?" by AI":""):a.act==="status"?`Status ${a.from} → ${a.to}${a.by==="ai"?" (AI)":""}`:a.act==="edit"?"Edited · "+(a.chg||""):a.act==="override"?"Saved despite warning":a.act==="proof"?`Payment proof checked by you${a.amt?" · ₹"+a.amt:""}${a.utr?" · UTR "+a.utr:""}`:a.act==="delete"?"Deleted"+(a.sum?" · "+a.sum:""):a.act)+(a.why?` · “${a.why}”`:"");
+const idTag=o=>{const x=exIdOf(o);const D=dupFlags(o);if(D.length)return`<span class="mtag risk" data-detail="${o.id}" style="cursor:pointer">⚠ ${D.some(d=>d.k==="utr")?"Dup UTR":D.some(d=>d.k==="shot")?"Dup shot":"Dup ID"}</span>`;
+  const pv=pvOf(o);const t=[x?"ID …"+String(x).slice(-4):"",o.utr?"UTR":"",pv==="verified"?"✓ verified":pv==="ai"?"AI-read":""].filter(Boolean).join(" · ");return t?`<span class="mtag" data-detail="${o.id}" style="cursor:pointer">${esc(t)}</span>`:""};
 const fdt=t=>new Date(t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
 function sheetOrderDetail(id){const o=orders.find(x=>x.id===id);if(!o)return;const A=ACC();
   const gross=o.side==="SELL"&&o.status==="Completed"?(A.sellP[o.id]||0):null,fee=+o.fee||0;const W=orderWarn(o);
   const R=(k,v)=>v?`<div class="dqr"><span>${k}</span><b>${v}</b></div>`:"";const H=audits.filter(a=>a.order===id).sort((a,b)=>b.time-a.time).slice(0,40);
   openSheet(`<div class="insw"><div class="insh"><h3>${o.side} ${fmtQ(o.qty)} ${esc(o.coin)} @ ₹${fmtR(o.rate)}</h3></div>
     <div class="rml">${R("Status",esc(o.status))}${R("Exchange",esc(o.platform||modeOf(o)))}${R("Exchange order ID",esc(exIdOf(o)))}${R("UTR",esc(o.utr||""))}${R("Client / party",esc(o.cp||""))}${R("Total",inr(Math.round(orderTotal(o))))}${R("Recorded in banks",allocated(o)?inr(Math.round(allocated(o))):"")}
-    ${R("Payment check",o.pv==="verified"?"Verified by you":o.pv==="received"?"Received":"Not checked")}${R("Created",fdt(o.time))}${o.status==="Completed"&&o.doneAt?R("Completed",fdt(o.doneAt)):""}
+    ${R("Payment check",({verified:"Verified by you",ai:"AI extracted · not checked by you",received:"Received"})[pvOf(o)]||"Not checked")}${o.payAt?R("Payment time",fdt(o.payAt)):""}${R("Created",fdt(o.time))}${o.status==="Completed"&&o.doneAt?R("Completed",fdt(o.doneAt)):""}
     ${gross!=null?R("Gross profit",sgn(gross)):""}${fee?R("Fee","−"+inr(fee)):""}${gross!=null&&fee?R("Net profit",sgn(gross-fee)):""}${R("Note",esc(o.note||""))}</div>
     <div class="pcsec">Risk</div><div class="rml">${W.length?W.map(w=>`<div class="dqr"><span>⚠️ ${esc(w.msg)}</span></div>`).join(""):'<div class="dqr"><span>No problems found</span><b class="pos">Clear</b></div>'}${o.ovr?'<div class="dqr"><span>You saved this despite a warning</span></div>':""}</div>
     <div class="pcsec">Activity</div><div class="rml">${H.length?H.map(a=>`<div class="dqr"><span>${esc(auTxt(a))}${a.warn&&a.warn.length?`<br><small class="note" style="margin:0">${esc(a.warn.join(" "))}</small>`:""}</span><b style="font-weight:500;color:var(--muted);white-space:nowrap">${fdt(a.time)}</b></div>`).join(""):'<div class="dqr"><span class="note" style="margin:0">No history yet. Changes from now on are recorded here.</span></div>'}</div></div>`)}
 function sheetAuditLog(){const L=[...audits].sort((a,b)=>b.time-a.time).slice(0,120);
   openSheet(`<div class="insw"><div class="insh"><h3>Activity log</h3><span class="note">orders created, edited, deleted · overrides</span></div>
     <div class="rml">${L.length?L.map(a=>{const o=orders.find(x=>x.id===a.order);return`<div class="dqr"><span>${esc(auTxt(a))}<br><small class="note" style="margin:0">${o?esc(shortO(o)):esc(a.sum||"deleted order")}${a.warn&&a.warn.length?" · ⚠ "+esc(a.warn.join(" ")):""}</small></span><b style="font-weight:500;color:var(--muted);white-space:nowrap">${fdt(a.time)}</b></div>`}).join(""):'<div class="dqr"><span class="note" style="margin:0">Nothing yet. Every new order, edit, status change and delete from now on is listed here.</span></div>'}</div></div>`)}
+// ================= PAYMENT SCREENSHOT READER — reads UPI / bank screenshots and SMS on the phone, you confirm
+const PAY_BANKS=[["SBI",/state bank(?: of(?: india)?)?|\bsbi\b/i],["HDFC Bank",/hdfc(?: bank)?/i],["ICICI Bank",/icici(?: bank)?/i],["Axis Bank",/axis(?: bank)?/i],["Kotak Bank",/kotak(?: mahindra)?(?: bank)?/i],["Yes Bank",/yes bank/i],["PNB",/punjab national(?: bank)?|\bpnb\b/i],["Bank of Baroda",/bank of baroda|\bbob\b/i],["Canara Bank",/canara(?: bank)?/i],["Union Bank",/union bank(?: of india)?/i],["IDFC First",/idfc(?: first)?(?: bank)?/i],["IndusInd Bank",/indusind(?: bank)?/i],["Federal Bank",/federal bank/i],["Paytm Payments Bank",/paytm payments bank/i],["Airtel Payments Bank",/airtel payments bank/i],["Jio Payments Bank",/jio payments bank/i],["India Post Payments Bank",/india post payments bank|\bippb\b/i],["Central Bank",/central bank(?: of india)?/i],["Bank of India",/bank of india/i],["Indian Bank",/indian bank/i],["UCO Bank",/uco bank/i],["IDBI Bank",/idbi(?: bank)?/i],["RBL Bank",/rbl(?: bank)?/i],["AU Small Finance",/au small finance(?: bank)?/i],["Bandhan Bank",/bandhan(?: bank)?/i]];
+const PAY_MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+function payTime(t){const yy=v=>{v=+v;return v<100?2000+v:v};
+  const tm=x=>{const m=String(x||"").match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?/i);if(!m)return null;let H=+m[1];const A=(m[3]||"").toLowerCase();if(A==="pm"&&H<12)H+=12;if(A==="am"&&H===12)H=0;return H>23?null:[H,+m[2]]};
+  const MN="(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)";let m,d,mo,y,r=null;
+  if(m=t.match(new RegExp("(\\d{1,2})(?:st|nd|rd|th)?[\\s\\-\\/.,]+"+MN+"[a-z]*\\.?[\\s\\-\\/.,]+(\\d{2,4})(.{0,32})","i"))){d=+m[1];mo=PAY_MON[m[2].toLowerCase()];y=yy(m[3]);r=tm(m[4])}
+  else if(m=t.match(new RegExp(MN+"[a-z]*\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})(.{0,32})","i"))){mo=PAY_MON[m[1].toLowerCase()];d=+m[2];y=+m[3];r=tm(m[4])}
+  else if(m=t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(.{0,32})/)){d=+m[1];mo=+m[2]-1;y=yy(m[3]);r=tm(m[4])}
+  else return 0;
+  if(!(mo>=0&&mo<=11&&d>=1&&d<=31&&y>=2015&&y<=2100))return 0;const dt=new Date(y,mo,d,r?r[0]:0,r?r[1]:0);return isNaN(dt)?0:dt.getTime()}
+function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);const flat=lines.join(" ");
+  const P={amount:0,utr:"",sender:"",receiver:"",bank:"",last4:"",time:0,status:"",dir:"",method:"UPI",ok:false};if(!flat)return P;
+  // amount: first ₹ / Rs / INR figure (OCR often turns ₹ into ~ £ < ?), skipping balance / fee lines
+  const CUR="(?:₹|Rs\\.?|INR|[~£<¥%?=])";const skip=/(?:bal(?:ance)?|avl|available|fee|charge|limit|cashback|reward)\W{0,12}$/i;
+  for(const m of flat.matchAll(new RegExp("(?:^|[^A-Za-z0-9])"+CUR+"\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)","ig"))){if(skip.test(flat.slice(Math.max(0,m.index-18),m.index+1)))continue;const v=+m[1].replace(/,/g,"");if(v>=1&&v<1e9&&String(Math.trunc(v)).length<=9){P.amount=v;break}}
+  if(!P.amount){const c=lines.filter(l=>/^\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?$|^\d{1,7}\.\d{1,2}$/.test(l));if(c.length===1)P.amount=+c[0].replace(/,/g,"")}
+  // UTR / reference (labelled first, then a bare 12-digit UPI reference)
+  const fixO=v=>/^[0-9OIlSB]{12}$/.test(v)&&(v.match(/\d/g)||[]).length>=10?v.replace(/[Oo]/g,"0").replace(/[Il]/g,"1").replace(/S/g,"5").replace(/B/g,"8"):v;
+  const find=re=>{for(const m of flat.matchAll(new RegExp(re.source,"ig"))){const v=fixO(m[1]);if((v.match(/\d/g)||[]).length>=6)return v}return ""};
+  P.utr=find(/\bUTR\s*(?:No\.?|number)?\s*[:\-#]?\s*([A-Z0-9]{8,24})/)||find(/\bUPI\s*(?:Ref(?:erence)?\.?|Txn|transaction)\s*(?:No\.?|ID|number)?\s*[:\-#]?\s*([A-Z0-9]{8,24})/)||find(/\b(?:IMPS|NEFT|RTGS)\s*(?:Ref(?:erence)?\.?\s*)?(?:No\.?|ID|number)?\s*[:\-#]?\s*([A-Z0-9]{8,24})/)||find(/\b(?:Ref(?:erence)?\.?|RRN)\s*(?:No\.?|ID|number)?\s*[:\-#]?\s*(?:IMPS|NEFT|UPI)?\s*([A-Z0-9]{8,24})/)||find(/\b(?:Transaction|Txn)\s*(?:ID|No\.?)\s*[:\-#]?\s*([A-Z0-9]{8,32})/);
+  if(!P.utr){const m=flat.match(/(?:^|[^\d])(\d{12})(?!\d)/);if(m)P.utr=m[1]}
+  P.status=/fail(?:ed|ure)|declin|unsuccessful|reject|reversed|cancel/i.test(flat)?"Failed":/pending|processing|in progress|initiated/i.test(flat)?"Pending":/success|complet|credited|debited|received|\bsent\b|\bpaid\b/i.test(flat)?"Success":"";
+  P.dir=/debited from|paid to|money sent|sent to|transferred to|you paid/i.test(flat)?"out":/received|credited (?:to|in|by|with)|credit alert/i.test(flat)?"in":"";
+  P.method=/\bIMPS\b/i.test(flat)?"IMPS":/\bNEFT\b|\bRTGS\b/i.test(flat)?"NEFT":"UPI";
+  const B=PAY_BANKS.find(([,re])=>re.test(flat));P.bank=B?B[0]:"";
+  const l4=flat.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*(\d{4})\b/i)||flat.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);P.last4=l4?l4[1]:"";
+  P.time=payTime(flat);
+  const nameOf=v=>{v=v.replace(/\(.*?\)/g," ").replace(/\S+@\S+/g," ");PAY_BANKS.forEach(([,re])=>{v=v.replace(new RegExp(re.source,"ig")," ")});v=v.replace(/\b(?:a\/c|acct?|account|no\.?|ref|upi|vpa|bank|ltd|limited)\b/ig," ").replace(/[xX*•]{2,}\d*/g," ").replace(/[^A-Za-z .'\-]/g," ").replace(/\s+/g," ").trim();return v.length>=2?v.slice(0,40):""};
+  const grab=re=>{for(let i=0;i<lines.length;i++){const m=lines[i].match(re);if(!m)continue;let v=(m[1]||"").trim();if(!v&&lines[i+1])v=lines[i+1];const n=nameOf(v);if(n)return n}return ""};
+  P.receiver=grab(/^(?:paid to|money sent to|sent to|transferred to|credited to|beneficiary(?: name)?|banking name|to)\b\s*[:\-]?\s*(.*)$/i);
+  P.sender=grab(/^(?:money received from|received from|paid by|paid from|sender(?: name)?|remitter|debited from|from)\b\s*[:\-]?\s*(.*)$/i);
+  // SMS style (one line): "... credited to RAVI KUMAR VPA ..." / "... received from AMIT SHARMA ..."
+  const nm="([A-Za-z][A-Za-z .'\\-]{2,40}?)(?=\\s+(?:VPA|UPI|IMPS|NEFT|on|ref|via|a\\/c|\\()|[.,;(]|\\s*$)";
+  if(!P.receiver){const m=flat.match(new RegExp("(?:credited to|paid to|sent to|transferred to)\\s+"+nm,"i"));if(m)P.receiver=nameOf(m[1])}
+  if(!P.sender){const m=flat.match(new RegExp("(?:received from|credited by|by a\\/c of|from)\\s+"+nm,"i"));if(m)P.sender=nameOf(m[1])}
+  P.ok=P.amount>0&&!!P.utr;return P}
+const fileHash=async f=>{try{const b=await f.arrayBuffer();if(window.crypto&&crypto.subtle){const h=await crypto.subtle.digest("SHA-256",b);return[...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,32)}return"f"+impHash(String.fromCharCode(...new Uint8Array(b.slice(0,60000))))}catch(e){return""}};
+function payBank(p){const mine=banks.filter(b=>b.type!=="Cash");let b=null;if(p.last4)b=mine.find(x=>x.accNo&&String(x.accNo).replace(/\D/g,"").endsWith(p.last4));
+  if(!b&&p.bank){const k=p.bank.toLowerCase().split(" ")[0];const c=mine.filter(x=>((x.name||"")+" "+(x.bankName||"")).toLowerCase().includes(k));if(c.length===1)b=c[0]}return b||null}
+function payMatches(p){const side=p.dir==="in"?"SELL":p.dir==="out"?"BUY":"";
+  return orders.filter(o=>o.status!=="Cancelled"&&o.via!=="ex"&&modeOf(o)!=="Direct"&&(!side||o.side===side)&&Math.abs(orderTotal(o)-p.amount)<=1).sort((a,b)=>(a.status==="Pending"?0:1)-(b.status==="Pending"?0:1)||b.time-a.time).slice(0,6)}
+const nameTok=v=>String(v||"").toLowerCase().split(/[^a-z]+/).filter(w=>w.length>=3);
+let formProof=null;
+// what could be wrong with this payment for this order (shown live; you can still confirm with a reason)
+function payWarn(v,o,hash){const W=[];
+  if(v.status&&v.status!=="Success")W.push(`The screenshot shows this payment as ${v.status}, not Success.`);
+  if(!(v.amount>0))W.push("No amount.");
+  if(!v.utr)W.push("No UTR / reference. Add it so the payment can be traced.");
+  else{const D=dupFlags({id:o?o.id:"__x",utr:v.utr,status:"Pending"});if(D.length)W.push(`This UTR was already used in another order: ${shortO(D[0].o)}.`)}
+  if(hash){const u=shotUsed([hash],"__none");if(u)W.push(`This screenshot was already used for ${u.id===(o&&o.id)?"this order":"another order"}: ${shortO(u)}.`)}
+  if(o){const tot=orderTotal(o),paid=allocated(o);
+    if(v.amount>0&&Math.abs(v.amount-tot)>1)W.push(v.amount<tot?`Partial payment: ${inr(Math.round(v.amount))} of ${inr(Math.round(tot))}.`:`Payment ${inr(Math.round(v.amount))} is more than the order total ${inr(Math.round(tot))}.`);
+    const other=o.side==="BUY"?v.receiver:v.sender;const a=nameTok(other),b=nameTok(o.cp);
+    if(a.length&&b.length&&!a.some(w=>b.some(z=>z.includes(w)||w.includes(z))))W.push(`${o.side==="BUY"?"Receiver":"Sender"} “${other}” is not the client “${o.cp}” (exchange nicknames can differ).`);
+    if(o.utr&&v.utr&&normRef(o.utr)!==normRef(v.utr))W.push(`This order already has a different UTR (${o.utr}).`)}
+  return W}
+function payCard(p,file,src){
+  const card=document.createElement("div");card.className="acard paycard";let hash="";const hp=file?fileHash(file).then(h=>{hash=h;upd2()}):Promise.resolve();
+  const bk0=payBank(p),ms=payMatches(p);const oo=orders.filter(o=>!ms.includes(o)&&(o.status==="Pending"||o.status==="Appeal")&&o.via!=="ex"&&modeOf(o)!=="Direct").sort((a,b)=>b.time-a.time).slice(0,6);
+  const lab=o=>`${o.side} ${fmtQ(o.qty)} ${o.coin} · ${o.cp||"—"} · ${inr(Math.round(orderTotal(o)))} · ${o.status}`;
+  const dtv=p.time?new Date(p.time-new Date(p.time).getTimezoneOffset()*6e4).toISOString().slice(0,16):"";
+  card.innerHTML=`<div class="ah">Payment found <small>${src==="AI"?"AI extracted":"read on your phone"} · check, then confirm</small></div>
+    <div class="payg"><label>Amount ₹<input data-f="amount" inputmode="decimal" value="${p.amount||""}"></label><label>UTR / reference<input data-f="utr" value="${esc(p.utr)}"></label>
+    <label>From<input data-f="sender" value="${esc(p.sender)}"></label><label>To<input data-f="receiver" value="${esc(p.receiver)}"></label>
+    <label>Bank<input data-f="bank" value="${esc(p.bank)}"></label><label>Date &amp; time<input data-f="time" type="datetime-local" value="${dtv}"></label>
+    <label>Status<select data-f="status">${["Success","Pending","Failed"].map(x=>`<option ${x===(p.status||"Success")?"selected":""}>${x}</option>`).join("")}</select></label>
+    <label>Match to order<select data-f="order">${ms.map(o=>`<option value="${o.id}">✓ ${esc(lab(o))}</option>`).join("")}${oo.map(o=>`<option value="${o.id}">${esc(lab(o))}</option>`).join("")}<option value="">No order yet · start a new one</option></select></label></div>
+    <label class="dirchk" data-recw hidden><input type="checkbox" data-f="rec"><span data-rect></span></label>
+    <div class="paywarn" data-w></div>
+    <div class="row2"><button class="mini" type="button" data-ok>Confirm &amp; attach</button><button class="mini ghost" type="button" data-skip>Skip</button></div>`;
+  const F=k=>card.querySelector(`[data-f="${k}"]`);
+  const read=()=>({amount:+String(F("amount").value).replace(/,/g,"")||0,utr:F("utr").value.trim(),sender:F("sender").value.trim(),receiver:F("receiver").value.trim(),bank:F("bank").value.trim(),time:F("time").value?new Date(F("time").value).getTime():0,status:F("status").value,order:F("order").value,rec:F("rec").checked});
+  function upd2(){const v=read(),o=orders.find(x=>x.id===v.order);const W=payWarn(v,o,hash);card.querySelector("[data-w]").textContent=W.length?"⚠️ "+W.join("\n⚠️ "):"";
+    const bk=bk0,can=!!(o&&bk&&v.status==="Success"&&v.amount>0&&allocated(o)+v.amount<=orderTotal(o)+1);const rw=card.querySelector("[data-recw]");rw.hidden=!can;
+    if(can)card.querySelector("[data-rect]").textContent=`Also record ${inr(Math.round(v.amount))} ${o.side==="BUY"?"paid from":"received in"} ${bk.name}`;if(!can)F("rec").checked=false}
+  card.addEventListener("input",upd2);card.addEventListener("change",e=>{if(e.target.dataset.f==="order"){const o=orders.find(x=>x.id===F("order").value);if(o&&allocated(o)===0&&bk0&&!F("rec").checked&&read().status==="Success")F("rec").checked=true}upd2()});
+  card.querySelector("[data-skip]").onclick=()=>card.remove();
+  card.querySelector("[data-ok]").onclick=async()=>{const btn=card.querySelector("[data-ok]");btn.disabled=true;
+    try{await hp;const v=read(),o=orders.find(x=>x.id===v.order);const W=payWarn(v,o,hash);let why="";
+      if(W.length){const c=await confirmRisk(W,"Check this payment","Confirm anyway");if(!c){btn.disabled=false;return}why=c.why}
+      let ids=[];try{if(file&&assetsApi)ids=await uploadProofs([file])}catch(e){toast("Screenshot not saved, details will still be added")}
+      if(!o){formProof={ids,hashes:hash?[hash]:[],time:v.time};$("#t-add").click();$("#pdet").open=true;$("#f-utr").value=v.utr;$("#f-pv").value="verified";$("#f-note").value=`Payment ${inr(Math.round(v.amount))}${v.sender?" from "+v.sender:""}${v.receiver?" to "+v.receiver:""}`.slice(0,120);
+        const sb=document.querySelector(`#sideSeg [data-v="${p.dir==="in"?"SELL":"BUY"}"]`);if(sb)sb.click();$("#f-cp").value=(p.dir==="in"?v.sender:v.receiver)||"";if(v.status!=="Success")$("#f-status").value="Pending";dupHint();upd();card.remove();toast("Add quantity and rate, then save. The screenshot is attached.");return}
+      const patch={pv:"verified",proofs:[...(o.proofs||[]),...ids],shots:[...(o.shots||[]),...(hash?[hash]:[])]};if(v.time)patch.payAt=v.time;
+      if(!o.utr&&v.utr)patch.utr=v.utr;else if(v.utr&&normRef(v.utr)!==normRef(o.utr))patch.note=((o.note?o.note+" · ":"")+"UTR "+v.utr).slice(0,200);
+      if(v.rec&&bk0)patch.splits=[...(o.splits||[]),{bank:bk0.id,amt:r2(v.amount),method:p.method||"UPI"}];
+      await patchRec(o.id,patch);await auditLog(o,"proof",{utr:v.utr,amt:Math.round(v.amount),why,warn:W});
+      card.querySelector(".ah").innerHTML="Saved <small>verified by you</small>";card.querySelector(".payg").remove();card.querySelector(".row2").remove();card.querySelector("[data-recw]").remove();card.querySelector("[data-w]").textContent=`Attached to ${shortO(o)}`;card.querySelector("[data-w]").style.color="var(--accent)";toast("Payment verified")
+    }catch(err){console.error(err);btn.disabled=false;toast("Couldn't save. Try again.")}};
+  {const o0=orders.find(x=>x.id===F("order").value);if(o0&&bk0&&allocated(o0)===0&&(p.status||"Success")==="Success")F("rec").checked=true}
+  upd2();return card}
 function plans(amount,dir,cashOnly,method){
   const {bal}=balances();const use=limitUse();
   const avail=b=>{if(dir!=="pay"||!method)return bal[b.id];return Math.min(bal[b.id],limitLeft(b,method,use))};
@@ -3066,13 +3166,15 @@ const ACT={
       const mode=["P2P","Direct","Cash"].includes(a.mode)?a.mode:"P2P";const pay=a.payment||(mode==="Cash"?"Cash":"UPI");
       const sp=toSplits(a.banks,mode==="Cash"?"Cash":methodOf(pay));if(sp.bad.length)throw new Error("unknown bank: "+sp.bad.join(", "));
       const no={id:newId("o"),side,coin:String(a.coin||"USDT").toUpperCase(),qty:+a.qty,rate:+a.rate,status:["Completed","Pending","Appeal","Cancelled"].includes(a.status)?a.status:"Completed",mode,pay,platform:mode==="P2P"?(a.platform||"Binance"):"",cp:a.counterparty||"",note:a.note||"",splits:sp.out,proofs:a.__proofs||[],time:Date.now(),src:"ai"};
+      if(a.__hashes&&a.__hashes.length)no.shots=a.__hashes;if(a.__proofs&&a.__proofs.length)no.pv="ai";
       if(a.exchange_order_id)no.exId=String(a.exchange_order_id).trim().slice(0,40);if(a.utr)no.utr=String(a.utr).trim().slice(0,40);
-      const dp=dupFlags(no);if(dp.length)throw new Error("Not added. "+(dp[0].k==="utr"?"This UTR was already used in ":"This order ID is already saved in ")+shortO(dp[0].o));
+      const dp=dupFlags(no);if(dp.length)throw new Error("Not added. "+(dp[0].k==="utr"?"This UTR was already used in ":dp[0].k==="shot"?"This screenshot was already used for ":"This order ID is already saved in ")+shortO(dp[0].o));
       await putRec(no);await auditLog(no,"create",{by:"ai"})}},
   set_order_status:{d:a=>{const o=orders.find(x=>x.id===a.order_id);return`Mark ${o?o.side+" "+o.qty+" "+o.coin+(o.cp?" ("+o.cp+")":""):"order"} as ${a.status}`},
     run:async a=>{if(!orders.find(x=>x.id===a.order_id))throw new Error("order not found");if(!["Completed","Pending","Appeal","Cancelled"].includes(a.status))throw new Error("bad status");await changeStatus(a.order_id,a.status,{ai:true})}},
   assign_banks:{d:a=>{const o=orders.find(x=>x.id===a.order_id);return`Assign ${o?o.side+" "+o.qty+" "+o.coin:"order"} to ${(a.banks||[]).map(x=>x.bank+" ₹"+x.amount).join(", ")}`},
-    run:async a=>{const o=orders.find(x=>x.id===a.order_id);if(!o)throw new Error("order not found");const sp=toSplits(a.banks,methodOf(o.pay));if(sp.bad.length)throw new Error("unknown bank: "+sp.bad.join(", "));const patch={splits:[...(o.splits||[]),...sp.out]};if(a.__proofs&&a.__proofs.length)patch.proofs=[...(o.proofs||[]),...a.__proofs];if(["Completed","Pending","Appeal","Cancelled"].includes(a.status))patch.status=a.status;await patchRec(o.id,patch)}},
+    run:async a=>{const o=orders.find(x=>x.id===a.order_id);if(!o)throw new Error("order not found");const sp=toSplits(a.banks,methodOf(o.pay));if(sp.bad.length)throw new Error("unknown bank: "+sp.bad.join(", "));if(a.__hashes&&a.__hashes.length){if(a.__hashes.some(h=>(o.shots||[]).includes(h)))throw new Error("This screenshot is already attached to this order");const u=shotUsed(a.__hashes,o.id);if(u)throw new Error("This screenshot was already used for "+shortO(u))}
+      const patch={splits:[...(o.splits||[]),...sp.out]};if(a.__hashes&&a.__hashes.length){patch.shots=[...(o.shots||[]),...a.__hashes];if(!o.pv)patch.pv="ai"}if(a.__proofs&&a.__proofs.length)patch.proofs=[...(o.proofs||[]),...a.__proofs];if(["Completed","Pending","Appeal","Cancelled"].includes(a.status))patch.status=a.status;await patchRec(o.id,patch)}},
   add_expense:{d:a=>`Expense ₹${a.amount} · ${a.category||"Other"}${a.bank?" from "+a.bank:""}${a.note?" · "+a.note:""}`,
     run:async a=>{if(!(+a.amount>0))throw new Error("needs amount");const b=a.bank?findBank(a.bank):null;if(a.bank&&!b)throw new Error("unknown bank "+a.bank);await putRec({id:newId("x_"),kind:"expense",amt:+a.amount,cat:CATS.includes(a.category)?a.category:"Other",bank:b?b.id:"",note:a.note||"",proofs:a.__proofs||[],time:Date.now()})}},
   transfer:{d:a=>`Transfer ₹${a.amount} from ${a.from} to ${a.to}${a.method?" by "+a.method:""}`,
@@ -3099,7 +3201,7 @@ function actionCard(actions,host,files){host=host||curMsgs();files=files||[];let
   card.querySelector("[data-skip]").onclick=()=>{card.querySelector(".row2").remove();card.querySelector(".ah").textContent="Cancelled · nothing was recorded"};
   card.querySelector("[data-apply]").onclick=async()=>{const row=card.querySelector(".row2");row.remove();let ok=0;
     if(files.length&&assetsApi&&actions.some(a=>["pay_party","add_order","add_expense","assign_banks"].includes(a.type))){card.querySelector(".ah").textContent="Saving screenshot…";try{proofIds=await uploadProofs(files)}catch(e){proofIds=[];toast("Screenshot not saved, records will still be added")}}
-    actions.forEach(a=>{if(proofIds&&proofIds.length&&a.attach_proof!==false)a.__proofs=proofIds});
+    {const hashes=await Promise.all(files.map(fileHash));actions.forEach(a=>{if(proofIds&&proofIds.length&&a.attach_proof!==false){a.__proofs=proofIds;a.__hashes=hashes}})}
     for(let i=0;i<actions.length;i++){const a=actions[i],el=card.querySelector(`.ai[data-i="${i}"] .st`);
       try{if(!ACT[a.type])throw new Error("unknown action");await ACT[a.type].run(a);el.textContent="Done";el.className="st ok";ok++}
       catch(err){el.textContent="Failed";el.className="st err";el.title=err.message;el.parentElement.insertAdjacentHTML("beforeend",`<span class="note" style="display:block">${esc(err.message||"Couldn't save")}</span>`)}}
@@ -3756,7 +3858,7 @@ $("#menuBtn").onclick=openDrawer;
 $("#drawer").addEventListener("click",e=>{if(e.target.id==="drawer"||e.target.closest("#dClose,[data-go],[data-sheet]"))$("#drawer").hidden=true});
 document.addEventListener("click",()=>setTimeout(updateChrome,0));
 // ---------- settings ----------
-const PREF_DEF={biz:"",owner:"",coin:"USDT",mode:"P2P",plat:"Binance",pay:"UPI",status:"Completed",coins:["USDT","BTC","ETH","USDC"],plats:["Binance","Bybit","OKX","KuCoin","Other"],upi:"rolling",week:"Mon",pmin:30,lpct:90,alerts:{pending:true,limits:true,direct:true,unassigned:true,stock:true},lang:"English",len:"Short",learn:true,mem:true,autoIntake:true,night:true,nightAt:"23:00",bkDays:7};
+const PREF_DEF={biz:"",owner:"",coin:"USDT",mode:"P2P",plat:"Binance",pay:"UPI",status:"Completed",coins:["USDT","BTC","ETH","USDC"],plats:["Binance","Bybit","OKX","KuCoin","Other"],upi:"rolling",week:"Mon",pmin:30,lpct:90,alerts:{pending:true,limits:true,direct:true,unassigned:true,stock:true},lang:"English",len:"Short",learn:true,mem:true,autoIntake:false,night:true,nightAt:"23:00",bkDays:7};
 function pref(k){const p=(settings&&settings.prefs)||{};return p[k]!=null?p[k]:PREF_DEF[k]}
 const alertOn=k=>(pref("alerts")||{})[k]!==false;
 let prefT=null,prefPending={};
@@ -3890,7 +3992,7 @@ async function autoApply(actions,files){
   card.innerHTML=`<div class="ah">Saving…</div>${actions.map((a,i)=>`<div class="ai" data-i="${i}"><span class="st">…</span><span>${esc(ACT[a.type].d(a))}</span></div>`).join("")}`;
   let proofIds=[];
   if(files.length&&assetsApi&&actions.some(a=>["pay_party","add_order","add_expense","assign_banks"].includes(a.type))){try{proofIds=await uploadProofs(files)}catch(e){toast("Screenshot proof not saved")}}
-  actions.forEach(a=>{if(proofIds.length)a.__proofs=proofIds});
+  const hashes=await Promise.all(files.map(fileHash));actions.forEach(a=>{if(proofIds.length){a.__proofs=proofIds;a.__hashes=hashes}});
   __track=[];let ok=0;
   for(let i=0;i<actions.length;i++){const a=actions[i],el=card.querySelector(`.ai[data-i="${i}"] .st`);
     try{await ACT[a.type].run(a);el.textContent="Saved";el.className="st ok";ok++}
@@ -3959,18 +4061,20 @@ $("#i2-go").onclick=async()=>{
     }
     const blobs=await Promise.all(i2Files.map(f=>shrinkImage(f)));
     const vision=blobs.length&&(aiCfg.prov!=="builtin"||i2Max>0);
-    let ocrText="";
+    let ocrText="";const ocrTexts=[];
     if(blobs.length&&!vision){
       for(let i=0;i<blobs.length;i++){
         res0.textContent=`Reading screenshot ${i+1} of ${blobs.length} on your phone…`;
         if(!ocrWorker){res0.textContent="Getting the screenshot reader ready (first time takes a little longer)…";const f=t=>{res0.textContent=t};ocrListeners=[f];const stop=()=>{};await ocrInit().finally(stop)}
         res0.textContent=`Reading screenshot ${i+1} of ${blobs.length}…`;
         try{const t=await ocrImage(i2Files[i],m=>{res0.textContent=`Reading screenshot ${i+1} of ${blobs.length}… ${m.replace("reading ","")}`});
-          ocrText+=`\n--- SCREENSHOT ${i+1} (text read by OCR, may contain small errors) ---\n${t||"(no text found)"}\n`}
+          ocrTexts.push(t||"");ocrText+=`\n--- SCREENSHOT ${i+1} (text read by OCR, may contain small errors) ---\n${t||"(no text found)"}\n`}
         catch(e){console.error(e);throw Object.assign(new Error("ocr"),{text:e&&e.message==="timeout"?"Reading took too long. Try fewer screenshots at a time, or check your internet.":"Couldn't read the screenshot on this phone. Paste the text instead, or add your own AI key in Settings to read images."})}
       }
       res0.textContent="Matching with your orders, banks and parties…";
     }
+    {const pl=[];ocrTexts.forEach((t,i)=>{const p=payParse(t);if(p.ok)pl.push([p,i2Files[i]])});if(text&&!pl.length){const p=payParse(text);if(p.ok)pl.push([p,null])}
+     pl.reverse().forEach(([p,fl])=>res0.after(payCard(p,fl,"phone")))}
     const prompt=`You are the SMART INTAKE of "P2P Order Book", an app for an Indian P2P crypto merchant. The user has given ${i2Files.length?i2Files.length+" screenshot(s)"+(vision?" (attached as images)":" (their text was read by OCR, see SCREENSHOT sections)"):"no screenshots"}${text?" and the pasted text below":""}. They can be: bank or UPI SMS/notifications, UPI app payment screenshots (GPay, PhonePe, Paytm, bank apps), exchange P2P order screenshots (Binance, Bybit, OKX, KuCoin…), bank statements, WhatsApp messages or a list of deals.
 Read everything carefully and turn it into records. Rules:
 - AUTO-LINK: if one screenshot is an exchange order and another is the payment for it (same amount ±₹1, or the payer/receiver name matches the counterparty's real name), create ONE add_order with "banks" filled from the payment (which of MY banks, amount, method UPI/IMPS) and the UTR/ref + order number in note. Do not create a separate payment record for it.
@@ -3985,7 +4089,8 @@ Read everything carefully and turn it into records. Rules:
 - Never create the same payment twice; if two screenshots show the same UTR/ref, use one.
 ${aiStyle()} Amounts in ₹. Keep JSON keys and action fields in English.
 Action formats: add_order {"type":"add_order","side","coin","qty","rate","mode","status","platform","payment","counterparty","note","banks":[{"bank","amount","method"}]}; pay_party {"type":"pay_party","party","amount","to_account","paid_by","banks":[{"bank","amount","method"}],"note"}; assign_banks {"type":"assign_banks","order_id","banks":[...]}; add_expense {"type":"add_expense","amount","category","bank","note"}; transfer {"type":"transfer","from","to","amount","method"}; add_party_due {"type":"add_party_due","party","amount","note"}.
-Respond ONLY with JSON: {"summary":"what you found, 1-3 lines","actions":[...],"questions":["..."]}.
+- PAYMENT DETAILS: for every screenshot that is a payment confirmation also fill "payments" with what is printed on it (never guess a number): {"shot":1,"amount","utr","sender","receiver","bank","last4","time":"YYYY-MM-DD HH:MM","status":"Success|Pending|Failed","direction":"in|out"}. The user checks these before anything is marked verified.
+Respond ONLY with JSON: {"summary":"what you found, 1-3 lines","actions":[...],"questions":["..."],"payments":[...]}.
 MEMORY: ${JSON.stringify(aiMemory())}
 DATA: ${JSON.stringify(agentContext())}
 ${text?"PASTED TEXT:\n"+text.slice(0,12000):""}${ocrText?"\nSCREENSHOT TEXT:"+ocrText.slice(0,16000):""}`;
@@ -3995,12 +4100,14 @@ ${text?"PASTED TEXT:\n"+text.slice(0,12000):""}${ocrText?"\nSCREENSHOT TEXT:"+oc
     const acts=(Array.isArray(res.actions)?res.actions:[]).filter(a=>a&&ACT[a.type]&&a.type!=="remember").slice(0,15);
     if(ocrText){const d=document.createElement("details");d.className="note";d.innerHTML=`<summary style="cursor:pointer">Text read from screenshots</summary><pre style="white-space:pre-wrap;font:500 .74rem var(--mono);margin:6px 0 0">${esc(ocrText.trim())}</pre>`;res0.after(d)}
     res0.textContent=(res.summary||"")+((res.questions||[]).length?"\n\nNeeds your input:\n• "+res.questions.join("\n• "):"")+(acts.length?"":"\n\nNothing to record.");
+    if(vision&&Array.isArray(res.payments))res.payments.slice(0,10).reverse().forEach(x=>{const t=x.time?Date.parse(String(x.time).replace(" ","T")):0;const p={amount:+x.amount||0,utr:String(x.utr||"").replace(/\s+/g,""),sender:String(x.sender||""),receiver:String(x.receiver||""),bank:String(x.bank||""),last4:String(x.last4||""),time:isNaN(t)?0:t,status:/fail/i.test(x.status)?"Failed":/pend/i.test(x.status)?"Pending":"Success",dir:x.direction==="in"?"in":x.direction==="out"?"out":"",method:"UPI"};
+      if(p.amount>0&&p.utr)res0.after(payCard(p,i2Files[Math.max(0,(+x.shot||1)-1)]||null,"AI"))});
     if(acts.length){
       if(pref("autoIntake")!==false){const card=await autoApply(acts,[...i2Files]);res0.after(card);i2Files=[];i2Draw();$("#i2-text").value=""}
       else{const card=actionCard(acts,out,[...i2Files]);res0.after(card);card.querySelector("[data-apply]").addEventListener("click",()=>{i2Files=[];i2Draw();$("#i2-text").value=""})}}
   }catch(err){
     res0.textContent=err&&err.code==="images_unavailable"?"Screenshots can't be read in this view. Paste the text instead.":err&&err.code==="image_rejected"?"One of the images couldn't be read. Try a different screenshot.":(err&&err.text)||"Couldn't read that. Try again.";
-    if(err&&["bad_key","no_key","no_model","no_url","unavailable","network"].includes(err.code))res0.textContent+="\nCheck Settings → AI connection.";
+    if(err&&["bad_key","no_key","no_model","no_url","unavailable","network"].includes(err.code)){if(out.querySelector(".paycard"))res0.textContent="Payment read on your phone (below). AI isn't connected, so no order was made from it.";else res0.textContent+="\nCheck Settings → AI connection."}
   }finally{btn.disabled=false;btn.textContent="Add from text"}
 };
 
@@ -4018,12 +4125,12 @@ function fillForm(o,edit){
   $("#f-coin").value=o.coin;$("#f-status").value=edit?o.status:pref("status");$("#f-qty").value=o.qty;$("#f-rate").value=edit?o.rate:(lastRate(o.coin,o.side)||o.rate);
   if(o.pay)$("#f-pay").value=o.pay;if(o.platform)$("#f-plat").value=o.platform;
   $("#f-cp").value=o.cp||"";$("#f-note").value=edit?(o.note||""):"";
-  $("#f-exid").value=edit?exIdOf(o):"";$("#f-utr").value=edit?(o.utr||""):"";$("#f-fee").value=edit?(o.fee||""):"";$("#f-pv").value=edit?(o.pv||""):"";$("#pdet").open=!!(edit&&(exIdOf(o)||o.utr||o.fee||o.pv));dupHint();
+  $("#f-exid").value=edit?exIdOf(o):"";$("#f-utr").value=edit?(o.utr||""):"";$("#f-fee").value=edit?(o.fee||""):"";$("#f-pv").value=edit?pvOf(o):"";$("#pdet").open=!!(edit&&(exIdOf(o)||o.utr||o.fee||o.pv));dupHint();
   formSplit.set(edit?o.splits:[]);upd();cpCheck();pairUpd();
   $("#formTitle").textContent=edit?"Edit order":"Repeat order";$("#formTitle").classList.toggle("editing",edit);$("#editCancel").hidden=!edit;$("#saveBtn").textContent=edit?"Update order":"Save order";
   if(!edit)toast("Copied. Change the quantity if needed and save");
 }
-function endEdit(clear){editingId=null;try{$("#dir-acc").dataset.u=""}catch(e){}$("#formTitle").textContent="New order";$("#formTitle").classList.remove("editing");$("#editCancel").hidden=true;$("#saveBtn").textContent="Save order";
+function endEdit(clear){editingId=null;if(clear)formProof=null;try{$("#dir-acc").dataset.u=""}catch(e){}$("#formTitle").textContent="New order";$("#formTitle").classList.remove("editing");$("#editCancel").hidden=true;$("#saveBtn").textContent="Save order";
   if(clear){["#f-qty","#f-cp","#f-note","#f-rate","#f-exid","#f-utr","#f-fee"].forEach(s=>$(s).value="");$("#f-pv").value="";$("#pdet").open=false;$("#dupWarn").hidden=true;formSplit.reset();upd();applyFormDefaults();rateHintUpd();cpCheck()}}
 $("#editCancel").onclick=()=>{endEdit(true);$("#t-orders").click()};
 function dupHint(){const el=$("#dupWarn");if(!el)return;const D=dupFlags({id:editingId||"__new",exId:$("#f-exid").value.trim(),utr:$("#f-utr").value.trim(),status:"Pending"});
@@ -4362,7 +4469,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=21;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=22;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4429,6 +4536,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00022","5 Oct 2026",["Payment screenshots and SMS are read on your phone: amount, UTR, who paid whom, bank, time and status","You check and edit what was read, pick the order, then confirm. Only then it shows as \"Verified\"","Records made by AI are marked \"AI-read\" until you check them","Warns on repeated screenshot, repeated UTR, different amount, different name, or a failed/pending payment","Smart intake now asks you first by default (you can switch auto-save back on in Settings)"]],
   ["0.0.0.00021","5 Oct 2026",["New: Exchange order ID, UTR, fee and payment check on every order (under \"Order ID, UTR & fee\")","Duplicate UTR or order ID is flagged before saving, and you can still save it with a reason","Warns when bank amounts differ from the order total, or an order is Completed with no payment recorded","Cancelled orders must be reopened as Pending; undoing a Completed order asks first","Search finds orders by exchange order ID and UTR (long numbers too)","Activity log: every new order, edit, status change, delete and override is recorded","Importing a file no longer re-adds an order you already typed in with the same order ID"]],
   ["0.0.0.00020","5 Oct 2026",["Net worth is now one figure everywhere: money + coins at average cost + coins in transit − what you owe parties","Tap Net worth to see how it adds up","Profit now uses your average buy cost, so selling old stock shows real profit","Exchange status \"Paid\" is now Pending (not Completed)","A bank with history is hidden, not erased, when deleted","Saving an order tells you if part of the money isn't in a bank yet"]],
   ["0.0.0.00019","4 Oct 2026",["Voice listens inside the app — no Google popup (needs new app 0.0.0.00019)","Words show live while you speak"]],
