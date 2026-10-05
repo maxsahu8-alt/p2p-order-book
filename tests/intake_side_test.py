@@ -19,7 +19,7 @@ async def main():
     J="(()=>{const g=ixS.groups[0],M=ixMine(g);return [ixSide(g),M.verdict,M.lines.map(l=>l.s+':'+l.t),g.X.ord.side,g.X.pay.dir,g.X.pay.sender,g.X.pay.receiver,g.X.pay.acct,g.cmp.overall,g.risk.level,g.risk.reasons]})()"
     print("1 default:",await pg.evaluate(J))
     await pg.screenshot(path="buy_default.png",full_page=True)
-    await pg.evaluate("void(()=>{settings.prefs=settings.prefs||{};settings.prefs.owner='Shiv Sahu';ixS.groups.forEach(g=>ixVerify(g));ixDraw()})()")
+    await pg.evaluate("void(()=>{setPref('owner','Shiv Sahu');ixS.groups.forEach(g=>ixVerify(g));ixDraw()})()")
     print("2 owner Shiv Sahu:",await pg.evaluate(J))
     await pg.evaluate("document.querySelector('[data-ix=flip]').click()");await pg.wait_for_timeout(300)
     print("3 flipped:",await pg.evaluate(J))
