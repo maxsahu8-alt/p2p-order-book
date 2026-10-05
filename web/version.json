@@ -1,9 +1,9 @@
 {
- "web": "0.0022",
- "build": 22,
- "display": "0.0.0.00022",
+ "web": "0.0023",
+ "build": 23,
+ "display": "0.0.0.00023",
  "files": {
-  "index.html": "8f297fd7eeb0a9d722901c69a7747e30e2c13b6b",
+  "index.html": "fe5e876a72a913a39427fb18a637abc0725fce74",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 4,
   "name": "0.0.0.00019",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Payment screenshot reader with confirm card; AI-read vs verified; screenshot reuse check"
+  "notes": "Faster screenshot reading: payment read on phone in parallel, Skip AI button, AI timeouts"
  }
 }
