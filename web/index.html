@@ -4036,7 +4036,7 @@ function renderJobs(){
 }
 // ---------- smart intake ----------
 let i2Files=[],i2Max=0;
-function i2Draw(){$("#i2-prev").innerHTML=i2Files.map((f,i)=>`<span class="pv"><img src="${URL.createObjectURL(f)}" alt=""><button type="button" data-ri="${i}" aria-label="Remove">×</button></span>`).join("");}
+function i2Draw(){if(i2Files.length&&!ocrWorker&&!ocrPromise){try{ocrInit().catch(()=>{})}catch(e){}}$("#i2-prev").innerHTML=i2Files.map((f,i)=>`<span class="pv"><img src="${URL.createObjectURL(f)}" alt=""><button type="button" data-ri="${i}" aria-label="Remove">×</button></span>`).join("");}
 function i2Add(list){const all=[...(list||[])];const imgs=all.filter(f=>/^image\//.test(f.type)||(!f.type&&/\.(png|jpe?g|webp|heic|heif|gif|bmp)$/i.test(f.name||""))||(!f.type&&f.size>0));
   if(!all.length)return;if(!imgs.length){toast("That file isn't a picture. Choose a screenshot.");return}const max=10;
 
@@ -4123,8 +4123,8 @@ ${text?"PASTED TEXT:\n"+text.slice(0,12000):""}${ocrText?"\nSCREENSHOT TEXT:"+oc
       else{const card=actionCard(acts,out,[...i2Files]);res0.after(card);card.querySelector("[data-apply]").addEventListener("click",()=>{i2Files=[];i2Draw();$("#i2-text").value=""})}}
   }catch(err){
     if(tick)clearInterval(tick);if(skipBtn)skipBtn.remove();
-    let n=0;try{n=ocrJob?await Promise.race([ocrJob,new Promise(r=>setTimeout(()=>r(0),25000))]):0}catch(e){}
-    if(err&&(err.code==="skipped"||err.code==="busy")){res0.textContent=n?"Payment read on your phone (below). "+(err.code==="skipped"?"AI skipped":"The AI was too slow")+", so no order was made from it. Try again later, or add the order by hand.":(err.code==="skipped"?"Skipped the AI.":"The AI is busy or slow right now.")+" Couldn't read a payment on the phone either. Try again in a minute, or paste the text.";return}
+    let n=0;if(ocrJob){const st=()=>{res0.textContent=(err&&err.code==="skipped"?"AI skipped. ":"The AI is slow. ")+"Reading the payment on your phone… "+String(ocrState||"").replace(/^Screenshot reader: /,"")};st();ocrListeners=[st];const t=setInterval(st,1000);try{n=await Promise.race([ocrJob,new Promise(r=>setTimeout(()=>r(0),100000))])}catch(e){}clearInterval(t);ocrListeners=[]}
+    if(err&&(err.code==="skipped"||err.code==="busy")){res0.textContent=n?"Payment read on your phone (below). "+(err.code==="skipped"?"AI skipped":"The AI was too slow")+", so no order was made from it. Try again later, or add the order by hand.":(err.code==="skipped"?"Skipped the AI.":"The AI is busy or slow right now.")+" Couldn't read a payment on the phone either"+(/couldn't start|took too long/.test(String(ocrState))?" ("+String(ocrState).replace(/^Screenshot reader /,"reader ")+")":". Make sure the screenshot shows the full payment")+". You can also paste the SMS text.";return}
     res0.textContent=err&&err.code==="images_unavailable"?"Screenshots can't be read in this view. Paste the text instead.":err&&err.code==="image_rejected"?"One of the images couldn't be read. Try a different screenshot.":(err&&err.text)||"Couldn't read that. Try again.";
     if(err&&["bad_key","no_key","no_model","no_url","unavailable","network"].includes(err.code)){if(out.querySelector(".paycard"))res0.textContent="Payment read on your phone (below). AI isn't connected, so no order was made from it.";else res0.textContent+="\nCheck Settings → AI connection."}
   }finally{btn.disabled=false;btn.textContent="Add from text"}
@@ -4488,7 +4488,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=23;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=24;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4555,6 +4555,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00024","5 Oct 2026",["Screenshot reader starts warming up as soon as you add a screenshot, so reading is ready sooner","After \"Skip AI\" it now waits for the phone reader and shows its progress"]],
   ["0.0.0.00023","5 Oct 2026",["Screenshot reading is much faster to start: the payment is read on your phone at the same time as the AI","Shows seconds while waiting, and a \"Skip AI · read on phone\" button after 12 seconds","AI requests now stop after 40 seconds instead of hanging"]],
   ["0.0.0.00022","5 Oct 2026",["Payment screenshots and SMS are read on your phone: amount, UTR, who paid whom, bank, time and status","You check and edit what was read, pick the order, then confirm. Only then it shows as \"Verified\"","Records made by AI are marked \"AI-read\" until you check them","Warns on repeated screenshot, repeated UTR, different amount, different name, or a failed/pending payment","Smart intake now asks you first by default (you can switch auto-save back on in Settings)"]],
   ["0.0.0.00021","5 Oct 2026",["New: Exchange order ID, UTR, fee and payment check on every order (under \"Order ID, UTR & fee\")","Duplicate UTR or order ID is flagged before saving, and you can still save it with a reason","Warns when bank amounts differ from the order total, or an order is Completed with no payment recorded","Cancelled orders must be reopened as Pending; undoing a Completed order asks first","Search finds orders by exchange order ID and UTR (long numbers too)","Activity log: every new order, edit, status change, delete and override is recorded","Importing a file no longer re-adds an order you already typed in with the same order ID"]],
