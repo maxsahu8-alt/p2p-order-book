@@ -226,6 +226,7 @@ table.coins td.pos{color:var(--buy)} table.coins td.neg{color:var(--sell)}
 .ixrisk{border-radius:12px;padding:10px 12px;background:var(--soft)}.ixrisk.LOW b{color:var(--buy)}.ixrisk.MEDIUM b{color:var(--warn)}.ixrisk.HIGH b{color:var(--sell)}.ixrisk ul{margin:6px 0 0 18px;padding:0;font-size:.82rem}
 .ixdup{border:1.5px solid var(--warn);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:.84rem}.ixdup b{color:var(--warn);display:block;margin-bottom:3px}
 .ixsave{border-radius:12px;padding:10px 12px;margin-top:10px;background:var(--soft);font-size:.84rem}.ixsave.saved b{color:var(--buy)}.ixsave.failed b{color:var(--sell)}
+.ixwhy{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--soft);font-size:.82rem}.ixwhy ul{margin:4px 0 0 18px;padding:0}.ixai{font-size:.74rem;color:var(--muted);margin-top:8px}.ixsrc{font-size:.6rem;font-weight:600;color:var(--muted);background:var(--soft);padding:1px 6px;border-radius:99px;margin-left:4px;vertical-align:middle}.ixsrc.ai{color:var(--accent)}
 .ixt{display:block;font-size:.62rem;text-align:center;color:var(--muted)}.ixhl{font-size:.74rem;font-weight:700;color:var(--muted);margin:10px 0 2px}.ixg>summary{cursor:pointer;padding:4px 0}.ixcam{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}
 .vcols{display:grid;grid-template-columns:1fr;gap:0}
 .bstats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.bstats div{background:var(--soft);border-radius:12px;padding:9px 11px}.bstats span{display:block;font-size:.72rem;color:var(--muted)}.bstats b{font:600 .88rem var(--mono)}
@@ -2275,10 +2276,10 @@ function ixReconcile(items){const fam=x=>ixIsPay(x.cls.type)?"p":ixIsOrd(x.cls.t
     items.filter(x=>fam(x)==="u").forEach(u=>{if(hasO&&!hasP)ixItem(u,"PAY_RECEIPT");else if(hasP&&!hasO)ixItem(u,"EX_ORDER")})}
   return items}
 // ---- merge AI-read values into what the phone read. Phone values win when the phone was sure; differences are reported
-function ixMerge(local,ai,conf){const out={...local},diffs=[];Object.keys(ai||{}).forEach(k=>{if(k==="conf")return;const a=ai[k],l=local[k];
-    if(l==null||l===""){if(a!=null)out[k]=a}
-    else if(a!=null&&String(a).toLowerCase().replace(/\s|,/g,"")!==String(l).toLowerCase().replace(/\s|,/g,"")&&!["acct","bank","method","status","date","time","when","sender","receiver","buyer","seller"].includes(k)){diffs.push(k);if(conf!=null&&conf<0.85)out[k]=a}})
-  return{v:out,diffs}}
+function ixMerge(local,ai,conf){const out={...local},diffs=[],filled=[];Object.keys(ai||{}).forEach(k=>{if(k==="conf")return;const a=ai[k],l=local[k];
+    if(l==null||l===""){if(a!=null){out[k]=a;filled.push(k)}}
+    else if(a!=null&&String(a).toLowerCase().replace(/\s|,/g,"")!==String(l).toLowerCase().replace(/\s|,/g,"")&&!["acct","bank","method","status","date","time","when","sender","receiver","buyer","seller"].includes(k)){diffs.push(k);if(conf!=null&&conf<0.85){out[k]=a;filled.push(k)}}})
+  return{v:out,diffs,filled}}
 function ixAiReady(){return aiCfg.prov!=="builtin"||i2Max>0}
 // ---- analyse one group: verify locally, decide if AI is needed, risk, duplicates
 function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(g.order||{}).ord;
@@ -2286,11 +2287,12 @@ function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(
   g.X=X;const hashes=g.items.map(x=>x.hash);const cmp=verCompare(X,{hashes});
   // spec: different payment method or a partial name is never "verified"
   const soft=cmp.fields.some(f=>(f.k==="method"||f.k==="seller")&&f.res==="UNCLEAR");if(cmp.overall==="VERIFIED"&&soft)cmp.overall="REVIEW";
-  if(g.conflicts&&g.conflicts.length&&cmp.overall==="VERIFIED"){cmp.overall="REVIEW";cmp.flags.push("INCONSISTENT_FONTS")}
+  if(cmp.overall!=="VERIFIED"&&!g.ai&&!g.reasonsAI0)g.needAI=true;
+  if(g.conflicts&&g.conflicts.length&&cmp.overall==="VERIFIED"){cmp.overall="REVIEW"}
   if(!g.order&&cmp.overall==="VERIFIED")cmp.overall="REVIEW"; // payment alone has nothing to be compared with
   g.cmp=cmp;g.dups=ixDups(g);g.risk=ixRisk(g);if(cmp.overall==='VERIFIED'&&g.risk.level!=='LOW')cmp.overall=g.risk.level==='HIGH'?'MISMATCH':'REVIEW';else if(cmp.overall==='REVIEW'&&g.risk.level==='HIGH')cmp.overall='MISMATCH';
   const confs=g.items.map(x=>x.ocr&&x.ocr.conf!=null?x.ocr.conf:null).filter(x=>x!=null);
-  g.reasonsAI=[];const need=g.reasonsAI;
+  g.reasonsAI=[];const need=g.reasonsAI;if(g.needAI&&!g.ai)need.push(cmp.overall==='MISMATCH'?'result shows a mismatch (could be a reading error)':'result needs review');
   if(g.items.some(x=>x.ocr&&x.ocr.engine==="Tesseract"&&x.ocr.conf<85&&x.ocr.status!=="fail"))need.push("OCR confidence below 85%");
   if(g.items.some(x=>x.cls.type==="UNKNOWN"))need.push("screenshot type unclear");
   if(g.pays.length&&!(X.pay.amount!=null&&X.pay.utr))need.push("payment amount or UTR missing");
@@ -4340,8 +4342,14 @@ function ocrInit(){
 // OCR works better and faster on a grey, mid-size image
 async function ocrPrep(file){
   try{const url=URL.createObjectURL(file);const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=url});
-    const k=Math.min(1,1400/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
-    const g=c.getContext("2d");g.filter="grayscale(1) contrast(1.25)";g.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+    const long=Math.max(img.width,img.height);const k=long>2200?2200/long:(Math.max(img.width,img.height)<1000?1.6:1);
+    const c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+    const g=c.getContext("2d",{willReadFrequently:true});g.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+    // dark-theme screenshots (light text on dark): tesseract reads dark-on-light, so measure and invert
+    const d=g.getImageData(0,0,c.width,c.height),px=d.data;let sum=0,n=0;for(let y=0;y<c.height;y+=7)for(let x=0;x<c.width;x+=7){const o=(y*c.width+x)*4;sum+=px[o]*.299+px[o+1]*.587+px[o+2]*.114;n++}
+    const dark=n&&sum/n<120;
+    for(let o=0;o<px.length;o+=4){let v=px[o]*.299+px[o+1]*.587+px[o+2]*.114;if(dark)v=255-v;v=Math.max(0,Math.min(255,(v-128)*1.35+128));px[o]=px[o+1]=px[o+2]=v}
+    g.putImageData(d,0,0);
     return await new Promise(ok=>c.toBlob(b=>ok(b||file),"image/png"))}catch(e){return file}}
 async function ocrImage(blob,onp){const w=await ocrInit();if(onp)ocrListeners=[onp];try{const {data}=await Promise.race([w.recognize(await ocrPrep(blob)),new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),60000))]);return (data&&data.text||"").replace(/[ \t]+\n/g,"\n").trim()}finally{ocrListeners=[]}}
 // ---------- auto-save with undo ----------
@@ -4533,29 +4541,42 @@ function ixStatuses(g){const its=g.items;
   const ver=g.cmp.overall==="VERIFIED"?"ok":g.cmp.overall==="REVIEW"?"warn":"bad";
   const sv=g.save?(g.save.state==="saved"?"ok":g.save.state==="failed"?"bad":"warn"):"na";
   return{ocr,cls,ext,ai,ver,sv}}
+const IX_SRC={amount:["pay.amount","ord.fiat"],buyer:["pay.sender","ord.buyer"],seller:["pay.receiver","ord.seller"],utr:["pay.utr"],orderid:["ord.id"],method:["pay.method","ord.method"],time:["pay.date","pay.time","ord.when"],acct:["pay.bank","pay.acct","ord.acct"],status:["pay.status"]};
+const ixSrc=(g,k)=>{const a=g.aiFilled;return a&&(IX_SRC[k]||[]).some(x=>a.has(x))?'<span class="ixsrc ai">✨ AI</span>':'<span class="ixsrc">📷 phone</span>'};
+function ixWhy(g){const F=g.cmp.fields,out=[];
+  F.filter(f=>f.res==="MISMATCH").forEach(f=>out.push(`${f.label}: ${f.note||"does not match"}${f.pay!=="—"&&f.ord!=="—"?` (${f.pay} vs ${f.ord})`:""}`));
+  g.cmp.local.forEach(x=>out.push(x));
+  if(!out.length)F.filter(f=>f.major&&(f.res==="NOTFOUND"||f.res==="UNCLEAR")).forEach(f=>out.push(`${f.label}: ${f.note||(f.res==="NOTFOUND"?"not found in the screenshots":"unclear")}`));
+  if(g.conflicts&&g.conflicts.length)out.push("Phone and AI read different values for: "+g.conflicts.join(", ")+". The AI value is shown; please confirm it.");
+  g.risk.reasons.forEach(r=>{if(out.length<5&&!out.some(o=>o.toLowerCase().includes(r.toLowerCase().slice(0,12))))out.push(r)});
+  if(!out.length&&g.cmp.overall==="VERIFIED")out.push("All key fields agree across the screenshots");
+  if(g.cmp.overall!=="VERIFIED"&&g.ai!=="ok"&&g.items.some(x=>x.ocr&&x.ocr.conf!=null&&x.ocr.conf<85))out.push("Phone reading confidence is low, so this could be a reading error");
+  return out.slice(0,5)}
 function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall],S=ixStatuses(g);const amt=P.amount!=null?P.amount:O.fiat;
   const yn=v=>v==null||v===""?"—":"✓";const ck=(l,v)=>`<div class="ixk ${v==null||v===""?"na":""}"><span>${v==null||v===""?"—":"✓"}</span> ${l}</div>`;
-  const partial=g.items.some(x=>x.ext!=="ok")&&g.cmp.overall!=="VERIFIED";
+  const partial=!(P.amount!=null&&P.utr&&(!g.order||(O.id&&(O.fiat!=null||O.crypto!=null))))&&g.cmp.overall!=="VERIFIED";
   const aiNote=g.ai==="unavailable"?"LOCAL ANALYSIS COMPLETE · Cloud AI unavailable. Results below are based on on-device analysis.":partial?"PARTIAL READING · Some information could not be confidently read.":"";
   const side=g.target||ixSide(g)||!g.order?"":`<div class="note" style="margin:6px 0">Did you buy or sell?</div><div class="row2"><button class="mini ghost" type="button" data-ix="side:BUY">I bought</button><button class="mini ghost" type="button" data-ix="side:SELL">I sold</button></div>`;
   const saveLbl=g.saved?"SAVED ✓":g.save&&g.save.state==="failed"?"SAVE AGAIN":"SAVE TRANSACTION";
   return`<div class="vres ${g.cmp.overall}"><div class="vh"><span class="vchip">${T[0]} ${g.cmp.overall==="VERIFIED"?"VERIFIED":T[1]}</span><b>${g.conf}% confidence</b></div>
     <div class="ixamt">${amt!=null?inr(amt):"Amount not read"}${O.fiat!=null&&P.amount!=null&&Math.abs(O.fiat-P.amount)>1?` <small>order ${inr(O.fiat)}</small>`:""}</div>
     <div class="vt">${g.cmp.overall==="VERIFIED"?"Screenshots appear consistent":g.cmp.overall==="REVIEW"?"Needs your review":"Potential inconsistency detected"}${g.order?"":" · payment only"}</div>
-    ${aiNote?`<div class="note" style="margin:6px 0 0"><b>${esc(aiNote.split(" · ")[0])}</b><br>${esc(aiNote.split(" · ")[1]||"")}</div>`:""}
+    <div class="ixwhy"><b>WHY</b><ul>${ixWhy(g).map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>
+    <div class="ixai">${g.ai==="ok"?"✨ Checked by AI vision on top of the phone reading":g.ai==="unavailable"?"⚠ Cloud AI unavailable"+(g.aiErr==="bad_key"?" (key rejected)":g.aiErr==="rate_limited"?" (no free requests left)":g.aiErr==="busy"?" (busy or slow)":"")+": results below are from on-device analysis":g.ai==="na"?"AI not connected: results are from on-device analysis":"📷 Read on your phone"}${g.items[0]&&g.items[0].ocr?` · ${esc(g.items.map(x=>x.ocr&&x.ocr.engine).filter((v,i,a)=>v&&a.indexOf(v)===i).join(" + "))}`:""}</div>
+    ${aiNote&&g.ai!=="unavailable"&&g.ai!=="na"&&partial?`<div class="note" style="margin:6px 0 0"><b>PARTIAL READING</b><br>Some information could not be confidently read.</div>`:""}
     <div class="ixchips">${ixChip("OCR",S.ocr,"OCR_STATUS")}${ixChip("Type",S.cls,"CLASSIFICATION_STATUS")}${ixChip("Extract",S.ext,"EXTRACTION_STATUS")}${ixChip("AI",S.ai,"AI_STATUS")}${ixChip("Verify",S.ver,"VERIFICATION_STATUS")}${ixChip("Save",S.sv,"SAVE_STATUS")}</div></div>
     <div class="pvs">${g.items.map(x=>`<span class="pv"><img src="${URL.createObjectURL(x.file)}" alt=""><small class="ixt">${esc(IX_TYPES[x.cls.type])}</small></span>`).join("")}</div>
     ${g.unknown&&g.unknown.length?`<div class="note">Couldn't tell what ${g.unknown.length>1?"some pictures are":"one picture is"}. Tell me: ${g.unknown.map(u=>`<button class="mini ghost" data-ix="type:${u.hash}:PAY_RECEIPT">${"Payment"}</button><button class="mini ghost" data-ix="type:${u.hash}:EX_ORDER">Order</button>`).join(" ")}</div>`:""}
     ${g.dups.length?`<div class="ixdup"><b>⚠ POSSIBLE DUPLICATE</b>${g.dups.map(d=>`<div>${esc(d.msg)}</div>`).join("")}</div>`:""}
     ${g.pays.length||g.order?`<div class="pcsec">Payment</div><div class="ixks">${ck("Amount",P.amount)}${ck("UTR",P.utr)}${ck("Sender",P.sender)}${ck("Receiver",P.receiver)}${ck("Status",P.status)}</div>`:""}
     ${g.order?`<div class="pcsec">Order</div><div class="ixks">${ck("Order ID",O.id)}${ck("Amount",O.fiat)}${ck("Buyer",O.buyer)}${ck("Seller",O.seller)}</div>`:""}
-    <div class="pcsec">Match analysis</div><div class="vtab">${g.cmp.fields.filter(f=>g.order||!["buyer","seller","method","acct"].includes(f.k)).map(f=>`<div class="vrow ${f.res}"><div class="vk">${esc(f.label)}</div><div class="vv"><span>${esc(f.pay)}</span><span>${esc(f.ord)}</span></div><div class="vr">${ixRes(f)}</div>${f.note?`<div class="vn">${esc(f.note)}</div>`:""}</div>`).join("")}</div>
+    <div class="pcsec">Match analysis</div><div class="vtab">${g.cmp.fields.filter(f=>g.order||!["buyer","seller","method","acct"].includes(f.k)).map(f=>`<div class="vrow ${f.res}"><div class="vk">${esc(f.label)} ${ixSrc(g,f.k)}</div><div class="vv"><span>${esc(f.pay)}</span><span>${esc(f.ord)}</span></div><div class="vr">${ixRes(f)}</div>${f.note?`<div class="vn">${esc(f.note)}</div>`:""}</div>`).join("")}</div>
     <div class="pcsec">Risk analysis</div><div class="ixrisk ${g.risk.level}"><b>${g.risk.level} RISK</b>${g.risk.reasons.length?`<ul>${g.risk.reasons.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>`:"<div>No warning signs found in what is visible.</div>"}</div>
     <p class="note">Screenshot analysis cannot independently prove that a payment actually settled. Check your bank app or SMS before releasing coins.</p>
     ${g.save?`<div class="ixsave ${g.save.state}"><b>${g.save.state==="saved"?"RECORDED 1 OF 1":g.save.state==="failed"?"ANALYSIS COMPLETE · SAVE FAILED":"NOT SAVED"}</b><div>${esc(g.save.msg||"")}</div></div>`:""}
     ${side}
     <div class="row2" style="margin-top:10px">${g.order||g.target?`<button class="primary" type="button" data-ix="save" ${g.saved?"disabled":""}>${saveLbl}</button>`:""}<button class="mini ghost" type="button" data-ix="recheck">RECHECK</button></div>${!g.order&&!g.target?`<div class="note" style="margin-top:6px">Payment only: choose the order it belongs to below, then confirm.</div><div data-paycard></div>`:""}
-    <div class="row2" style="margin-top:6px"><button class="mini ghost" type="button" data-ix="deep">DEEP AI CHECK</button><button class="mini ghost" type="button" data-ix="raw">VIEW RAW DATA</button></div>
+    <div class="row2" style="margin-top:6px"><button class="mini ${g.cmp.overall!=="VERIFIED"&&g.ai!=="ok"?"":"ghost"}" type="button" data-ix="deep">${g.ai==="ok"?"DEEP AI CHECK AGAIN":"DEEP AI CHECK"}</button><button class="mini ghost" type="button" data-ix="raw">VIEW RAW DATA</button></div>
     <div class="ixraw" hidden><pre>${esc(JSON.stringify({ocr:g.items.map(x=>({type:x.cls.type,engine:x.ocr&&x.ocr.engine,conf:x.ocr&&x.ocr.conf,text:x.ocr&&x.ocr.text})),payment:P,order:O,flags:g.cmp.flags,risk:g.risk,duplicates:g.dups.map(d=>d.msg),aiReasons:g.reasonsAI,aiConflicts:g.conflicts||[]},null,1))}</pre></div>`}
 function ixDraw(){const out=$("#i2-ix");if(!out)return;out.innerHTML="";const G=ixS.groups;
   if(G.length>1){const h=document.createElement("div");h.className="acard ixhead";h.innerHTML=`<div class="ah">${G.length} TRANSACTIONS DETECTED</div><div class="row2"><button class="primary" type="button" data-ixall="save">SAVE ALL</button><button class="mini ghost" type="button" data-ixall="review">REVIEW INDIVIDUALLY</button></div><div class="note" data-ixallmsg></div>`;
@@ -4580,12 +4601,12 @@ async function ixDeep(g){const pay=(g.pays.find(x=>!x.support)||g.pays[0]),ord=g
   if(!files.length)return;
   try{const out=await Promise.race([verExtract(files.map(f=>f.blob)),new Promise((_,no)=>setTimeout(()=>no(aiErr("busy","slow")),85000))]);
     const m1=ixMerge(g.pays[0]?g.pays[0].pay:{},out.X.pay,pay&&pay.ocr?pay.ocr.conf/100:null),m2=ixMerge(ord?ord.ord:{},out.X.ord,ord&&ord.ocr?ord.ocr.conf/100:null);
-    g.aiPay=m1.v;g.aiOrd=m2.v;g.aiFlags=out.X.flags;g.conflicts=[...m1.diffs.map(k=>"payment "+k),...m2.diffs.map(k=>"order "+k)];g.ai="ok";ixVerify(g)}
+    g.aiPay=m1.v;g.aiOrd=m2.v;g.aiFlags=out.X.flags;g.aiFilled=new Set([...m1.filled.map(k=>"pay."+k),...m2.filled.map(k=>"ord."+k)]);g.conflicts=[...m1.diffs.map(k=>"payment "+k),...m2.diffs.map(k=>"order "+k)];g.ai="ok";ixVerify(g)}
   catch(e){g.ai="unavailable";g.aiErr=e&&e.code;ixVerify(g)}}
 async function ixOcrAll(items,prog){let n=0;const skip=new Promise((_,no)=>{ixS.skip=()=>no(new Error("skip"))});skip.catch(()=>{});
   for(const it of items){if(prog)prog(n,items.length);it.ocr=await ixOcr(it,skip);n++;await new Promise(r=>setTimeout(r,0))}}
 async function ixFinish(groups,useAI){for(const g of groups){ixVerify(g);
-    if(useAI&&g.reasonsAI.length&&ixAiReady()&&(g.pays.length||g.order)&&!g.ai){await ixDeep(g)}
+    if(useAI&&g.reasonsAI.length&&ixAiReady()&&(g.pays.length||g.order)&&!g.ai){await ixDeep(g);g.needAI=false}
     else if(g.reasonsAI.length&&!ixAiReady())g.ai="na";
     if(!g.histId)await ixHistAdd(g)}}
 // the whole run
@@ -4983,7 +5004,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=30;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=31;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5050,6 +5071,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00031","6 Oct 2026",["Smart Intake reads dark-theme screenshots much better (the phone reader now inverts dark images and keeps full resolution)","When the result is not clean, AI vision double-checks automatically, so a reading error is not shown as a mismatch","New WHY box says exactly what caused the status; each field shows whether the phone or AI read it","Clear AI status line (checked by AI, unavailable, or not connected)"]],
   ["0.0.0.00030","6 Oct 2026",["Fixed: an order screenshot and its payment screenshot are now ONE transaction, not two","All pictures are classified first, then grouped by order ID, amount, names, method, time, UTR and crypto amount","If you add one order and one payment they are always combined; an amount difference shows as Mismatch inside the same transaction","Missing details in one screenshot are filled from the other when saving"]],
   ["0.0.0.00029","6 Oct 2026",["Smart Intake rebuilt: add screenshots (gallery, camera or paste) and they are read, identified, matched and verified automatically","Payments and orders are paired by amount, name, method, time and order ID, then grouped; \"N transactions detected\" with Save all or review one by one","Separate statuses for reading, type, extraction, AI, verification and saving. A save problem no longer shows the whole analysis as failed","Low / Medium / High risk with reasons, duplicate check before saving, and Recent intakes (Today, Yesterday, This week)","AI is used only when the phone reading is unclear, or when you tap Deep AI check"]],
   ["0.0.0.00028","5 Oct 2026",["New Verify screenshots (Control menu): add the payment and the order screenshot, the app reads both and compares amount, names, UTR, order ID, method, time and bank","Clear result: Verified, Needs review or Mismatch, with every field marked Match, Unclear, Mismatch or Not found","Flags duplicate UTR, reused screenshots, edited-looking images and time problems. It never says a payment is genuine","Optional Verify server (Cloudflare Worker in the repo) so no AI key is needed on the phone"]],
