@@ -27,7 +27,14 @@ jobs:
       - name: Build
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        run: gradle -p android :app:assembleRelease --no-daemon --stacktrace
+        run: |
+          set +e
+          gradle -p android :app:assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log
+          ec=${PIPESTATUS[0]}
+          if [ "$ec" -ne 0 ]; then
+            grep -E "error:|What went wrong|Could not|Execution failed|FAILED|Caused by|Duplicate|minSdk|compileSdk" -A3 build.log | head -40 | sed 's/^/::error::/' | tr -d '\r' | head -40
+            exit $ec
+          fi
       - name: Collect APK
         run: |
           . android/app/version.properties
