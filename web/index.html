@@ -217,6 +217,7 @@ table.coins td.pos{color:var(--buy)} table.coins td.neg{color:var(--sell)}
 .plan .pl span:last-child{font-family:var(--mono)}
 .ledger .lg{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-top:1px solid var(--line)}
 .ledger .lg:first-child{border-top:0}
+.bstats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.bstats div{background:var(--soft);border-radius:12px;padding:9px 11px}.bstats span{display:block;font-size:.72rem;color:var(--muted)}.bstats b{font:600 .88rem var(--mono)}
 .ledger .lg .a{font:600 .9rem var(--mono);text-align:right}
 .ledger .lg .a.in{color:var(--buy)} .ledger .lg .a.out{color:var(--sell)}
 .ledger .lg .o-meta{grid-column:1/-1}
@@ -1860,13 +1861,27 @@ let mvCache=null;
 function movements(){if(mvCache)return mvCache;return mvCache=movementsRaw()}
 function movementsRaw(){
   const m=[];
-  orders.forEach(o=>{if(o.status==="Cancelled"||noBank(o))return;(o.splits||[]).forEach(x=>m.push({bank:x.bank,amt:(o.side==="SELL"?1:-1)*(+x.amt||0),time:o.time,label:`${o.side} ${fmtQ(o.qty)} ${o.coin}${o.cp?" · "+o.cp:""} · ${x.method||methodOf(o.pay)}`,kind:o.side,method:x.method||methodOf(o.pay)}))});
+  orders.forEach(o=>{if(o.status==="Cancelled"||noBank(o))return;(o.splits||[]).forEach(x=>m.push({bank:x.bank,amt:(o.side==="SELL"?1:-1)*(+x.amt||0),time:o.time,label:`${o.side} ${fmtQ(o.qty)} ${o.coin}${o.cp?" · "+o.cp:""} · ${x.method||methodOf(o.pay)}`,kind:o.side,method:x.method||methodOf(o.pay),pend:o.status==="Pending"||o.status==="Appeal"}))});
   exps.forEach(x=>{if(x.bank)m.push({bank:x.bank,amt:-(+x.amt||0),time:x.time,label:"Expense · "+x.cat+(x.note?" · "+x.note:""),kind:"EXP"})});
   ppays.forEach(x=>{const pn=(parties.find(p=>p.id===x.party)||{}).name||"party";(x.splits||[]).forEach(sp=>m.push({bank:sp.bank,amt:-(+sp.amt||0),time:x.time,label:"Paid "+pn+" · "+(sp.method||"IMPS"),kind:"PP",method:sp.method||"IMPS"}))});
   moves.forEach(x=>{m.push({bank:x.from,amt:-(+x.amt||0),time:x.time,label:"Transfer to "+bankName(x.to)+" · "+(x.method||"IMPS"),kind:"TR",method:x.method||"IMPS"});m.push({bank:x.to,amt:+x.amt||0,time:x.time,label:"Transfer from "+bankName(x.from),kind:"TR"})});
   return m;
 }
 function balances(){const mv=movements();const out={};allBanks.forEach(b=>out[b.id]=+b.opening||0);mv.forEach(x=>{if(x.bank in out)out[x.bank]+=x.amt});return{bal:out,mv}}
+// ---- bank management: one place for per-bank numbers (balance, today, pending, count, status, reconciliation)
+function bankStats(b,mv,bal){
+  mv=mv||movements();const t=mv.filter(x=>x.bank===b.id),td=t.filter(x=>isToday(x.time));
+  const inn=td.filter(x=>x.amt>0).reduce((a,x)=>a+x.amt,0),out=-td.filter(x=>x.amt<0).reduce((a,x)=>a+x.amt,0);
+  const pend=t.filter(x=>x.pend);const last=t.reduce((m,x)=>Math.max(m,x.time||0),0);
+  const balance=bal==null?(+b.opening||0)+t.reduce((a,x)=>a+x.amt,0):bal;
+  const checks=recs.filter(r=>r.kind==="bankrec"&&r.bank===b.id).sort((a,c)=>c.time-a.time);
+  const idle=last?Math.floor((Date.now()-last)/DAY):null;
+  let status="Active",tone="";
+  if(b.status==="frozen"){status="Frozen";tone="bad"}else if(b.status==="paused"){status="Paused";tone="warn"}
+  else{const L=b.limits||{};if(+L.ALL||+L.UPI||+L.IMPS||+L.NEFT){const u=limitUse();const left=Math.min(...["UPI","IMPS","NEFT"].filter(m=>+L[m]).map(m=>limitLeft(b,m,u)),+L.ALL?limitLeft(b,"IMPS",u):Infinity);if(left<=0){status="Limit reached";tone="warn"}}
+    if(status==="Active"&&(idle==null||idle>=7)){status=idle==null?"New":"Idle "+idle+"d";tone="muted"}}
+  return{balance,inn,out,volume:inn+out,todayN:td.length,total:t.length,pendN:pend.length,pendIn:pend.filter(x=>x.amt>0).reduce((a,x)=>a+x.amt,0),pendOut:-pend.filter(x=>x.amt<0).reduce((a,x)=>a+x.amt,0),last,status,tone,checks};
+}
 function stockLeft(){
   const coins=new Set(["USDT",...Object.keys(settings.stock||{}),...orders.map(o=>o.coin)]);const out={};
   coins.forEach(c=>{let q=+(settings.stock||{})[c]||0;orders.forEach(o=>{if(o.coin===c&&o.status==="Completed")q+=o.side==="BUY"?+o.qty:-o.qty});out[c]=q});
@@ -2145,6 +2160,7 @@ const sheets={
   bank(id){const b=banks.find(x=>x.id===id)||{};openSheet(`<h3>${id?"Edit bank":"Add bank"}</h3><form id="sf" style="grid-template-columns:1fr">
     <label>Name<input id="s-name" required placeholder="e.g. SBI 4521" value="${esc(b.name||"")}"></label>
     <label>Type<select id="s-type"><option ${b.type!=="Cash"?"selected":""}>Bank</option><option ${b.type==="Cash"?"selected":""}>Cash</option></select></label>
+    <label>Status<select id="s-status"><option value="" ${!b.status?"selected":""}>Active</option><option value="paused" ${b.status==="paused"?"selected":""}>Paused (not using now)</option><option value="frozen" ${b.status==="frozen"?"selected":""}>Frozen / blocked</option></select></label>
     <label>Opening balance (₹)<input id="s-open" type="number" inputmode="decimal" step="any" value="${b.opening??""}" placeholder="Balance before tracking started"></label>
     <div class="flabel" style="margin:4px 0 -4px">Daily sending limits</div>
     <div class="limgrid">
@@ -2166,7 +2182,7 @@ const sheets={
     <label>Note<input id="s-note" value="${esc(b.note||"")}" placeholder="e.g. daily limit 1 lakh"></label>
     <button class="primary" type="submit">Save</button>${id?'<button class="primary" type="button" id="s-del" style="background:var(--soft);color:var(--sell)">Delete bank</button>':""}</form>`,el=>{
     el.querySelector("#sf").onsubmit=async e=>{e.preventDefault();const name=$("#s-name").value.trim();if(!name){toast("Enter a name");return}
-      try{await putRec({...b,id:id||newId("b_"),kind:"bank",name:name.slice(0,40),type:$("#s-type").value,opening:+$("#s-open").value||0,note:$("#s-note").value.trim().slice(0,100),holder:$("#s-holder").value.trim().slice(0,80),bankName:$("#s-bname").value.trim().slice(0,80),accNo:$("#s-acc").value.replace(/\s+/g,"").slice(0,30),ifsc:$("#s-ifsc").value.trim().toUpperCase().slice(0,15),accType:$("#s-atype").value,branch:$("#s-branch").value.trim().slice(0,80),upi:$("#s-upi").value.trim().slice(0,80),phone:$("#s-phone").value.trim().slice(0,20),limits:{UPI:+$("#s-lupi").value||0,IMPS:+$("#s-limps").value||0,NEFT:+$("#s-lneft").value||0,ALL:+$("#s-lall").value||0},time:b.time||Date.now()});toast("Bank saved");closeSheet()}catch(err){toast("Couldn't save. Try again.")}};
+      try{await putRec({...b,id:id||newId("b_"),kind:"bank",name:name.slice(0,40),type:$("#s-type").value,status:$("#s-status").value,opening:+$("#s-open").value||0,note:$("#s-note").value.trim().slice(0,100),holder:$("#s-holder").value.trim().slice(0,80),bankName:$("#s-bname").value.trim().slice(0,80),accNo:$("#s-acc").value.replace(/\s+/g,"").slice(0,30),ifsc:$("#s-ifsc").value.trim().toUpperCase().slice(0,15),accType:$("#s-atype").value,branch:$("#s-branch").value.trim().slice(0,80),upi:$("#s-upi").value.trim().slice(0,80),phone:$("#s-phone").value.trim().slice(0,20),limits:{UPI:+$("#s-lupi").value||0,IMPS:+$("#s-limps").value||0,NEFT:+$("#s-lneft").value||0,ALL:+$("#s-lall").value||0},time:b.time||Date.now()});toast("Bank saved");closeSheet()}catch(err){toast("Couldn't save. Try again.")}};
     if(id)twoTap(el.querySelector("#s-del"),async()=>{try{const A=ACC();const v=A.bal[id]||0;if(Math.abs(v)>=1){toast(`Balance is ${inr(Math.round(v))}. Move it out first, then delete.`);return}
       const used=movements().some(x=>x.bank===id);const bk=allBanks.find(b=>b.id===id);
       if(used&&bk){await putRec({...bk,archived:true,archivedAt:Date.now()});toast("Bank removed · its history is kept")}else{await delRec(id);toast("Bank deleted")}closeSheet()}catch(err){toast("Couldn't delete")}});
@@ -2214,10 +2230,32 @@ const sheets={
     el.querySelector("#a-add").onclick=()=>ed.add();el.querySelector("#a-sug").onclick=()=>ed.suggest(modeOf(o)==="Cash");
     el.querySelector("#a-save").onclick=async()=>{const g=ed.get();if(g.sum>orderTotal(o)+0.5){toast("Bank amounts are more than the order total");return}
       try{await patchRec(id,{splits:g.splits});toast("Banks assigned");closeSheet()}catch(err){toast("Couldn't save")}}})},
-  ledger(id){const b=banks.find(x=>x.id===id);if(!b)return;const {bal,mv}=balances();const list=mv.filter(x=>x.bank===id).sort((a,c)=>c.time-a.time).slice(0,60);
-    openSheet(`<h3>${esc(b.name)}</h3><div class="calc" style="margin-bottom:12px"><span>Balance now</span><b class="num">${inr(bal[id])}</b></div>${limBar(b,limitUse()).replace('class="lims"','class="lims" style="margin-bottom:12px"')}
-    <div class="ledger">${list.length?list.map(x=>`<div class="lg"><span>${esc(x.label)}</span><span class="a ${x.amt>=0?"in":"out"}">${x.amt>=0?"+":"−"}${inr(Math.abs(x.amt))}</span><div class="o-meta">${new Date(x.time).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</div></div>`).join(""):'<p class="note">No transactions yet. Opening balance '+inr(b.opening||0)+'.</p>'}</div>
-    <div class="row2" style="margin-top:14px"><button class="mini" type="button" id="l-share">Share details</button><button class="mini ghost" type="button" id="l-stmt">Match statement</button><button class="mini ghost" type="button" id="l-edit">Edit / limits</button><button class="mini ghost" type="button" data-close>Close</button></div>`,el=>{el.querySelector("#l-edit").onclick=()=>sheets.bank(id);el.querySelector("#l-share").onclick=()=>sheets.share(id);el.querySelector("#l-stmt").onclick=()=>sheets.stmt(id)})},
+  ledger(id,all){const b=banks.find(x=>x.id===id);if(!b)return;const {bal,mv}=balances();const full=mv.filter(x=>x.bank===id).sort((a,c)=>c.time-a.time),list=all?full:full.slice(0,60);const S=bankStats(b,mv,bal[id]);const lc=S.checks[0];
+    const dt=t=>new Date(t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+    openSheet(`<h3>${esc(b.name)} <span class="cpb ${S.tone==="bad"?"":"idle"}" style="${S.tone==="bad"?"background:var(--sell);color:#fff":""}">${esc(S.status)}</span></h3><div class="calc" style="margin-bottom:12px"><span>Balance now</span><b class="num">${inr(bal[id])}</b></div>
+    <div class="kpis" style="margin-bottom:10px"><div class="kpi"><span class="kl">In today</span><b class="pos">${inr(S.inn)}</b></div><div class="kpi"><span class="kl">Out today</span><b class="neg">${inr(S.out)}</b></div></div>
+    <div class="bstats"><div><span>Today's volume</span><b>${inr(S.volume)}</b></div><div><span>Txns today / total</span><b>${S.todayN} / ${S.total}</b></div><div><span>Pending</span><b>${S.pendN?S.pendN+" · "+inr(S.pendIn+S.pendOut):"None"}</b></div><div><span>Last txn</span><b>${S.last?dt(S.last):"—"}</b></div></div>
+    <p class="note" style="margin:6px 0 10px">${lc?`Last check ${dt(lc.time)}: real ${inr(lc.real)} · ${Math.abs(lc.diff)<1?"matched ✓":"difference "+(lc.diff>0?"+":"−")+inr(Math.abs(lc.diff))}`:"Not checked against the real bank balance yet."}</p>
+    ${limBar(b,limitUse()).replace('class="lims"','class="lims" style="margin-bottom:12px"')}
+    <div class="ledger">${list.length?list.map(x=>`<div class="lg"><span>${esc(x.label)}${x.pend?' <span class="mtag">Pending</span>':""}</span><span class="a ${x.amt>=0?"in":"out"}">${x.amt>=0?"+":"−"}${inr(Math.abs(x.amt))}</span><div class="o-meta">${dt(x.time)}</div></div>`).join("")+(!all&&full.length>60?`<button type="button" class="link" id="l-all" style="padding:10px;width:100%">Show all ${full.length} ›</button>`:""):'<p class="note">No transactions yet. Opening balance '+inr(b.opening||0)+'.</p>'}</div>
+    <div class="row2" style="margin-top:14px"><button class="mini" type="button" id="l-rec">Check balance</button><button class="mini ghost" type="button" id="l-stmt">Match statement</button><button class="mini ghost" type="button" id="l-share">Share details</button><button class="mini ghost" type="button" id="l-edit">Edit / limits</button></div>`,el=>{el.querySelector("#l-edit").onclick=()=>sheets.bank(id);el.querySelector("#l-share").onclick=()=>sheets.share(id);el.querySelector("#l-stmt").onclick=()=>sheets.stmt(id);el.querySelector("#l-rec").onclick=()=>sheets.bankrec(id);const la=el.querySelector("#l-all");if(la)la.onclick=()=>sheets.ledger(id,true)})},
+  bankrec(id){const b=banks.find(x=>x.id===id);if(!b)return;const {bal}=balances();const app=bal[id]||0;const S=bankStats(b,null,app);
+    openSheet(`<h3>Check ${esc(b.name)}</h3><p class="note" style="margin:-6px 0 12px">Type the balance your real bank app shows right now. The app compares it with its own number.</p>
+    <div class="calc" style="margin-bottom:10px"><span>App balance</span><b class="num">${inr(app)}</b></div>
+    <label>Real bank balance (₹)<input id="br-real" type="number" inputmode="decimal" step="any" placeholder="From your bank app"></label>
+    <div class="calc" id="br-diff" style="margin:10px 0"><span>Difference</span><b class="num">—</b></div>
+    <p class="note" id="br-hint" style="margin:0 0 10px">Pending orders are already counted in the app balance${S.pendN?" ("+S.pendN+" pending now)":""}. If the bank has not received a payment yet, the difference can be that.</p>
+    <label>Note (optional)<input id="br-note" placeholder="e.g. checked after night orders"></label>
+    <div class="row2" style="margin-top:12px"><button class="primary" type="button" id="br-save">Save check</button><button class="mini ghost" type="button" id="br-fix" hidden>Save &amp; fix balance</button></div>
+    ${S.checks.length?`<div class="flabel" style="margin:16px 0 4px">Earlier checks</div><div class="ledger">${S.checks.slice(0,8).map(c=>`<div class="lg"><span>Real ${inr(c.real)} · app ${inr(c.app)}</span><span class="a ${Math.abs(c.diff)<1?"in":"out"}">${Math.abs(c.diff)<1?"matched":(c.diff>0?"+":"−")+inr(Math.abs(c.diff))}</span><div class="o-meta">${new Date(c.time).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}${c.fixed?" · balance fixed":""}${c.note?" · "+esc(c.note):""}</div></div>`).join("")}</div>`:""}`,el=>{
+      const real=()=>{const v=el.querySelector("#br-real").value;return v===""?null:+v};
+      el.querySelector("#br-real").oninput=()=>{const r=real();const d=r==null?null:Math.round((r-app)*100)/100;el.querySelector("#br-diff").innerHTML=r==null?"<span>Difference</span><b class=\"num\">—</b>":`<span>Difference</span><b class="num ${Math.abs(d)<1?"pos":"neg"}">${Math.abs(d)<1?"Matched ✓":(d>0?"+":"−")+inr(Math.abs(d))}</b>`;el.querySelector("#br-fix").hidden=r==null||Math.abs(d)<1};
+      const save=async fix=>{const r=real();if(r==null){toast("Enter the real balance");return}const diff=Math.round((r-app)*100)/100;
+        try{
+          if(fix&&Math.abs(diff)>=1){if(!confirm(`Change the opening balance of ${b.name} by ${diff>0?"+":"−"}₹${Math.abs(diff).toLocaleString("en-IN")} so the app matches your bank?`))return;await putRec({...allBanks.find(x=>x.id===id),opening:(+b.opening||0)+diff});auditLog(id,"bank_fix",{diff,real:r,app})}
+          await putRec({id:newId("br_"),kind:"bankrec",bank:id,real:r,app,diff,fixed:!!(fix&&Math.abs(diff)>=1),note:el.querySelector("#br-note").value.trim().slice(0,100),time:Date.now()});
+          toast(Math.abs(diff)<1?"Matched ✓":fix?"Balance fixed":"Check saved");sheets.ledger(id)}catch(e){toast("Couldn't save")}};
+      el.querySelector("#br-save").onclick=()=>save(false);el.querySelector("#br-fix").onclick=()=>save(true)})},
   share(id){const b=banks.find(x=>x.id===id);if(!b)return;
     const F=[["holder","Account holder"],["bankName","Bank"],["accNo","Account no."],["ifsc","IFSC"],["accType","Account type"],["branch","Branch"],["upi","UPI ID"],["phone","Phone"]].filter(([k])=>b[k]);
     if(!F.length){toast("Add account details first");sheets.bank(id);return}
@@ -2631,7 +2669,7 @@ function renderDirectPlus(due,paidWeek,left){
     barChart($("#chWeeks"),{labels:wks.map(w=>w.lab.split(" ")[0]),series:[{name:"Paid",values:vals,color:c1,tipFmt:v=>inr(v)}],tipTitle:i=>"Week of "+wks[i].lab,every:1})}catch(e){console.error(e)}
 }
 let wP=(()=>{try{return localStorage.getItem("p2p_wP")||"today"}catch(e){return "today"}})();
-function bankTag(b,mv){const l=mv.filter(x=>x.bank===b.id).sort((a,c)=>c.time-a.time)[0];if(!l)return ' <span class="cpb idle">New</span>';const d=Math.floor((Date.now()-l.time)/DAY);return d>=7?` <span class="cpb idle">Idle ${d}d</span>`:""}
+function bankTag(b,mv){if(b.status==="frozen")return ' <span class="cpb idle" style="background:var(--sell);color:#fff">Frozen</span>';if(b.status==="paused")return ' <span class="cpb idle">Paused</span>';const l=mv.filter(x=>x.bank===b.id).sort((a,c)=>c.time-a.time)[0];if(!l)return ' <span class="cpb idle">New</span>';const d=Math.floor((Date.now()-l.time)/DAY);return d>=7?` <span class="cpb idle">Idle ${d}d</span>`:""}
 function renderWalletPlus(bal,mv,total){
   document.querySelectorAll("#wSeg button").forEach(b=>b.classList.toggle("on",b.dataset.p===wP));
   const n=new Date(),d0=new Date(n);d0.setHours(0,0,0,0);const days=wP==="today"?1:+wP;const a=wP==="today"?d0.getTime():Date.now()-days*DAY;
@@ -2692,7 +2730,7 @@ function renderWallet(){
   $("#bankCount").textContent=banks.length?banks.length+" accounts":"";
   const use=limitUse();
   $("#bankList").innerHTML=banks.length?banks.map(b=>{const t=mv.filter(x=>x.bank===b.id&&isToday(x.time));const i=t.filter(x=>x.amt>0).reduce((s,x)=>s+x.amt,0),o=-t.filter(x=>x.amt<0).reduce((s,x)=>s+x.amt,0);
-    return `<button class="bank" type="button" data-sheet="ledger:${b.id}"><span class="bico">${esc((b.name||"?").replace(/[^A-Za-z0-9]/g,"").slice(0,2).toUpperCase()||"₹")}</span><span class="bname">${esc(b.name)}${b.type==="Cash"?' <span class="mtag">Cash</span>':""}${bankTag(b,mv)}</span><span class="bbal ${bal[b.id]<0?"neg":""}">${inr(bal[b.id])}</span>${limBar(b,use)}<span class="bsub">${b.accNo?"A/c ••"+esc(b.accNo.slice(-4))+" · ":""}${b.upi?esc(b.upi)+" · ":""}Today <span class="in">+${inr(i)}</span> · <span class="out">−${inr(o)}</span></span></button>`}).join("")
+    return `<button class="bank" type="button" data-sheet="ledger:${b.id}"><span class="bico">${esc((b.name||"?").replace(/[^A-Za-z0-9]/g,"").slice(0,2).toUpperCase()||"₹")}</span><span class="bname">${esc(b.name)}${b.type==="Cash"?' <span class="mtag">Cash</span>':""}${bankTag(b,mv)}</span><span class="bbal ${bal[b.id]<0?"neg":""}">${inr(bal[b.id])}</span>${limBar(b,use)}<span class="bsub">${b.accNo?"A/c ••"+esc(b.accNo.slice(-4))+" · ":""}${b.upi?esc(b.upi)+" · ":""}Today <span class="in">+${inr(i)}</span> · <span class="out">−${inr(o)}</span>${(()=>{const q=t.length;const pe=mv.filter(x=>x.bank===b.id&&x.pend).length;return (q?" · "+q+" txn":"")+(pe?" · "+pe+" pending":"")})()}</span></button>`}).join("")
     :'<div class="empty"><strong>No banks yet</strong>Tap “Add bank” to add each account with its current balance. Add one with type Cash for cash in hand.</div>';
   const st=stockLeft();
   $("#stockCards").innerHTML=Object.entries(st).filter(([c,q])=>c==="USDT"||Math.abs(q)>1e-9).map(([c,q])=>`<div class="mcard"><div class="lbl">${esc(c)} left</div><div class="val" style="${q<0?"color:var(--sell)":""}">${fmtQ(+q.toFixed(6))}</div><div class="sm">${q<0?"Sold more than bought":"Completed orders"}</div></div>`).join("");
@@ -4488,7 +4526,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=24;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=25;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -4555,6 +4593,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00025","5 Oct 2026",["Bank page now shows today in/out, today's volume, transactions, pending, last transaction and status","New \"Check balance\": type your real bank balance, see the difference, save the check, or fix the balance in one tap","Bank status: Active, Paused or Frozen; Limit reached and Idle show automatically","Row on Wallet shows transaction and pending counts; full history with Show all"]],
   ["0.0.0.00024","5 Oct 2026",["Screenshot reader starts warming up as soon as you add a screenshot, so reading is ready sooner","After \"Skip AI\" it now waits for the phone reader and shows its progress"]],
   ["0.0.0.00023","5 Oct 2026",["Screenshot reading is much faster to start: the payment is read on your phone at the same time as the AI","Shows seconds while waiting, and a \"Skip AI · read on phone\" button after 12 seconds","AI requests now stop after 40 seconds instead of hanging"]],
   ["0.0.0.00022","5 Oct 2026",["Payment screenshots and SMS are read on your phone: amount, UTR, who paid whom, bank, time and status","You check and edit what was read, pick the order, then confirm. Only then it shows as \"Verified\"","Records made by AI are marked \"AI-read\" until you check them","Warns on repeated screenshot, repeated UTR, different amount, different name, or a failed/pending payment","Smart intake now asks you first by default (you can switch auto-save back on in Settings)"]],
