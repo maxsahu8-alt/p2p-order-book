@@ -1,9 +1,9 @@
 {
- "web": "0.0027",
- "build": 27,
- "display": "0.0.0.00027",
+ "web": "0.0028",
+ "build": 28,
+ "display": "0.0.0.00028",
  "files": {
-  "index.html": "51c66d07ea26b95b455feaa6cbd9537aa50f6200",
+  "index.html": "d9dd7c8d28a5f6c6c87f5e2e670f2b80800881c9",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 4,
   "name": "0.0.0.00019",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Phase 8: risk checks"
+  "notes": "Verify screenshots"
  }
 }
