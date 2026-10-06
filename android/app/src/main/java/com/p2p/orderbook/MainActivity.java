@@ -100,7 +100,10 @@ public class MainActivity extends Activity {
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW); // database phone runs on http://100.x.x.x
         s.setSupportMultipleWindows(false);
         s.setTextZoom(100);
-        web.setBackgroundColor(Color.parseColor("#0b0f16"));
+        // Match the opening colour to the app theme (light or dark) so there is no dark-to-white flash.
+        final int bgc = Color.parseColor("light".equals(prefs.getString("theme", "dark")) ? "#f4f5f7" : "#0c0d0e");
+        web.setBackgroundColor(bgc);
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(bgc));
 
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
                 .setDomain(HOST)
@@ -475,6 +478,11 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- bridge for the web app
     class Bridge {
+        @JavascriptInterface
+        public void setTheme(String t) {
+            try { prefs.edit().putString("theme", "light".equals(t) ? "light" : "dark").apply(); } catch (Exception e) { }
+        }
+
         @JavascriptInterface
         public String setWidget(String json) {
             try {
