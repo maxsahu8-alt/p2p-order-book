@@ -12,11 +12,6 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.text.Text;
-import com.google.mlkit.vision.text.TextRecognition;
-import com.google.mlkit.vision.text.TextRecognizer;
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -164,7 +159,6 @@ public class MainActivity extends Activity {
             }
         });
         web.addJavascriptInterface(new Bridge(), "P2PNative");
-        web.addJavascriptInterface(new OcrBridge(), "P2POcr");
         setContentView(web);
         web.loadUrl(START);
     }
@@ -303,38 +297,6 @@ public class MainActivity extends Activity {
 
     static final int CAM_REQ = 7301;
     Uri camUri = null;
-
-    /** On-device text recognition (Google ML Kit, bundled model: works offline, nothing leaves the phone). */
-    class OcrBridge {
-        @JavascriptInterface
-        public void recognize(final String id, final String b64) {
-            new Thread(() -> {
-                try {
-                    byte[] raw = Base64.decode(b64, Base64.DEFAULT);
-                    Bitmap bmp = BitmapFactory.decodeByteArray(raw, 0, raw.length);
-                    if (bmp == null) { ocrOut(id, "", 0, "decode"); return; }
-                    final TextRecognizer rec = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-                    rec.process(InputImage.fromBitmap(bmp, 0))
-                        .addOnSuccessListener(t -> {
-                            StringBuilder sb = new StringBuilder();
-                            double sum = 0; int n = 0;
-                            for (Text.TextBlock b : t.getTextBlocks()) {
-                                for (Text.Line l : b.getLines()) {
-                                    sb.append(l.getText()).append('\n');
-                                    try { sum += l.getConfidence(); n++; } catch (Throwable ignore) { }
-                                }
-                                sb.append('\n');
-                            }
-                            ocrOut(id, sb.toString(), n > 0 ? Math.round(sum / n * 100) : 90, null);
-                            rec.close();
-                        })
-                        .addOnFailureListener(e -> { ocrOut(id, "", 0, "mlkit"); rec.close(); });
-                } catch (Throwable e) {
-                    ocrOut(id, "", 0, "error");
-                }
-            }).start();
-        }
-    }
 
     void ocrOut(String id, String text, long conf, String err) {
         final String js = "window.P2POcrResult&&P2POcrResult(" + JSONObject.quote(id) + "," + JSONObject.quote(text) + "," + conf + ","
