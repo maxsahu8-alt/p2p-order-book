@@ -1,9 +1,9 @@
 {
- "web": "0.0039",
- "build": 39,
- "display": "0.0.0.00039",
+ "web": "0.0040",
+ "build": 40,
+ "display": "0.0.0.00040",
  "files": {
-  "index.html": "f80f93a22e4470fcd65d9d525d792c958fc5a6a4",
+  "index.html": "c6c2991c4c400556245f0091e0cfe33ccd020b54",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 10,
   "name": "0.0.0.00036",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Live market: USDT/INR in header, P2P ads, coins in USDT and INR"
+  "notes": "Professional market bar in header"
  }
 }
