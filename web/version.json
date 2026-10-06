@@ -3,7 +3,7 @@
  "build": 44,
  "display": "0.0.0.00044",
  "files": {
-  "index.html": "a0f8970182ee4bc4f16f8a1f7015819b4f91da4a",
+  "index.html": "96e7329320e6092e5d489152169d914b15132d50",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 10,
   "name": "0.0.0.00036",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Greeting targets accordion"
+  "notes": "Double-tap greeting opens targets pop-up"
  }
 }
