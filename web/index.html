@@ -206,7 +206,7 @@ table.coins td.pos{color:var(--buy)} table.coins td.neg{color:var(--sell)}
 .exp .amt{font:600 .95rem var(--mono);color:var(--sell);text-align:right}
 .exp .o-meta{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px}
 .sheet-bg{overscroll-behavior:contain;position:fixed;inset:0;background:rgba(8,15,24,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
-html,body,.sheet{scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar,.sheet::-webkit-scrollbar{width:0;height:0;display:none}html{overscroll-behavior-y:none}.sheet{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--surface);width:100%;max-width:560px;max-height:88vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom,0px));box-sizing:border-box;box-shadow:0 -4px 22px rgba(0,0,0,.1)}
+html,body,#sheetBody{scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar,#sheetBody::-webkit-scrollbar{width:0;height:0;display:none}#sheetBody{overflow-y:auto;min-height:0;flex:1 1 auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.grab{flex:none}html{overscroll-behavior-y:none}.sheet{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--surface);width:100%;max-width:560px;max-height:88vh;overflow:visible;display:flex;flex-direction:column;border-radius:20px 20px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom,0px));box-sizing:border-box;box-shadow:none;border-top:1px solid rgba(255,255,255,.5);background-clip:padding-box}
 .grab{width:40px;height:4px;border-radius:2px;background:var(--line-strong);margin:4px auto 12px}
 .sheet h3{font:700 1.1rem var(--display);margin:0 0 14px}
 .sheet form{box-shadow:none;border:0;padding:0}
@@ -672,7 +672,7 @@ section.chat > .sec-head:first-child:not(:has(span:not(:empty),button:not([hidde
 .qrc{color:var(--muted);display:grid}
 /* add menu: advanced */
 .sheet:has(.qwrap){padding-top:6px}
-.qwrap .qhead{position:sticky;top:-8px;z-index:2;background:var(--surface);padding:8px 0 6px;margin:0 0 -2px}
+.qwrap .qhead{position:sticky;top:0;z-index:2;background:var(--surface);padding:8px 0 6px;margin:0 0 -2px}
 .qhead h3{font:800 1.35rem var(--display)!important;letter-spacing:-.02em}
 .qh{position:relative;overflow:hidden;gap:10px;min-height:150px;justify-content:flex-end}
 .qh::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:currentColor;opacity:.035}
@@ -2673,11 +2673,11 @@ function openSheet(html,onReady){$("#sheetBody").innerHTML=html;$("#sheetBg").hi
 function closeSheet(){$("#sheetBg").hidden=true;$("#sheetBody").innerHTML="";document.body.style.overflow=""}
 $("#sheetBg").addEventListener("click",e=>{if(e.target.id==="sheetBg"||e.target.closest("[data-close]"))closeSheet()});
 // swipe a sheet down to close it
-(function(){const bg=$("#sheetBg"),sh=bg.querySelector(".sheet");let y0=0,t0=0,dy=0,on=false,go=false;
+(function(){const bg=$("#sheetBg"),sh=bg.querySelector(".sheet"),bd=$("#sheetBody");let y0=0,t0=0,dy=0,on=false,go=false;
  const soft=()=>{sh.style.transition="";sh.style.transform=""};const reset=()=>{soft();sh.style.animation=""};
  new MutationObserver(()=>{if(bg.hidden)reset()}).observe(bg,{attributes:true,attributeFilter:["hidden"]});
  sh.addEventListener("touchstart",e=>{if(e.touches.length!==1){on=false;return}const t=e.target;if(t.closest&&t.closest("input,textarea,select,[contenteditable],canvas,.chart"))return on=false;on=true;go=false;dy=0;y0=e.touches[0].clientY;t0=Date.now()},{passive:true});
- sh.addEventListener("touchmove",e=>{if(!on)return;const d=e.touches[0].clientY-y0;if(!go){if(d>14&&sh.scrollTop<=0){go=true;y0=e.touches[0].clientY-d;sh.style.animation="none";sh.style.transition="none"}else if(d<-8||sh.scrollTop>0){on=false;return}else return}
+ sh.addEventListener("touchmove",e=>{if(!on)return;const d=e.touches[0].clientY-y0;if(!go){if(d>14&&bd.scrollTop<=0){go=true;y0=e.touches[0].clientY-d;sh.style.animation="none";sh.style.transition="none"}else if(d<-8||bd.scrollTop>0){on=false;return}else return}
   dy=Math.max(0,e.touches[0].clientY-y0);sh.style.transform=`translateY(${dy}px)`;if(e.cancelable)e.preventDefault()},{passive:false});
  const end=()=>{if(!on||!go){on=false;return}on=false;go=false;const v=dy/Math.max(1,Date.now()-t0);
   if(dy>sh.offsetHeight*.38||(v>1.3&&dy>90)){sh.style.transition="transform .22s ease-out";sh.style.transform="translateY(105%)";setTimeout(()=>{closeSheet();reset()},200)}
@@ -5291,7 +5291,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=60;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=62;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5358,6 +5358,8 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00062","6 Oct 2026",["Pop-up sheets: removed the shadow that drew dark patches at the rounded top corners, so the corners are clean"]],
+  ["0.0.0.00061","6 Oct 2026",["Pop-up menus: fixed the black corners at the top edge of the sheet (the scrolling area moved inside the sheet so the rounded corners are drawn cleanly)"]],
   ["0.0.0.00060","6 Oct 2026",["Removed the dark scroll bar on the right edge and the dark shadow above pop-ups (the scroll bar part needs the new APK)"]],
   ["0.0.0.00059","6 Oct 2026",["Pop-up swipe-down is firmer: it needs a real pull (about 40% of the sheet) or a fast flick to close, springs back smoothly without flicker, and no longer bounces at the top edge"]],
   ["0.0.0.00058","6 Oct 2026",["Swipe down on any pop-up menu (Add, forms, details) to close it"]],

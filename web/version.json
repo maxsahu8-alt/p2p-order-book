@@ -1,17 +1,17 @@
 {
- "web": "0.0060",
- "build": 60,
- "display": "0.0.0.00060",
+ "web": "0.0062",
+ "build": 62,
+ "display": "0.0.0.00062",
  "files": {
-  "index.html": "d3d87c551643dc3dc9cc99976ff526be59a60272",
+  "index.html": "03c84ad678d8f4b2d90fac6c14078d934a60e65c",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
  },
  "apk": {
-  "code": 15,
-  "name": "0.0.0.00054",
+  "code": 16,
+  "name": "0.0.0.00060",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Hide scrollbar, softer sheet shadow"
+  "notes": "Clean sheet corners"
  }
 }
