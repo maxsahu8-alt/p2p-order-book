@@ -1,9 +1,9 @@
 {
- "web": "0.0058",
- "build": 58,
- "display": "0.0.0.00058",
+ "web": "0.0059",
+ "build": 59,
+ "display": "0.0.0.00059",
  "files": {
-  "index.html": "aa880b88e3d031d4714ecf5410ba47afe898d5f8",
+  "index.html": "5d3e01c5d6b1f53b6b24ddbba12307200218be3b",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 15,
   "name": "0.0.0.00054",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Swipe down to close sheets"
+  "notes": "Firmer swipe-down, no flicker"
  }
 }
