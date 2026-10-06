@@ -36,6 +36,7 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import androidx.core.content.FileProvider;
+import androidx.core.splashscreen.SplashScreen;
 import androidx.webkit.WebViewAssetLoader;
 
 import org.json.JSONArray;
@@ -80,9 +81,15 @@ public class MainActivity extends Activity {
     ValueCallback<Uri[]> fileCb;
     SharedPreferences prefs;
     volatile boolean checking = false;
+    volatile boolean webReady = false;
 
     @Override
     protected void onCreate(Bundle state) {
+        // Keep the splash up until the app screen is ready, so there is no blank gap before the opening animation.
+        SplashScreen sp = SplashScreen.installSplashScreen(this);
+        sp.setKeepOnScreenCondition(() -> !webReady);
+        sp.setOnExitAnimationListener(v -> v.getView().animate().alpha(0f).setDuration(280).withEndAction(v::remove).start());
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> webReady = true, 2500);
         super.onCreate(state);
         prefs = getSharedPreferences("p2p", MODE_PRIVATE);
         getWindow().setStatusBarColor(Color.parseColor("#0b0f16"));
@@ -478,6 +485,9 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- bridge for the web app
     class Bridge {
+        @JavascriptInterface
+        public void appReady() { webReady = true; }
+
         @JavascriptInterface
         public void setTheme(String t) {
             try { prefs.edit().putString("theme", "light".equals(t) ? "light" : "dark").apply(); } catch (Exception e) { }
