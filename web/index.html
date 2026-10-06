@@ -4318,11 +4318,19 @@ $("#eyeBtn").onclick=()=>{hideAmt=!hideAmt;try{localStorage.setItem("p2p_hide",h
 let sqT;$("#hq").addEventListener("input",e=>{clearTimeout(sqT);sqT=setTimeout(()=>{searchQ=e.target.value.trim();renderList()},250)});
 $("#searchBtn").onclick=()=>openUS();
 // page title in the header + active top-menu pill
+(function(){if(!document.getElementById("gtcss")){const s=document.createElement("style");s.id="gtcss";s.textContent=`.xhead.gr .htitle b{display:flex;flex-direction:column;gap:1px;white-space:normal;overflow:visible}.gt-l{display:flex;align-items:center;gap:6px;font:600 .7rem var(--body);color:var(--muted);letter-spacing:.01em;animation:gtUp .6s cubic-bezier(.2,.8,.2,1) both}.gt-i{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}.gt-i .rays{transform-origin:12px 12px;animation:gtSpin 18s linear infinite}.gt-i.n{animation:gtFloat 4s ease-in-out infinite}.gt-i.e{animation:gtFloat 4.5s ease-in-out infinite}.gt-n{font:800 1.18rem/1.15 var(--display);letter-spacing:-.015em;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-bottom:1px;background:linear-gradient(100deg,var(--fg) 38%,var(--accent) 50%,var(--fg) 62%);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gtUp .7s .12s cubic-bezier(.2,.8,.2,1) both,gtSh 1.7s .35s ease-in-out both}@keyframes gtUp{from{opacity:0;transform:translateY(9px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}@keyframes gtSh{from{background-position:0% 0}to{background-position:100% 0}}@keyframes gtSpin{to{transform:rotate(360deg)}}@keyframes gtFloat{50%{transform:translateY(-1.5px)}}.xhead.gr .sub.ok{display:none}.xhead.gr #menuBtn{position:relative}.xhead.gr:has(#syncNote.ok) #menuBtn::after{content:"";position:absolute;right:5px;bottom:5px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--surface)}@media(prefers-reduced-motion:reduce){.gt-l,.gt-n,.gt-i,.gt-i .rays{animation:none!important}.gt-n{background:none;-webkit-text-fill-color:currentColor}}`;document.head.appendChild(s)}})();
+function gtLabel(h){h=h==null?new Date().getHours():h;return h>=5&&h<12?["Good morning","m"]:h>=12&&h<17?["Good afternoon","a"]:h>=17&&h<21?["Good evening","e"]:["Good night","n"]}
+function gtName(){const o=String(pref("owner")||"").trim().split(/\s+/)[0]||"";return o?o.charAt(0).toUpperCase()+o.slice(1).toLowerCase():String(pref("biz")||"").trim()}
+const GT_ICON={m:'<g class="rays"><path d="M12 3v2M4.2 7.2l1.4 1.4M19.8 7.2l-1.4 1.4M2 15h2M20 15h2"/></g><path d="M7 18a5 5 0 0 1 10 0M3 18h18"/>',a:'<circle cx="12" cy="12" r="4"/><g class="rays"><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g>',e:'<path d="M7 16a5 5 0 0 1 10 0M3 16h18M6 20h12M12 6v2M5.5 9.5l1.4 1.4M18.5 9.5l-1.4 1.4"/>',n:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 4v3M15.5 5.5h3"/>'};
+var gtKey="";
+function homeTitle(anim){const b=document.getElementById("pageTitle"),h=document.querySelector("header.xhead");if(!b||!h)return;const[l,k]=gtLabel(),n=gtName()||"P2P Order Book";const key=l+"|"+n;if(!anim&&key===gtKey&&b.querySelector(".gt-n"))return;gtKey=key;
+ h.classList.add("gr");b.innerHTML=`<span class="gt-l"><svg class="gt-i ${k}" viewBox="0 0 24 24" aria-hidden="true">${GT_ICON[k]}</svg>${l}</span><span class="gt-n">${esc(n)}</span>`}
+setInterval(()=>{try{const h=document.querySelector("header.xhead");if(h&&h.classList.contains("gr"))homeTitle(false)}catch(e){}},60000);
 const PAGE_NAMES={intake:"Smart intake",settings:"Settings",home:"P2P Order Book",orders:"Orders",add:"New order",coins:"Coins",wallet:"Wallet",direct:"Direct payments",ai:"AI Agent",ideas:"Ideas"};
 function updateChrome(){
   const cur=Object.keys(PAGE_NAMES).find(k=>{const el=$("#p-"+k);return el&&!el.hidden})||"home";
   if(cur==="intake"&&!cloudReady()&&!ocrWorker&&!ocrPromise&&!(aiCfg.prov!=="builtin"||i2Max>0))setTimeout(()=>ocrInit().catch(()=>{}),300);
-  $("#pageTitle").textContent=cur==="home"&&pref("biz")?pref("biz"):cur==="add"&&typeof editingId!=="undefined"&&editingId?"Edit order":PAGE_NAMES[cur];
+  if(cur==="home")homeTitle(true);else{const hh=document.querySelector("header.xhead");if(hh)hh.classList.remove("gr");$("#pageTitle").textContent=cur==="add"&&typeof editingId!=="undefined"&&editingId?"Edit order":PAGE_NAMES[cur]}
   document.querySelectorAll("#topmenu [data-go]").forEach(b=>b.classList.toggle("on",b.dataset.go===cur));
   document.title=cur==="home"?"P2P Order Book":PAGE_NAMES[cur]+" · P2P Order Book";
 }
@@ -4415,7 +4423,7 @@ const PREF_DEF={biz:"",owner:"",coin:"USDT",mode:"P2P",plat:"Binance",pay:"UPI",
 function pref(k){const p=(settings&&settings.prefs)||{};return p[k]!=null?p[k]:PREF_DEF[k]}
 const alertOn=k=>(pref("alerts")||{})[k]!==false;
 let prefT=null,prefPending={};
-function setPref(k,v){prefPending[k]=v;settings={...settings,prefs:{...(settings.prefs||{}),...prefPending}};applyPrefs();clearTimeout(prefT);prefT=setTimeout(async()=>{prefPending={};try{await putRec({...settings,id:"s_main",kind:"setting"});toast("Settings saved")}catch(e){toast("Couldn't save settings")}},700)}
+function setPref(k,v){if(k==="owner"||k==="biz")setTimeout(()=>{try{updateChrome()}catch(e){}},0);prefPending[k]=v;settings={...settings,prefs:{...(settings.prefs||{}),...prefPending}};applyPrefs();clearTimeout(prefT);prefT=setTimeout(async()=>{prefPending={};try{await putRec({...settings,id:"s_main",kind:"setting"});toast("Settings saved")}catch(e){toast("Couldn't save settings")}},700)}
 const devGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}};
 const isFileCopy=/^(content|file):$/.test(location.protocol)&&!window.P2P_APK;
 const pinHas=()=>!isFileCopy&&/^([0-9a-f]{64}|x-?\d+)$/.test(String(devGet("p2p_pin","")||""));
@@ -5229,7 +5237,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=41;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=42;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5296,6 +5304,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00042","6 Oct 2026",["New home header: a greeting for the time of day (Good morning, afternoon, evening or night) with a small animated icon, and your first name in place of the app name, with a smooth entrance. Set it in Settings > Your name","The Saved on this device note became a small green dot on the menu button; it still shows in full if something is not saved"]],
   ["0.0.0.00041","6 Oct 2026",["The live USDT price in rupees now sits in the title row next to search, with a live dot and the 24h change. P2P buy and sell rates are on the Live market page"]],
   ["0.0.0.00040","6 Oct 2026",["New header: the market price now sits in a clean bar under the title, with a live dot, the 24h change, P2P buy and sell when available, and the time when the price is old"]],
   ["0.0.0.00039","6 Oct 2026",["New live market: the USDT/INR price (with 24h change) and the best P2P buy and sell rates show in the header, and update every minute","New Live market page: P2P ads, your last buy and sell rate against the market, and BTC, ETH, BNB, SOL, XRP, TRX, DOGE and USDC with the price in USDT and in rupees","The last price is kept for offline use and shown as old"]],
