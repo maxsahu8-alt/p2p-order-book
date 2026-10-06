@@ -1,9 +1,9 @@
 {
- "web": "0.0037",
- "build": 37,
- "display": "0.0.0.00037",
+ "web": "0.0038",
+ "build": 38,
+ "display": "0.0.0.00038",
  "files": {
-  "index.html": "92d6abe40b8866459df100c8fa9f997303af9fcd",
+  "index.html": "879518b6cf957a85a5b9547e00d9e168892f073b",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 10,
   "name": "0.0.0.00036",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Intake: cancel, live fields, two scores, debug screen, name fix"
+  "notes": "Link order-page name with payment name"
  }
 }

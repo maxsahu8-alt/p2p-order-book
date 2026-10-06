@@ -4773,6 +4773,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     <div class="ixflow">${party(L)}<div class="ixmid"><div class="ixamt">${amt!=null?inr(amt):"Amount not read"}</div><div class="ixline"><span></span></div>${O.fiat!=null&&P.amount!=null&&Math.abs(O.fiat-P.amount)>1?`<small>order says ${inr(O.fiat)}</small>`:""}</div>${party(R)}</div>
     <div class="vt">${deal?esc(deal)+" · ":""}${g.cmp.overall==="VERIFIED"?"Screenshots appear consistent":g.cmp.overall==="REVIEW"?"Needs your review":"Potential inconsistency detected"}${g.order?"":" · payment only"}</div>
     ${ixScoreHtml(g)}
+    ${ixLinkHtml(g)}
     ${M.lines.length?`<div class="ixmine ${M.verdict}"><b>Your account check</b><ul>${M.lines.map(l=>`<li class="${l.s}">${esc(l.t)}${l.own?ixOwnRow(l.own):""}</li>`).join("")}</ul></div>`:""}
     <div class="ixwhy"><b>WHY</b><ul>${ixWhy(g).map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>
     <div class="ixai">${g.ai==="ok"?"✨ Checked by AI vision on top of the phone reading":g.ai==="unavailable"?"⚠ Cloud AI unavailable"+(g.aiErr==="bad_key"?" (key rejected)":g.aiErr==="rate_limited"?" (no free requests left)":g.aiErr==="busy"?" (busy or slow)":"")+": results below are from on-device analysis":g.ai==="na"?"AI not connected: results are from on-device analysis":"📷 Read on your phone"}${g.items[0]&&g.items[0].ocr?` · ${esc(g.items.map(x=>x.ocr&&x.ocr.engine).filter((v,i,a)=>v&&a.indexOf(v)===i).join(" + "))}`:""}</div>
@@ -4798,6 +4799,7 @@ function ixDraw(){try{ixRail()}catch(e){}const out=$("#i2-ix");if(!out)return;ou
     d.addEventListener("click",e=>{const b=e.target.closest("[data-ix]");if(!b)return;ixAct(g,b.dataset.ix,b)});out.appendChild(d);
     const slot=d.querySelector("[data-paycard]");if(slot){const it=g.pays.find(x=>!x.support)||g.pays[0];try{if(it&&it.ocr&&it.ocr.text){const pp=payParse(it.ocr.text);if(pp.ok||pp.amount)slot.appendChild(payCard(pp,it.file,"phone"))}}catch(e){console.error(e)}}})}
 async function ixAct(g,a,btn){
+  if(a==="linknames"){const c=ixLinkCand(g);if(c){await ixLinkNames(c.nick,c.real);ixS.groups.forEach(x=>{try{ixVerify(x)}catch(e){}});ixDraw();toast(`Linked ${c.nick} = ${c.real}`)}return}
   if(a==="debug"){sheets.ixdebug(g.id);return}
   if(a==="raw"){const r=btn.closest(".ixb").querySelector(".ixraw");r.hidden=!r.hidden;return}
   if(a==="addbank"){sheets.bank();return}
@@ -4903,6 +4905,7 @@ function cpTag(n){if(!n)return null;return cpTagMap.get(cpKey(n))||null}
 function cpBadge(n){const t=cpTag(n);return t&&t.tag==="star"?'<span class="cpb star" title="Trusted">★</span>':t&&t.tag==="block"?'<span class="cpb block" title="Blocked">⛔</span>':""}
 function cpStats(){const m={};orders.forEach(o=>{const n=(o.cp||"").trim();if(!n)return;const k=cpKey(n);const x=m[k]=m[k]||{name:n,n:0,c:0,ap:0,vol:0,last:0};x.n++;if(o.status==="Cancelled")x.c++;if(o.status==="Appeal")x.ap++;if(o.status==="Completed")x.vol+=orderTotal(o);x.last=Math.max(x.last,o.time)});
   Object.entries(cpBook()).forEach(([k,h])=>{const x=m[k]=m[k]||{name:h.n,n:0,c:0,ap:0,vol:0,last:0};x.n+=h.o;x.c+=h.c;x.ap+=h.a;x.vol+=h.bv+h.sv;x.last=Math.max(x.last,h.l);x.hist=h.o});
+  recs.filter(r=>r.kind==="ident"&&r.realName).forEach(r=>{if(m[r.to])m[r.to].name=r.realName});
   recs.filter(x=>x.kind==="cptag").forEach(t=>{if(!m[t.id])m[t.id]={name:t.name,n:0,c:0,ap:0,vol:0,last:0}});return m}
 function cpCheck(){const n=$("#f-cp").value.trim(),w=$("#cpWarn");if(!n){w.hidden=true;return}const t=cpTag(n),st=cpStats()[cpKey(n)];
   if(t&&t.tag==="block"){w.className="cpwarn block";w.textContent="⛔ Blocked counterparty"+(t.note?": "+t.note:"")+". Be careful with this deal.";w.hidden=false;return}
@@ -5225,7 +5228,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=37;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=38;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5292,6 +5295,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00038","6 Oct 2026",["New: when the exchange order page shows one name and the payment shows another, Smart Intake offers Link as same person. The two names are joined, remembered for next time, and shown on the trader as Also known as"]],
   ["0.0.0.00037","6 Oct 2026",["New Cancel analysis button while Smart Intake is reading","New live view while reading: each screenshot shows what was found (amount, order ID, UTR, names) and what was not confidently detected","New two separate scores on every result: Extraction confidence (how well we read it) and Transaction match (how well payment and order belong together)","New Debug screen (turn on in Intake memory > Developer): OCR text and confidence, fields and their source screenshot, match calculation, risk flags, AI response, processing time","Fixed: a repeated name part such as DHIRAJ KUMAR kumar is now read as DHIRAJ KUMAR","Fixed: a wrong label such as Account Sender A... is no longer shown as your account"]],
   ["0.0.0.00036","6 Oct 2026",["New Chat replies: ready exchange-chat messages with amount, name and your bank details filled in; add your own","New One client, many names: merge the same person under different names so orders, trust and limits count as one","New Udhar khata: who owes you and who you owe, in rupees or USDT, with due dates, reminders and alerts","New Day close: end-of-day checklist and match your real bank, cash and USDT balances, with a saved history","New Business insights: best clients, best payment methods and banks, best days and hours, and clients who went quiet","New Bank health: credit streaks, rest-day advice, limits left, and a freeze log that learns your safe daily credit level","New At a glance card and an Android home-screen widget with today's profit, open orders and alerts (needs the new APK)"]],
   ["0.0.0.00035","6 Oct 2026",["New Intake memory: Smart Intake now learns on this phone, so the AI is needed less and less","Learns that two similar names are the same person (for example Likith Shetty = Likith Rajesh Shetty) when you save a deal","Learns where details sit on an exchange or payment screen after the AI reads something the phone missed, and uses that next time without the AI","Learns your bank from its last 4 digits when the AI recognises the logo","Shows known sellers and buyers (earlier deals) and how many intakes needed the AI today","Settings > Intake memory lists everything learned, and each item can be forgotten"]],
@@ -5397,6 +5401,7 @@ sheets.trader=function(name){if(!name)return;const D=traderData(name);const lv=!
   const myB=avgBuyRate(orders,coin),myS=(()=>{let q=0,v=0;orders.forEach(o=>{if(o.side==="SELL"&&o.status==="Completed"&&o.coin===coin){q+=+o.qty;v+=o.qty*o.rate}});return q?v/q:0})();
   const isB=D.tag&&D.tag.tag==="block",isS=D.tag&&D.tag.tag==="star";
   openSheet(`<div class="insw"><div class="pvh"><span class="pva">${esc(name.slice(0,2).toUpperCase())}</span><div class="pvn"><b>${esc(name)} ${cpBadge(name)}</b><small>${D.total?`Since ${new Date(D.first).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})} · last ${dfmt(D.last)}`:"No orders yet"}</small></div><span class="pvs ${lv}">${!D.closed?"New":lv==="ok"?"Good":lv==="warn"?"Careful":"Risky"}</span></div>
+    ${akaNames(name).length?`<p class="note" style="margin:6px 0">Also known as: ${akaNames(name).map(esc).join(", ")}</p>`:""}
     <div class="tgh">${ring(D.score,100,lvlCol(lv==="mute"?"warn":lv),D.closed?D.score:"—","trust score")}<div class="tgk"><div><span>Volume</span><b>${inr(Math.round(D.vol))}</b></div><div><span>Completion</span><b>${D.closed?Math.round(D.comp*100)+"%":"—"}</b></div></div></div>
     <div class="msgr">${[["Orders",D.total,""],["Cancelled",D.canc,D.canc?"neg":""],["Appeals",D.ap,D.ap?"neg":""],["Bought from you",D.buy.n?fmtQ(+D.buy.q.toFixed(2))+" "+coin:"—",""],["Sold to you",D.sell.n?fmtQ(+D.sell.q.toFixed(2))+" "+coin:"—",""],["Usual time",D.total?hLab(D.hb):"—",""]].map(([l,v,c])=>`<div><span>${l}</span><b class="${c}">${v}</b></div>`).join("")}</div>
     ${D.buy.n||D.sell.n?`<div class="pcsec">Rates with this trader</div>${insList([D.buy.n&&myS?[D.buy.avg>=myS?"ok":"warn",`You sold to them at <b>₹${D.buy.avg.toFixed(2)}</b> avg · your overall sell ₹${myS.toFixed(2)}.`]:null,D.sell.n&&myB?[D.sell.avg<=myB?"ok":"warn",`You bought from them at <b>₹${D.sell.avg.toFixed(2)}</b> avg · your overall buy ₹${myB.toFixed(2)}.`]:null])}`:""}
@@ -5552,9 +5557,9 @@ function identSuggest(){const S=cpStats();const E=Object.entries(S).sort((a,b)=>
   else if(a.k.length>=9&&p7Lev(a.k,b.k)<=1)why="1 letter different";
   else if(typeof ixlAlias==="function"&&ixlAlias(a.name,b.name))why="Learned by Intake";
   if(why)out.push({a,b,why})}return out}
-async function identMerge(fromK,toK,names){if(!fromK||!toK||fromK===toK)return false;if(identRes(toK)===fromK)return false;const to=identRes(toK);
+async function identMerge(fromK,toK,names,realName){if(!fromK||!toK||fromK===toK)return false;if(identRes(toK)===fromK)return false;const to=identRes(toK);
  try{const tg=cpTagMap&&cpTagMap.get(fromK);if(tg&&!cpTagMap.get(to)){await putRec({...tg,id:to})}}catch(e){}
- await putRec({id:"idn_"+fromK,kind:"ident",from:fromK,to,names:names||[],time:Date.now()});return true}
+ await putRec({id:"idn_"+fromK,kind:"ident",from:fromK,to,names:names||[],realName:realName||"",time:Date.now()});return true}
 sheets.ident=function(){const sug=identSuggest();const S=cpStats();const names=Object.values(S).map(x=>x.name).sort();const mer=recs.filter(r=>r.kind==="ident").sort((a,b)=>b.time-a.time);
  openSheet(`<div class="insw"><div class="insh"><h3>One client, many names</h3><span class="note">${sug.length} to check</span></div>
   <p class="note">Same person with two names? Merge them so orders, trust, limits and khata count as one client. You can undo any time.</p>
@@ -5721,6 +5726,10 @@ function ixLiveHtml(){const its=(ixS.items||[]).filter(x=>x.ocr&&x.ocr.text);if(
   else if(O)f.push(["Amount",O.fiat!=null?money(O.fiat):null],["Order ID",O.id?String(O.id).slice(0,12)+(String(O.id).length>12?"…":""):null],["Buyer",O.buyer],["Seller",O.seller]);
   else f.push(["Details",null]);
   return`<div class="ixlv"><b>${esc(IX_TYPES[it.cls.type]||"Screenshot")}</b>${f.map(([k,v])=>`<div><span>${k}</span>${v?`<em>${esc(v)} ✓</em>`:`<i>Not confidently detected ⚠</i>`}</div>`).join("")}</div>`}).join("")+`</div>`}
+function ixLinkCand(g){try{const X=g.X,P=X.pay,O=X.ord;const sd=ixSide(g);if(!g.order||!sd)return null;const nick=sd==="BUY"?O.seller:O.buyer,real=sd==="BUY"?P.receiver:P.sender;if(!nick||!real)return null;if(cpKey(nick)===cpKey(real)||verName(nick,real)==="M")return null;return{nick,real}}catch(e){return null}}
+function ixLinkHtml(g){const c=ixLinkCand(g);return c?`<div class="ixmine warn"><b>Two names for one person?</b><div style="margin:4px 0 8px;font:500 .84rem var(--body)">Order page shows <b>${esc(c.nick)}</b>. Payment shows <b>${esc(c.real)}</b>.</div><button type="button" class="mini" data-ix="linknames">Link as same person</button></div>`:""}
+async function ixLinkNames(nick,real){const a=ixlN(nick),b=ixlN(real);if(a&&b&&a!==b){const[x,y]=a<b?[a,b]:[b,a];try{await ixlSet("ixl_alias_"+ixlH(x+"|"+y),{t:"alias",a:x,b:y,da:nick,db:real})}catch(e){}}return identMerge(cpKey(nick),cpKey(real),[nick,real],real)}
+function akaNames(name){const k=cpKey(name);const me=String(name||"").toLowerCase();return[...new Set(recs.filter(r=>r.kind==="ident"&&r.to===k).flatMap(r=>r.names||[]).filter(n=>n&&String(n).toLowerCase()!==me))]}
 const IX_W={amount:30,orderid:15,buyer:10,seller:10,utr:10,method:10,time:10,acct:5,status:5},IX_S={MATCH:1,FOUND:1,UNCLEAR:.4,NOTFOUND:0,MISMATCH:0};
 function ixScores(g){const X=g.X,P=X.pay,O=X.ord;
  const all=[P.amount,P.utr,P.sender,P.receiver,P.status,P.date||P.time,...(g.order?[O.id,O.fiat!=null?O.fiat:O.crypto,O.buyer||O.seller,O.when]:[])];
