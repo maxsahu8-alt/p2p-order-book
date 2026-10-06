@@ -1554,10 +1554,6 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
       <div class="srow2"><div><b>Your name</b></div><input id="st-owner" class="sinp" placeholder="Used by AI" maxlength="40"></div>
       <div class="srow2"><div><b>Intake memory</b><small>What Smart Intake has learned</small></div><button type="button" class="mini" id="st-ixmem">Open</button></div>
     </div>
-    <div class="sgroup"><h3>Display</h3>
-      <div class="srow2"><div><b>Screen size</b><small>Make everything bigger or smaller. You can also pinch with two fingers anywhere</small></div><div class="zmc"><button type="button" class="mini" id="zm-minus" aria-label="Smaller">−</button><b id="zm-val">100%</b><button type="button" class="mini" id="zm-plus" aria-label="Bigger">+</button><button type="button" class="mini" id="zm-reset">Reset</button></div></div>
-      <div class="srow2"><div><b>Calm mode</b><small>Turn off animations and motion</small></div><label class="tog"><input type="checkbox" id="st-calm"><span></span></label></div>
-    </div>
     <div class="sgroup"><h3>New order defaults</h3>
       <div class="srow2"><div><b>Deal type</b></div><select id="st-mode" class="ssel"><option value="P2P">P2P</option><option value="Direct">Direct</option><option value="Cash">Cash</option></select></div>
       <div class="srow2"><div><b>Coin</b></div><select id="st-coin" class="ssel"></select></div>
@@ -4363,17 +4359,6 @@ function tgClick(e){const b=e.target.closest&&e.target.closest("[data-tg]");if(!
 function tgSheet(){const h=document.querySelector("header.xhead");if(!h||!h.classList.contains("gr"))return;clearInterval(tgT);tgEdit=false;
  openSheet('<div class="insw" id="gtBody"></div>',el=>{el.addEventListener("click",tgClick);el.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("input"))tgClick({target:el.querySelector("[data-tg=save]")})});tgRender(true);tgT=setInterval(()=>{if(!tgEl()){clearInterval(tgT);return}if(!tgEdit)tgRender(false)},30000)})}
 (function(){let last=0;const go=()=>{const t=document.querySelector(".htitle");if(!t)return setTimeout(go,300);t.addEventListener("click",()=>{const n=Date.now();if(n-last<380){last=0;tgSheet()}else last=n});t.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tgSheet()}})};go()})();
-// ===== Display: screen zoom (buttons + pinch) and calm mode =====
-(function(){if(!document.getElementById("zmcss")){const s=document.createElement("style");s.id="zmcss";s.textContent=`html{touch-action:pan-x pan-y}.zmc{display:flex;align-items:center;gap:6px}.zmc b{min-width:44px;text-align:center;font:700 .85rem var(--body)}.zmb{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:99;background:var(--fg);color:var(--bg);font:800 1rem var(--body);padding:8px 16px;border-radius:99px;opacity:0;transition:opacity .2s;pointer-events:none}.zmb.on{opacity:.92}body.calm *,body.calm *::before,body.calm *::after{animation:none!important;transition:none!important}`;document.head.appendChild(s)}})();
-function zoomPct(){let z;try{z=parseInt(pref("zoom"),10)}catch(e){z=100}z=z;return z>=80&&z<=140?z:100}
-function zoomApply(z){z=z||zoomPct();document.documentElement.style.zoom=z===100?"":String(z/100);const e=document.getElementById("zm-val");if(e)e.textContent=z+"%";document.body.classList.toggle("calm",!!pref("calm"));const c=document.getElementById("st-calm");if(c)c.checked=!!pref("calm")}
-function zoomSet(z){z=Math.max(80,Math.min(140,Math.round(z/5)*5));setPref("zoom",z);zoomApply(z)}
-(function(){const q=id=>document.getElementById(id);const go=()=>{if(!q("zm-minus"))return setTimeout(go,300);q("zm-minus").onclick=()=>zoomSet(zoomPct()-5);q("zm-plus").onclick=()=>zoomSet(zoomPct()+5);q("zm-reset").onclick=()=>zoomSet(100);q("st-calm").addEventListener("change",e=>{setPref("calm",e.target.checked);zoomApply()})};go();
- let d0=0,z0=100,zl=100,bd=null,bt=null;const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
- const badge=z=>{if(!bd){bd=document.createElement("div");bd.className="zmb";document.body.appendChild(bd)}bd.textContent=z+"%";bd.classList.add("on");clearTimeout(bt);bt=setTimeout(()=>bd.classList.remove("on"),700)};
- document.addEventListener("touchstart",e=>{if(e.touches.length===2){d0=dist(e.touches)||0;z0=zl=zoomPct()}else d0=0},{passive:true});
- document.addEventListener("touchmove",e=>{if(e.touches.length===2&&d0){e.preventDefault();const n=Math.max(80,Math.min(140,Math.round(z0*dist(e.touches)/d0/5)*5));if(n!==zl){zl=n;document.documentElement.style.zoom=n===100?"":String(n/100);badge(n)}}},{passive:false});
- document.addEventListener("touchend",e=>{if(d0&&e.touches.length<2){d0=0;if(zl!==zoomPct())zoomSet(zl)}},{passive:true})})();
 const PAGE_NAMES={intake:"Smart intake",settings:"Settings",home:"P2P Order Book",orders:"Orders",add:"New order",coins:"Coins",wallet:"Wallet",direct:"Direct payments",ai:"AI Agent",ideas:"Ideas"};
 function updateChrome(){
   const cur=Object.keys(PAGE_NAMES).find(k=>{const el=$("#p-"+k);return el&&!el.hidden})||"home";
@@ -4481,7 +4466,7 @@ function fillSelect(el,list,cur){if(!el)return;const v=cur!=null?cur:el.value;el
 function applyPrefs(){
   const coins=pref("coins"),plats=pref("plats");
   fillSelect($("#f-coin"),coins);fillSelect($("#f-plat"),plats);fillSelect($("#i-plat"),plats);fillSelect($("#st-coin"),coins,pref("coin"));fillSelect($("#st-plat"),plats,pref("plat"));
-  updateChrome&&updateChrome();try{zoomApply()}catch(e){}
+  updateChrome&&updateChrome();
 }
 function applyFormDefaults(){
   if($("#f-qty").value)return;
@@ -5352,7 +5337,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
-  ["0.0.0.00045","6 Oct 2026",["Screen size: make the whole app bigger or smaller with the + and − buttons in Settings > Display, or pinch with two fingers anywhere","Calm mode: turns off all animations and motion"]],
+  ["0.0.0.00045","6 Oct 2026",["Removed the screen zoom and calm mode again, as requested. Everything else is unchanged"]],
   ["0.0.0.00044","6 Oct 2026",["Double-tap the greeting at the top of Home to open today's targets in a pop-up: profit, completed orders and volume fill up with a smooth animation. Set your own daily targets there; it also shows open orders and alerts"]],
   ["0.0.0.00043","6 Oct 2026",["The save status now lives in the greeting icon: it stays calm when everything is saved, pulses amber while syncing and red if saving fails. The green dot on the menu button is gone"]],
   ["0.0.0.00042","6 Oct 2026",["New home header: a greeting for the time of day (Good morning, afternoon, evening or night) with a small animated icon, and your first name in place of the app name, with a smooth entrance. Set it in Settings > Your name","The Saved on this device note became a small green dot on the menu button; it still shows in full if something is not saved"]],
