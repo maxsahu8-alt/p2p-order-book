@@ -15,6 +15,8 @@ android {
         targetSdk 34
         versionCode vp['versionCode'].toInteger()
         versionName vp['versionName']
+        // ML Kit ships native code for 4 CPU types (~35 MB). Modern phones are arm64 only, so keep just that one.
+        ndk { abiFilters 'arm64-v8a' }
         buildConfigField 'String', 'UPDATE_BASE', "\"${updateBase}\""
     }
     buildFeatures { buildConfig true }
@@ -47,4 +49,6 @@ preBuild.dependsOn copyWeb
 dependencies {
     implementation 'androidx.webkit:webkit:1.11.0'
     implementation 'androidx.core:core:1.13.1'
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
 }
