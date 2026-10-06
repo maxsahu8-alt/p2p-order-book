@@ -1,9 +1,9 @@
 {
- "web": "0.0036",
- "build": 36,
- "display": "0.0.0.00036",
+ "web": "0.0037",
+ "build": 37,
+ "display": "0.0.0.00037",
  "files": {
-  "index.html": "c65ade49785e963a7b491b773b8d8e9bac390c6b",
+  "index.html": "92d6abe40b8866459df100c8fa9f997303af9fcd",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 10,
   "name": "0.0.0.00036",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "4 MB APK, Tesseract reader"
+  "notes": "Intake: cancel, live fields, two scores, debug screen, name fix"
  }
 }

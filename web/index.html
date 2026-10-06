@@ -2285,6 +2285,7 @@ function ixClassify(text){const t=String(text||"");if(t.trim().length<12)return{
 const IX_LABELISH=/\b(transaction|txn|utr|debited|credited|banking|reference|ref|number|created|order|amount|total|price|rate|quantity|date|time|phonepe|google|gpay|paytm|bhim|transfer|details|status|successful|success|completed|upi|bank|account|payment|method|counterparty|merchant|released|chat|funding|assets|support|receipt|history|expense|expense|share|again|send)\b/i;
 function ixNameClean(v){v=String(v||"").replace(/\(.*$/,"").replace(/\S+@\S+/g," ").replace(/[^A-Za-z .'\-]/g," ").replace(/\s+/g," ").trim();
   let w=v.split(" ").filter(Boolean);while(w.length>2&&/^[a-z]{1,2}$/.test(w[0]))w.shift();while(w.length>1&&/^[^A-Za-z]$|^[A-Za-z]$/.test(w[w.length-1])&&w.length>2)w.pop();
+  {const seen=new Set();w=w.filter(x=>{const k=x.toLowerCase().replace(/[^a-z]/g,"");if(k.length<3)return true;if(seen.has(k))return false;seen.add(k);return true})}
   v=w.join(" ").replace(/^[.'\-\s]+|[.'\-\s]+$/g,"");if(v.length<2||IX_LABELISH.test(v)||!w.some(x=>x.replace(/[^A-Za-z]/g,"").length>=3))return null;return v.slice(0,40)}
 // ================= INTAKE MEMORY: what Smart Intake learns. Kept on this phone only; every item can be forgotten.
 var IXL;
@@ -4763,14 +4764,15 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
   const saveLbl=g.saved?"SAVED ✓":g.save&&g.save.state==="failed"?"SAVE AGAIN":"SAVE TRANSACTION";
   const M=ixMine(g),you=pref("owner")||"You",sd=M.side;const ini=n=>String(n||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase()||"?";
   const other=sd==="BUY"?(O.seller||P.receiver):sd==="SELL"?(O.buyer||P.sender):null;
-  const L=sd==="BUY"?{n:you,sub:M.acct||(P.acct?"Account "+P.acct:P.bank)||"Your account",me:1}:sd==="SELL"?{n:other||"Buyer",sub:"Buyer"+(O.platform?" · "+O.platform:"")}:{n:P.sender||O.buyer||"Sender",sub:"Sender"};
-  const R=sd==="BUY"?{n:other||"Seller",sub:"Seller"+(O.platform?" · "+O.platform:"")}:sd==="SELL"?{n:you,sub:M.acct||(P.acct?"Account "+P.acct:P.bank)||"Your account",me:1}:{n:P.receiver||O.seller||"Receiver",sub:"Receiver"};
+  const L=sd==="BUY"?{n:you,sub:M.acct||(P.acct&&ixAcctOk(P.acct)?"Account "+P.acct:P.bank)||"Your account",me:1}:sd==="SELL"?{n:other||"Buyer",sub:"Buyer"+(O.platform?" · "+O.platform:"")}:{n:P.sender||O.buyer||"Sender",sub:"Sender"};
+  const R=sd==="BUY"?{n:other||"Seller",sub:"Seller"+(O.platform?" · "+O.platform:"")}:sd==="SELL"?{n:you,sub:M.acct||(P.acct&&ixAcctOk(P.acct)?"Account "+P.acct:P.bank)||"Your account",me:1}:{n:P.receiver||O.seller||"Receiver",sub:"Receiver"};
   const party=x=>`<div class="ixp${x.me?" me":""}"><span class="av">${esc(ini(x.n))}</span><b>${esc(x.n)}</b><small>${esc(x.sub)}</small></div>`;
   const C=2*Math.PI*19,off=C*(1-Math.max(0,Math.min(100,g.conf))/100),col=g.cmp.overall==="VERIFIED"?"var(--accent)":g.cmp.overall==="REVIEW"?"var(--warn)":"var(--sell)";
   const deal=O.crypto&&O.price?`${sd==="SELL"?"Selling":sd==="BUY"?"Buying":"Trade"} ${O.crypto} ${O.coin||"USDT"} @ ₹${O.price}`:"";
-  return`<div class="vres ${g.cmp.overall}"><div class="ixtop">${sd?`<button type="button" class="ixside ${sd}" data-ix="flip" title="Wrong? Tap to switch">${sd} <i>⇄</i></button>`:""}<span class="vchip">${T[0]} ${g.cmp.overall==="VERIFIED"?"VERIFIED":T[1]}</span><span class="ixring" title="${g.conf}% confidence"><svg viewBox="0 0 48 48" width="48" height="48"><circle cx="24" cy="24" r="19" fill="none" stroke="var(--line)" stroke-width="4"/><circle class="rg" cx="24" cy="24" r="19" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" style="--c:${C.toFixed(1)}" transform="rotate(-90 24 24)"/></svg><b>${g.conf}</b></span></div>
+  return`<div class="vres ${g.cmp.overall}"><div class="ixtop">${sd?`<button type="button" class="ixside ${sd}" data-ix="flip" title="Wrong? Tap to switch">${sd} <i>⇄</i></button>`:""}<span class="vchip">${T[0]} ${g.cmp.overall==="VERIFIED"?"VERIFIED":T[1]}</span><span class="ixring" title="${g.conf}% overall trust"><svg viewBox="0 0 48 48" width="48" height="48"><circle cx="24" cy="24" r="19" fill="none" stroke="var(--line)" stroke-width="4"/><circle class="rg" cx="24" cy="24" r="19" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" style="--c:${C.toFixed(1)}" transform="rotate(-90 24 24)"/></svg><b>${g.conf}</b></span></div>
     <div class="ixflow">${party(L)}<div class="ixmid"><div class="ixamt">${amt!=null?inr(amt):"Amount not read"}</div><div class="ixline"><span></span></div>${O.fiat!=null&&P.amount!=null&&Math.abs(O.fiat-P.amount)>1?`<small>order says ${inr(O.fiat)}</small>`:""}</div>${party(R)}</div>
     <div class="vt">${deal?esc(deal)+" · ":""}${g.cmp.overall==="VERIFIED"?"Screenshots appear consistent":g.cmp.overall==="REVIEW"?"Needs your review":"Potential inconsistency detected"}${g.order?"":" · payment only"}</div>
+    ${ixScoreHtml(g)}
     ${M.lines.length?`<div class="ixmine ${M.verdict}"><b>Your account check</b><ul>${M.lines.map(l=>`<li class="${l.s}">${esc(l.t)}${l.own?ixOwnRow(l.own):""}</li>`).join("")}</ul></div>`:""}
     <div class="ixwhy"><b>WHY</b><ul>${ixWhy(g).map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>
     <div class="ixai">${g.ai==="ok"?"✨ Checked by AI vision on top of the phone reading":g.ai==="unavailable"?"⚠ Cloud AI unavailable"+(g.aiErr==="bad_key"?" (key rejected)":g.aiErr==="rate_limited"?" (no free requests left)":g.aiErr==="busy"?" (busy or slow)":"")+": results below are from on-device analysis":g.ai==="na"?"AI not connected: results are from on-device analysis":"📷 Read on your phone"}${g.items[0]&&g.items[0].ocr?` · ${esc(g.items.map(x=>x.ocr&&x.ocr.engine).filter((v,i,a)=>v&&a.indexOf(v)===i).join(" + "))}`:""}</div>
@@ -4787,7 +4789,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     ${g.save?`<div class="ixsave ${g.save.state}"><b>${g.save.state==="saved"?"RECORDED 1 OF 1":g.save.state==="failed"?"ANALYSIS COMPLETE · SAVE FAILED":"NOT SAVED"}</b><div>${esc(g.save.msg||"")}</div></div>`:""}
     ${side}
     <div class="row2" style="margin-top:10px">${g.order||g.target?`<button class="primary" type="button" data-ix="save" ${g.saved?"disabled":""}>${saveLbl}</button>`:""}<button class="mini ghost" type="button" data-ix="recheck">RECHECK</button></div>${!g.order&&!g.target?`<div class="note" style="margin-top:6px">Payment only: choose the order it belongs to below, then confirm.</div><div data-paycard></div>`:""}
-    <div class="row2" style="margin-top:6px"><button class="mini ${g.cmp.overall!=="VERIFIED"&&g.ai!=="ok"?"":"ghost"}" type="button" data-ix="deep">${g.ai==="ok"?"DEEP AI CHECK AGAIN":"DEEP AI CHECK"}</button><button class="mini ghost" type="button" data-ix="raw">VIEW RAW DATA</button></div>
+    <div class="row2" style="margin-top:6px"><button class="mini ${g.cmp.overall!=="VERIFIED"&&g.ai!=="ok"?"":"ghost"}" type="button" data-ix="deep">${g.ai==="ok"?"DEEP AI CHECK AGAIN":"DEEP AI CHECK"}</button><button class="mini ghost" type="button" data-ix="raw">VIEW RAW DATA</button>${pref("dev")?'<button class="mini ghost" type="button" data-ix="debug">DEBUG</button>':""}</div>
     <div class="ixraw" hidden><pre>${esc(JSON.stringify({ocr:g.items.map(x=>({type:x.cls.type,engine:x.ocr&&x.ocr.engine,conf:x.ocr&&x.ocr.conf,text:x.ocr&&x.ocr.text})),payment:P,order:O,flags:g.cmp.flags,risk:g.risk,duplicates:g.dups.map(d=>d.msg),aiReasons:g.reasonsAI,aiConflicts:g.conflicts||[]},null,1))}</pre></div>`}
 function ixDraw(){try{ixRail()}catch(e){}const out=$("#i2-ix");if(!out)return;out.innerHTML="";const G=ixS.groups;
   if(G.length>1){const h=document.createElement("div");h.className="acard ixhead";h.innerHTML=`<div class="ah">${G.length} TRANSACTIONS DETECTED</div><div class="row2"><button class="primary" type="button" data-ixall="save">SAVE ALL</button><button class="mini ghost" type="button" data-ixall="review">REVIEW INDIVIDUALLY</button></div><div class="note" data-ixallmsg></div>`;
@@ -4796,6 +4798,7 @@ function ixDraw(){try{ixRail()}catch(e){}const out=$("#i2-ix");if(!out)return;ou
     d.addEventListener("click",e=>{const b=e.target.closest("[data-ix]");if(!b)return;ixAct(g,b.dataset.ix,b)});out.appendChild(d);
     const slot=d.querySelector("[data-paycard]");if(slot){const it=g.pays.find(x=>!x.support)||g.pays[0];try{if(it&&it.ocr&&it.ocr.text){const pp=payParse(it.ocr.text);if(pp.ok||pp.amount)slot.appendChild(payCard(pp,it.file,"phone"))}}catch(e){console.error(e)}}})}
 async function ixAct(g,a,btn){
+  if(a==="debug"){sheets.ixdebug(g.id);return}
   if(a==="raw"){const r=btn.closest(".ixb").querySelector(".ixraw");r.hidden=!r.hidden;return}
   if(a==="addbank"){sheets.bank();return}
   if(a.startsWith("own:")){const l4=a.slice(4),sel=btn.closest(".ixown").querySelector("[data-ixown]"),bk=banks.find(x=>x.id===(sel&&sel.value));if(bk){await patchRec(bk.id,{accNo:"XXXXXX"+l4});toast(`Saved ••${l4} on ${bk.name||bk.bankName}`);ixS.groups.forEach(x=>{try{ixVerify(x)}catch(e){}});ixDraw()}return}
@@ -4824,16 +4827,16 @@ async function ixFinish(groups,useAI){for(const g of groups){ixVerify(g);
     else if(g.reasonsAI.length&&!ixAiReady())g.ai="na";
     if(!g.histId)await ixHistAdd(g)}}
 // the whole run
-async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
+async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;ixS.T={};setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
   const out=$("#i2-ix");out.innerHTML="";const card=document.createElement("div");card.className="acard ixprog";out.appendChild(card);const t0=Date.now();let msg="Getting your screenshots ready…";let skipShown=false;
-  const paint=()=>{const sec=Math.round((Date.now()-t0)/1000);card.innerHTML=`<div class="ah">ANALYSING ${files.length} SCREENSHOT${files.length>1?"S":""}</div><div class="ires">${esc(msg)} ${sec}s</div>${sec>=15&&!ixS.ocrReady&&!skipShown?"":""}`+(sec>=15&&ixS.stage==="ocr"?`<div class="note">${ixAiReady()?"The phone reader is slow to start. You can skip it and let your AI read the pictures.":"The phone reader is still starting (first use downloads about 10 MB). Please keep this page open."}</div>${ixAiReady()?'<button class="mini ghost" type="button" data-skipocr>Skip phone reader</button>':""}`:"");const sb=card.querySelector("[data-skipocr]");if(sb)sb.onclick=()=>ixS.skip&&ixS.skip()};
+  const paint=()=>{const sec=Math.round((Date.now()-t0)/1000);card.innerHTML=`<div class="ah">ANALYSING ${files.length} SCREENSHOT${files.length>1?"S":""}</div><div class="ires">${esc(msg)} ${sec}s</div>${sec>=15&&!ixS.ocrReady&&!skipShown?"":""}`+(sec>=15&&ixS.stage==="ocr"?`<div class="note">${ixAiReady()?"The phone reader is slow to start. You can skip it and let your AI read the pictures.":"The phone reader is still starting (first use downloads about 10 MB). Please keep this page open."}</div>${ixAiReady()?'<button class="mini ghost" type="button" data-skipocr>Skip phone reader</button>':""}`:"")+ixLiveHtml()+'<button class="mini ghost" type="button" data-ixcancel style="margin-top:8px">Cancel analysis</button>';const cb=card.querySelector("[data-ixcancel]");if(cb)cb.onclick=()=>{ixS.run++;clearInterval(tick);card.remove();ixS.busy=false;try{ixRail()}catch(e){}toast("Analysis cancelled")};const sb=card.querySelector("[data-skipocr]");if(sb)sb.onclick=()=>ixS.skip&&ixS.skip()};
   const tick=setInterval(paint,1000);paint();
   try{
     ixS.stage="prep";const items=await Promise.all(files.map(async(f,i)=>({i,file:f,blob:await shrinkImage(f),hash:await fileHash(f)})));
-    if(run!==ixS.run)return;ixS.items=items;
+    if(run!==ixS.run)return;ixS.items=items;ixS.T.prep=Date.now()-t0;
     ixS.stage="ocr";ocrListeners=[t=>{if(/Screenshot reader/.test(t))msg=t.replace("Screenshot reader: ","Reader: ")}];
     await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone…`});ocrListeners=[];
-    const failed=items.filter(x=>x.ocr.status==="fail");
+    if(run!==ixS.run)return;ixS.T.ocr=Date.now()-t0;const failed=items.filter(x=>x.ocr.status==="fail");
     if(failed.length===items.length){ // phone reader unavailable → let the AI read everything, if one is connected
       if(!ixAiReady()){clearInterval(tick);card.innerHTML=`<div class="ah">OCR UNAVAILABLE</div><div class="note">The phone reader couldn't start (${esc(items[0].ocr.err==="timeout"?"it took too long to download":"not available here")}). Your screenshots are kept. You can paste the payment SMS text instead, connect an AI in Settings, or try again on a better connection.</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ocrPromise=null;ixOcrCache.clear();ixS.busy=false;ixRun()};return}
       ixS.stage="ai";msg="Phone reader unavailable. Your AI is reading the pictures…";
@@ -4849,11 +4852,11 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
       const needAI=ixAiReady();if(needAI){const gs=ixS.groups;gs.forEach(g=>ixVerify(g));if(gs.some(g=>g.reasonsAI.length))msg="Double-checking unclear parts with AI…"}
       await ixFinish(ixS.groups,true);
     }
-    if(run!==ixS.run)return;
+    if(run!==ixS.run)return;ixS.T.done=Date.now()-t0;ixS.groups.forEach(g=>{g.T={...ixS.T}});
     clearInterval(tick);card.remove();ixDraw();renderIxHist();
     try{const first=out.querySelector(".ixg, .ixhead");if(first)first.scrollIntoView({block:"start",behavior:"smooth"})}catch(e){}
   }catch(e){console.error(e);clearInterval(tick);card.innerHTML=`<div class="ah">ANALYSIS INTERRUPTED</div><div class="note">${esc(e&&e.code==="busy"?"The AI is busy or slow right now.":e&&e.code==="bad_json"?e.text:"Something went wrong while reading. Your screenshots are kept.")}</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ixS.busy=false;ixRun()}}
-  finally{clearInterval(tick);ixS.busy=false;try{ixRail()}catch(e){}ocrListeners=[];if(ixS.again){ixS.again=false;setTimeout(()=>ixRun(),60)}}}
+  finally{clearInterval(tick);if(run===ixS.run)ixS.busy=false;try{ixRail()}catch(e){}ocrListeners=[];if(ixS.again){ixS.again=false;setTimeout(()=>ixRun(),60)}}}
 // ---- Recent intakes
 function renderIxHist(){const el=$("#i2-hist");if(!el)return;const L=recs.filter(r=>r.kind==="ix").sort((a,b)=>b.time-a.time).slice(0,40);if(!L.length){el.innerHTML="";return}
   const d0=new Date();d0.setHours(0,0,0,0);const t0=d0.getTime(),sec=[["Today",x=>x.time>=t0],["Yesterday",x=>x.time<t0&&x.time>=t0-DAY],["This week",x=>x.time<t0-DAY&&x.time>=t0-6*DAY]];
@@ -5222,7 +5225,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=36;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=37;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5289,6 +5292,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00037","6 Oct 2026",["New Cancel analysis button while Smart Intake is reading","New live view while reading: each screenshot shows what was found (amount, order ID, UTR, names) and what was not confidently detected","New two separate scores on every result: Extraction confidence (how well we read it) and Transaction match (how well payment and order belong together)","New Debug screen (turn on in Intake memory > Developer): OCR text and confidence, fields and their source screenshot, match calculation, risk flags, AI response, processing time","Fixed: a repeated name part such as DHIRAJ KUMAR kumar is now read as DHIRAJ KUMAR","Fixed: a wrong label such as Account Sender A... is no longer shown as your account"]],
   ["0.0.0.00036","6 Oct 2026",["New Chat replies: ready exchange-chat messages with amount, name and your bank details filled in; add your own","New One client, many names: merge the same person under different names so orders, trust and limits count as one","New Udhar khata: who owes you and who you owe, in rupees or USDT, with due dates, reminders and alerts","New Day close: end-of-day checklist and match your real bank, cash and USDT balances, with a saved history","New Business insights: best clients, best payment methods and banks, best days and hours, and clients who went quiet","New Bank health: credit streaks, rest-day advice, limits left, and a freeze log that learns your safe daily credit level","New At a glance card and an Android home-screen widget with today's profit, open orders and alerts (needs the new APK)"]],
   ["0.0.0.00035","6 Oct 2026",["New Intake memory: Smart Intake now learns on this phone, so the AI is needed less and less","Learns that two similar names are the same person (for example Likith Shetty = Likith Rajesh Shetty) when you save a deal","Learns where details sit on an exchange or payment screen after the AI reads something the phone missed, and uses that next time without the AI","Learns your bank from its last 4 digits when the AI recognises the logo","Shows known sellers and buyers (earlier deals) and how many intakes needed the AI today","Settings > Intake memory lists everything learned, and each item can be forgotten"]],
   ["0.0.0.00034","6 Oct 2026",["Fixed: the counterparty name on exchange orders (Counterparty Name(email)) is now read, and a wrapped Order Number is joined back together","Fixed: wrong names such as PhonePe Transaction ID or Order Number Created At are never used as a person name","Fixed: the payee UPI handle (for example @okhdfcbank) is no longer taken as your bank","Fixed: payment time written before the date, and 10/05/2026 order dates (month first) are read correctly","New: if a payment comes from an account not in your bank list, tap Yes, it's mine to save its last 4 digits on one of your banks"]],
@@ -5706,6 +5710,45 @@ sheets.glance=function(){const g=glanceData();const nat=!!(window.P2PNative&&typ
   <div class="pcsec">Home-screen widget</div>
   <p class="note">${nat?"Long-press your phone's home screen, tap Widgets, find P2P Order Book and place it. It shows today's profit, open orders and alerts, and opens the app when tapped. It refreshes every time you use the app.":"The home-screen widget works in the Android app. Install the latest APK, then long-press the home screen and add the P2P Order Book widget."}</p></div>`)};
 
+// ===== Smart Intake extras: live fields, two scores, debug screen =====
+(function(){if(!document.getElementById("p7css2")){const s=document.createElement("style");s.id="p7css2";s.textContent=`.ixlive{display:grid;gap:8px;margin-top:8px}.ixlv{border:1px solid var(--line);border-radius:12px;padding:8px 10px}.ixlv>b{display:block;font:700 .72rem var(--body);margin-bottom:4px}.ixlv div{display:flex;justify-content:space-between;gap:10px;font:500 .78rem var(--body);padding:2px 0}.ixlv span{color:var(--muted)}.ixlv em{font-style:normal;color:var(--accent);font-weight:600;text-align:right}.ixlv i{font-style:normal;color:var(--warn);text-align:right}.ixsc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.ixsc1{border:1px solid var(--line);border-radius:12px;padding:8px 10px}.ixsc1 span{display:block;font:600 .66rem var(--body);color:var(--muted)}.ixsc1 b{font:800 1.1rem var(--body)}.ixsc1 u{display:block;height:5px;border-radius:5px;background:var(--soft);margin-top:5px;text-decoration:none;overflow:hidden}.ixsc1 u i{display:block;height:100%;background:var(--accent)}.ixdbg pre{white-space:pre-wrap;word-break:break-word;font:500 .7rem/1.4 ui-monospace,monospace;background:var(--soft);border-radius:10px;padding:8px;max-height:220px;overflow:auto}`;document.head.appendChild(s)}})();
+function ixAcctOk(s){return/\d{2,}|x{3,}|\*{2,}|•{2,}/i.test(String(s||""))}
+function ixLiveHtml(){const its=(ixS.items||[]).filter(x=>x.ocr&&x.ocr.text);if(!its.length)return"";
+ its.forEach(it=>{if(!it.__live){try{ixItem(it)}catch(e){}it.__live=1}});
+ const money=v=>"₹"+Number(v).toLocaleString("en-IN",{maximumFractionDigits:2});
+ return`<div class="ixlive">`+its.map(it=>{const P=it.pay,O=it.ord,f=[];
+  if(P)f.push(["Amount",P.amount!=null?money(P.amount):null],["UTR",P.utr],["Sender",P.sender],["Receiver",P.receiver],["Status",P.status]);
+  else if(O)f.push(["Amount",O.fiat!=null?money(O.fiat):null],["Order ID",O.id?String(O.id).slice(0,12)+(String(O.id).length>12?"…":""):null],["Buyer",O.buyer],["Seller",O.seller]);
+  else f.push(["Details",null]);
+  return`<div class="ixlv"><b>${esc(IX_TYPES[it.cls.type]||"Screenshot")}</b>${f.map(([k,v])=>`<div><span>${k}</span>${v?`<em>${esc(v)} ✓</em>`:`<i>Not confidently detected ⚠</i>`}</div>`).join("")}</div>`}).join("")+`</div>`}
+const IX_W={amount:30,orderid:15,buyer:10,seller:10,utr:10,method:10,time:10,acct:5,status:5},IX_S={MATCH:1,FOUND:1,UNCLEAR:.4,NOTFOUND:0,MISMATCH:0};
+function ixScores(g){const X=g.X,P=X.pay,O=X.ord;
+ const all=[P.amount,P.utr,P.sender,P.receiver,P.status,P.date||P.time,...(g.order?[O.id,O.fiat!=null?O.fiat:O.crypto,O.buyer||O.seller,O.when]:[])];
+ const frac=all.filter(v=>v!=null&&v!=="").length/all.length;
+ const oc=g.items.map(x=>x.ocr&&x.ocr.conf).filter(c=>typeof c==="number"),ocr=oc.length?oc.reduce((a,b)=>a+b,0)/oc.length:null;
+ const ext=Math.round(ocr==null?frac*100:0.5*ocr+0.5*frac*100);
+ let mt=null,rows=[];
+ if(g.order){let sw=0,sc=0,amtOk=false;g.cmp.fields.forEach(f=>{const w=IX_W[f.k];if(!w)return;const s=IX_S[f.res]==null?0:IX_S[f.res];sw+=w;sc+=w*s;if(f.k==="amount")amtOk=s===1;rows.push({k:f.k,label:f.label,res:f.res,w,pts:Math.round(w*s*10)/10})});
+  mt=sw?Math.round(sc/sw*100):null;if(mt!=null&&!amtOk)mt=Math.min(mt,40)}
+ return{ext,match:mt,rows,frac:Math.round(frac*100),ocr:ocr==null?null:Math.round(ocr)}}
+function ixScoreHtml(g){let s;try{s=ixScores(g)}catch(e){return""}const bar=(l,v,t)=>`<div class="ixsc1" title="${t}"><span>${l}</span><b>${v==null?"—":v+"%"}</b><u><i style="width:${v||0}%"></i></u></div>`;
+ return`<div class="ixsc">${bar("Extraction confidence",s.ext,"How sure we are that we read the screenshots correctly")}${bar("Transaction match",s.match,"How strongly the payment and the order belong together")}</div>`}
+sheets.ixdebug=function(id){const g=(ixS.groups||[]).find(x=>x.id===id)||ixS.groups[0];if(!g)return toast("Nothing to show");
+ let S={rows:[]};try{S=ixScores(g)}catch(e){}const T=g.T||{},ms=v=>v==null?"—":(v/1000).toFixed(1)+" s";
+ const idx=x=>{const i=g.items.indexOf(x);return i<0?"—":"Screenshot "+(i+1)};const payIt=g.pays[0],ordIt=g.order;
+ const F=[];const add=(src,o,keys)=>keys.forEach(k=>{if(o&&o[k]!=null&&o[k]!=="")F.push([k,o[k],src])});
+ add(idx(payIt)+(g.aiFilled&&g.aiFilled.size?" + AI":""),g.X.pay,["amount","utr","sender","receiver","status","method","bank","date","time","acct"]);add(idx(ordIt)+(g.aiFilled&&g.aiFilled.size?" + AI":""),g.X.ord,["id","fiat","crypto","coin","price","buyer","seller","when","method","platform"]);
+ const aiTxt=JSON.stringify({status:g.ai||null,error:g.aiErr||null,reasons:g.reasonsAI||[],conflicts:g.conflicts||[],aiPay:g.aiPay||null,aiOrd:g.aiOrd||null},null,1);
+ openSheet(`<div class="insw ixdbg"><div class="insh"><h3>Debug</h3><span class="note">developer details</span></div>
+  <div class="pcsec">Processing time</div><div class="dqr"><span>Reading photos<small>${ms(T.prep)} prep · ${ms(T.ocr!=null&&T.prep!=null?T.ocr-T.prep:null)} OCR</small></span><b>${ms(T.done)}</b></div>
+  <div class="pcsec">Screenshots</div>${g.items.map((x,i)=>`<div class="p7c"><h4>Screenshot ${i+1} · ${esc(IX_TYPES[x.cls.type]||x.cls.type)}</h4><small class="note">classified ${Math.round((x.cls.conf||0)*100)}% · engine ${esc((x.ocr&&x.ocr.engine)||"—")} · OCR confidence ${x.ocr&&x.ocr.conf!=null?Math.round(x.ocr.conf)+"%":"—"}</small><pre>${esc((x.ocr&&x.ocr.text)||"(no text)")}</pre></div>`).join("")}
+  <div class="pcsec">Detected fields</div>${F.map(([k,v,s])=>`<div class="dqr"><span>${esc(k)}<small>${esc(s)}</small></span><b style="max-width:55%;text-align:right;word-break:break-word">${esc(String(v))}</b></div>`).join("")||'<p class="note">Nothing detected.</p>'}
+  <div class="pcsec">Match calculation</div>${S.rows.map(r=>`<div class="dqr"><span>${esc(r.label)}<small>${esc(r.res)} · weight ${r.w}</small></span><b>${r.pts}</b></div>`).join("")||'<p class="note">No order, so no match score.</p>'}
+  <div class="dqr"><span>Extraction ${S.ext}% = half OCR confidence${S.ocr!=null?" ("+S.ocr+"%)":" (not available)"} + half fields read (${S.frac}%)<small>Match ${S.match==null?"—":S.match+"%"} = points ÷ weights${S.match!=null&&S.match<=40?" · capped at 40 when the amount does not match":""}</small></span></div>
+  <div class="pcsec">Risk flags</div><pre>${esc(JSON.stringify({level:g.risk.level,reasons:g.risk.reasons,flags:g.cmp.flags,local:g.cmp.local,duplicates:g.dups.map(d=>d.msg)},null,1))}</pre>
+  <div class="pcsec">AI response</div><pre>${esc(aiTxt)}</pre>
+  <div class="pcsec">Boxes</div><p class="note">Bounding boxes are not recorded: the phone reader returns text only.</p></div>`)};
+
 sheets.ixmem=function(){const R=recs.filter(r=>r.kind==="ixl").sort((a,b)=>(b.last||0)-(a.last||0)),al=R.filter(r=>r.t==="alias"),lb=R.filter(r=>r.t==="lab"),ac=R.filter(r=>r.t==="acct");
   const FN={id:"Order ID",cp:"The other person's name",fiat:"Total amount",price:"Price",crypto:"Coin amount",receiver:"Receiver name",sender:"Sender name",utr:"UTR",amount:"Amount"};
   const row=(r,t,sm)=>`<div class="dqr"><span>${t}<small>${sm}</small></span><button type="button" class="mini ghost" data-ixdel="${esc(r.id)}" aria-label="Forget this">Forget</button></div>`;
@@ -5714,7 +5757,9 @@ sheets.ixmem=function(){const R=recs.filter(r=>r.kind==="ixl").sort((a,b)=>(b.la
     <div class="pcsec">Same person, different spelling (${al.length})</div><div class="rml">${al.length?al.map(r=>row(r,`${esc(r.da||r.a)} = ${esc(r.db||r.b)}`,seen(r))).join(""):empty("Nothing yet. Save a deal where the payment name and the order name are similar and I will learn them.")}</div>
     <div class="pcsec">Where details sit on a screen (${lb.length})</div><div class="rml">${lb.length?lb.map(r=>row(r,`${esc(FN[r.f]||r.f)} comes ${r.m==="below"?"under":"after"} “${esc(r.l)}”`,`${r.s==="ord"?"Exchange order":"Payment"} · ${seen(r).toLowerCase()}`)).join(""):empty("Nothing yet. When the AI reads something the phone missed, I remember where it was.")}</div>
     <div class="pcsec">Your accounts (${ac.length})</div><div class="rml">${ac.length?ac.map(r=>row(r,`••${esc(r.l4)} is ${esc(r.bank)}`,seen(r))).join(""):empty("Nothing yet. A bank the AI recognises from a logo is remembered by its last 4 digits.")}</div>
+    <div class="pcsec">Developer</div><div class="rml"><div class="dqr"><span>Developer details<small>Shows a DEBUG button on each intake result</small></span><label class="tog"><input type="checkbox" id="ixl-dev" ${pref("dev")?"checked":""}><span></span></label></div></div>
     ${R.length?'<button type="button" class="mini ghost" id="ixl-all" style="margin-top:10px">Forget everything</button>':""}</div>`,()=>{
+    $("#sheetBody").onchange=e=>{if(e.target.id==="ixl-dev"){setPref("dev",e.target.checked);toast(e.target.checked?"Developer details on":"Developer details off");try{ixDraw()}catch(x){}}};
     $("#sheetBody").onclick=async e=>{const d=e.target.closest("[data-ixdel]");if(d){await delRec(d.dataset.ixdel);if(IXL)IXL.dirty=true;sheets.ixmem();renderIxHist();return}
       const all=e.target.closest("#ixl-all");if(all){if(all.dataset.sure!=="1"){all.dataset.sure="1";all.textContent="Tap again to forget everything";return}
         for(const r of recs.filter(x=>x.kind==="ixl"))await delRec(r.id);if(IXL)IXL.dirty=true;toast("Intake memory cleared");sheets.ixmem();renderIxHist()}}})}
