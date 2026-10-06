@@ -1,9 +1,9 @@
 {
- "web": "0.0048",
- "build": 48,
- "display": "0.0.0.00048",
+ "web": "0.0049",
+ "build": 49,
+ "display": "0.0.0.00049",
  "files": {
-  "index.html": "33eccef3be52f0dec9377547e370cf4091edbe0b",
+  "index.html": "e32d59196a5998cb041c24930e2faa8d62ff3925",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 11,
   "name": "0.0.0.00046",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Animated ai in Pexai"
+  "notes": "Single opening animation"
  }
 }
