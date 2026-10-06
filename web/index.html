@@ -4326,13 +4326,45 @@ function gtName(){const o=String(pref("owner")||"").trim().split(/\s+/)[0]||"";r
 const GT_ICON={m:'<g class="rays"><path d="M12 3v2M4.2 7.2l1.4 1.4M19.8 7.2l-1.4 1.4M2 15h2M20 15h2"/></g><path d="M7 18a5 5 0 0 1 10 0M3 18h18"/>',a:'<circle cx="12" cy="12" r="4"/><g class="rays"><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g>',e:'<path d="M7 16a5 5 0 0 1 10 0M3 16h18M6 20h12M12 6v2M5.5 9.5l1.4 1.4M18.5 9.5l-1.4 1.4"/>',n:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 4v3M15.5 5.5h3"/>'};
 var gtKey="";
 function homeTitle(anim){const b=document.getElementById("pageTitle"),h=document.querySelector("header.xhead");if(!b||!h)return;const[l,k]=gtLabel(),n=gtName()||"P2P Order Book";const key=l+"|"+n;if(!anim&&key===gtKey&&b.querySelector(".gt-n"))return;gtKey=key;
- h.classList.add("gr");b.innerHTML=`<span class="gt-l"><svg class="gt-i ${k}" viewBox="0 0 24 24" aria-hidden="true">${GT_ICON[k]}</svg>${l}</span><span class="gt-n">${esc(n)}</span>`}
+ h.classList.add("gr");b.innerHTML=`<span class="gt-l"><svg class="gt-i ${k}" viewBox="0 0 24 24" aria-hidden="true">${GT_ICON[k]}</svg>${l}<svg class="gt-c" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></span><span class="gt-n">${esc(n)}</span>`;const ht=b.parentElement;ht.setAttribute("role","button");ht.tabIndex=0;ht.setAttribute("aria-label","Today's targets");ht.setAttribute("aria-expanded",!!tgOpen)}
 setInterval(()=>{try{const h=document.querySelector("header.xhead");if(h&&h.classList.contains("gr"))homeTitle(false)}catch(e){}},60000);
+// ===== Greeting accordion: today's targets =====
+(function(){if(!document.getElementById("tgcss")){const s=document.createElement("style");s.id="tgcss";s.textContent=`.gt-c{width:12px;height:12px;stroke:var(--muted);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:transform .4s cubic-bezier(.2,.8,.2,1);flex:none}.xhead.gro .gt-c{transform:rotate(180deg)}.xhead.gr .htitle{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}.xhead.gr .htitle:active{opacity:.6}
+.gtp{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .5s cubic-bezier(.2,.8,.2,1),opacity .35s;pointer-events:none}.gtp.open{grid-template-rows:1fr;opacity:1;pointer-events:auto}.gtp-in{overflow:hidden;min-height:0}
+.gtp-c{margin:4px 0 12px;padding:14px 14px 12px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:0 8px 24px -14px rgba(0,0,0,.35)}
+.gtp-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.gtp-h b{font:700 .82rem var(--body)}.gtp-h span{font:700 .72rem var(--body);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:3px 9px;border-radius:99px}
+.gtr{padding:7px 0}.gtr+.gtr{border-top:1px solid var(--line)}.gtr-t{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:600 .74rem var(--body);color:var(--muted)}.gtr-t em{font-style:normal;color:var(--fg);font-weight:800;font-size:.9rem}.gtr-t small{font-size:.68rem;color:var(--muted);font-weight:500}
+.gtr-b{height:6px;border-radius:6px;background:color-mix(in srgb,var(--muted) 18%,transparent);margin-top:6px;overflow:hidden}.gtr-b i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 60%,#fff));transition:width 1s cubic-bezier(.2,.8,.2,1)}.gtr.done .gtr-b i{box-shadow:0 0 10px var(--accent)}.gtr.none .gtr-b{background:none;border-top:1px dashed var(--line);border-radius:0;height:0;margin-top:9px}
+.gtp-f{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.gtp-f button{font:600 .72rem var(--body);border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:99px;padding:6px 11px;cursor:pointer}.gtp-f button.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.gtp-e{display:grid;gap:8px}.gtp-e label{display:grid;gap:3px;font:600 .72rem var(--body);color:var(--muted)}.gtp-e input{font:600 .95rem var(--body);padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);width:100%;box-sizing:border-box}
+@media(prefers-reduced-motion:reduce){.gtp,.gtr-b i,.gt-c{transition:none!important}}`;document.head.appendChild(s)}})();
+var tgOpen=false,tgEdit=false,tgT=null;
+function tgData(){const ol=orders.filter(o=>isToday(o.time)&&o.status!=="Cancelled"),st=stats(ol),sg=v=>(v<0?"−":"")+inr(Math.abs(Math.round(v)));
+ return[{k:"tg_profit",l:"Profit",v:st.profit,f:sg,ph:"e.g. 1000"},{k:"tg_orders",l:"Completed orders",v:ol.filter(o=>o.status==="Completed").length,f:v=>String(Math.round(v)),ph:"e.g. 20"},{k:"tg_vol",l:"Volume",v:st.b.v+st.s.v,f:v=>inr(Math.round(v)),ph:"e.g. 100000"}]}
+function tgNum(k){const v=parseFloat(pref(k));return v>0?v:0}
+function tgEl(){let p=document.getElementById("gtPanel");if(!p){const h=document.querySelector("header.xhead");if(!h)return null;p=document.createElement("div");p.id="gtPanel";p.className="gtp";p.innerHTML='<div class="gtp-in"><div class="gtp-c" id="gtBody"></div></div>';h.insertAdjacentElement("afterend",p);p.addEventListener("click",tgClick);p.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("input"))tgClick({target:p.querySelector("[data-tg=save]")})})}return p}
+function tgCount(el,to,f,ms){const t0=performance.now();if(matchMedia("(prefers-reduced-motion:reduce)").matches){el.textContent=f(to);return}(function s(t){const k=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,3);el.textContent=f(to*e);if(k<1)requestAnimationFrame(s);else el.textContent=f(to)})(t0)}
+function tgRender(anim){const p=tgEl();if(!p)return;const B=p.querySelector("#gtBody"),d=tgData();
+ if(tgEdit){B.innerHTML=`<div class="gtp-h"><b>Set daily targets</b></div><div class="gtp-e">${d.map(r=>`<label>${r.l}<input inputmode="decimal" data-k="${r.k}" placeholder="${r.ph}" value="${tgNum(r.k)||""}"></label>`).join("")}</div><div class="gtp-f"><button class="pri" data-tg="save">Save</button><button data-tg="cancel">Cancel</button></div>`;return}
+ const set=d.filter(r=>tgNum(r.k)>0),pc=set.length?Math.round(set.reduce((a,r)=>a+Math.max(0,Math.min(1,r.v/tgNum(r.k))),0)/set.length*100):null;
+ const al=(typeof lastAlerts!=="undefined"&&lastAlerts||[]).length,pend=orders.filter(o=>o.status==="Pending"||o.status==="Appeal").length;
+ B.innerHTML=`<div class="gtp-h"><b>Today's targets</b>${pc!=null?`<span>${pc}% of goal</span>`:""}</div>`+d.map((r,i)=>{const t=tgNum(r.k),f=t?Math.max(0,Math.min(1,r.v/t)):0;return`<div class="gtr ${t?f>=1?"done":"":"none"}"><div class="gtr-t"><span>${r.l}</span><span><em data-n="${i}">${r.f(r.v)}</em> <small>${t?"of "+r.f(t)+(f>=1?" ✓":""):"no target"}</small></span></div><div class="gtr-b"><i data-w="${Math.round(f*100)}"></i></div></div>`}).join("")+
+ `<div class="gtp-f"><button data-tg="edit">${set.length?"Edit targets":"Set targets"}</button><button data-tg="glance">${pend} open${al?" · "+al+" alert"+(al>1?"s":""):""}</button></div>`;
+ const run=()=>{B.querySelectorAll("[data-w]").forEach(i=>i.style.width=i.dataset.w+"%");if(anim)B.querySelectorAll("[data-n]").forEach(e=>{const r=d[+e.dataset.n];tgCount(e,r.v,r.f,900)})};
+ if(anim){B.querySelectorAll("[data-n]").forEach(e=>{e.textContent=d[+e.dataset.n].f(0)});setTimeout(()=>requestAnimationFrame(run),180)}else run()}
+function tgClick(e){const b=e.target.closest&&e.target.closest("[data-tg]");if(!b)return;const a=b.dataset.tg;
+ if(a==="edit"){tgEdit=true;tgRender()}else if(a==="cancel"){tgEdit=false;tgRender(true)}
+ else if(a==="save"){document.querySelectorAll("#gtPanel [data-k]").forEach(i=>{const v=parseFloat(String(i.value).replace(/,/g,""));setPref(i.dataset.k,v>0?String(v):"")});tgEdit=false;tgRender(true)}
+ else if(a==="glance"){try{sheets.glance()}catch(x){}}}
+function tgToggle(force){const h=document.querySelector("header.xhead");if(!h||!h.classList.contains("gr")){tgOpen=false;const q=document.getElementById("gtPanel");if(q)q.classList.remove("open");return}
+ tgOpen=force!=null?force:!tgOpen;const p=tgEl();if(!p)return;h.classList.toggle("gro",tgOpen);const t=document.getElementById("pageTitle");if(t)t.parentElement.setAttribute("aria-expanded",tgOpen);
+ p.classList.toggle("open",tgOpen);clearInterval(tgT);if(tgOpen){tgEdit=false;tgRender(true);tgT=setInterval(()=>{if(!tgEdit)tgRender(false)},30000)}}
+(function(){const go=()=>{const t=document.querySelector(".htitle");if(!t)return setTimeout(go,300);t.addEventListener("click",()=>tgToggle());t.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tgToggle()}})};go()})();
 const PAGE_NAMES={intake:"Smart intake",settings:"Settings",home:"P2P Order Book",orders:"Orders",add:"New order",coins:"Coins",wallet:"Wallet",direct:"Direct payments",ai:"AI Agent",ideas:"Ideas"};
 function updateChrome(){
   const cur=Object.keys(PAGE_NAMES).find(k=>{const el=$("#p-"+k);return el&&!el.hidden})||"home";
   if(cur==="intake"&&!cloudReady()&&!ocrWorker&&!ocrPromise&&!(aiCfg.prov!=="builtin"||i2Max>0))setTimeout(()=>ocrInit().catch(()=>{}),300);
-  if(cur==="home")homeTitle(true);else{const hh=document.querySelector("header.xhead");if(hh)hh.classList.remove("gr");$("#pageTitle").textContent=cur==="add"&&typeof editingId!=="undefined"&&editingId?"Edit order":PAGE_NAMES[cur]}
+  if(cur==="home")homeTitle(true);else{const hh=document.querySelector("header.xhead");if(hh){hh.classList.remove("gr","gro");const ht=hh.querySelector(".htitle");if(ht){ht.removeAttribute("role");ht.removeAttribute("tabindex");ht.removeAttribute("aria-expanded")}}tgOpen=false;{const q=document.getElementById("gtPanel");if(q)q.classList.remove("open")}clearInterval(tgT);$("#pageTitle").textContent=cur==="add"&&typeof editingId!=="undefined"&&editingId?"Edit order":PAGE_NAMES[cur]}
   document.querySelectorAll("#topmenu [data-go]").forEach(b=>b.classList.toggle("on",b.dataset.go===cur));
   document.title=cur==="home"?"P2P Order Book":PAGE_NAMES[cur]+" · P2P Order Book";
 }
@@ -5239,7 +5271,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=43;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=44;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5306,6 +5338,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00044","6 Oct 2026",["Tap the greeting at the top of Home to open today's targets: profit, completed orders and volume fill up with a smooth animation. Set your own daily targets there; it also shows open orders and alerts"]],
   ["0.0.0.00043","6 Oct 2026",["The save status now lives in the greeting icon: it stays calm when everything is saved, pulses amber while syncing and red if saving fails. The green dot on the menu button is gone"]],
   ["0.0.0.00042","6 Oct 2026",["New home header: a greeting for the time of day (Good morning, afternoon, evening or night) with a small animated icon, and your first name in place of the app name, with a smooth entrance. Set it in Settings > Your name","The Saved on this device note became a small green dot on the menu button; it still shows in full if something is not saved"]],
   ["0.0.0.00041","6 Oct 2026",["The live USDT price in rupees now sits in the title row next to search, with a live dot and the 24h change. P2P buy and sell rates are on the Live market page"]],

@@ -2,7 +2,7 @@ import asyncio, json, time, sys, os
 from playwright.async_api import async_playwright
 APP=os.environ.get("APP","/home/claude/p2p-tracker.html")
 now=int(time.time()*1000)
-RECS=[{"id":"s_main","kind":"setting","stock":{},"prefs":{"owner":"shiv sahu"}}]
+RECS=[{"id":"s_main","kind":"setting","stock":{},"prefs":{"owner":"shiv sahu","tg_orders":"4","tg_profit":"1000"}},{"id":"o1","side":"SELL","qty":100,"rate":98,"status":"Completed","time":now,"coin":"USDT","fiat":9800},{"id":"o2","side":"BUY","qty":100,"rate":97,"status":"Completed","time":now-1000,"coin":"USDT","fiat":9700}]
 async def main():
   ok=True
   def chk(n,c):
@@ -35,6 +35,19 @@ async def main():
     await pg.evaluate("document.getElementById('syncNote').textContent='Save failed'");await pg.wait_for_timeout(100)
     chk("state bad",await pg.evaluate("document.querySelector('.xhead').dataset.gs")=="bad")
     chk("icon turns red",await pg.evaluate("getComputedStyle(document.querySelector('.gt-i')).stroke")!=await pg.evaluate("getComputedStyle(document.querySelector('#menuBtn')).color"))
+    await pg.evaluate("document.querySelector('.htitle').click()");await pg.wait_for_timeout(1600)
+    chk("accordion opens on tap",await pg.evaluate("document.getElementById('gtPanel').classList.contains('open')"))
+    txt=await pg.inner_text("#gtPanel")
+    chk("targets shown",("Profit" in txt) and ("Completed orders" in txt) and ("Volume" in txt) and "% of goal" in txt)
+    chk("bars filled",await pg.evaluate("[...document.querySelectorAll('#gtPanel [data-w]')].some(i=>parseFloat(i.style.width)>0)"))
+    await pg.screenshot(path="/tmp/claude-0/gt_open.png")
+    await pg.evaluate("document.querySelector('[data-tg=edit]').click()");await pg.wait_for_timeout(200)
+    await pg.evaluate("document.querySelector('#gtPanel [data-k=tg_vol]').value='50000'");await pg.evaluate("document.querySelector('[data-tg=save]').click()");await pg.wait_for_timeout(1400)
+    chk("saved target applies",await pg.evaluate("pref('tg_vol')")=="50000" and "50,000" in await pg.inner_text("#gtPanel"))
+    await pg.evaluate("document.querySelector('.htitle').click()");await pg.wait_for_timeout(700)
+    chk("accordion closes",await pg.evaluate("!document.getElementById('gtPanel').classList.contains('open')"))
+    await pg.evaluate("document.querySelector('.htitle').click()");await pg.wait_for_timeout(500);await pg.evaluate("goPage('orders')");await pg.wait_for_timeout(300)
+    chk("hidden on other pages",await pg.evaluate("!document.getElementById('gtPanel').classList.contains('open')"))
     chk("no page errors",not errs)
     if errs:print(errs)
     for h in (6,14,19,22):
