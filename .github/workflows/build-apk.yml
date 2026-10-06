@@ -44,6 +44,6 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ env.VNAME }}-${{ github.run_number }}
-          name: P2P Order Book ${{ env.VNAME }} (build ${{ github.run_number }})
+          name: Pexai ${{ env.VNAME }} (build ${{ github.run_number }})
           make_latest: true
           files: P2P-Order-Book.apk

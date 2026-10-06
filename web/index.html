@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>html,body{margin:0;padding:0}</style></head><body><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>P2P Order Book</title>
+<title>Pexai</title><meta name="app-id" content="P2P Order Book"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Crect width='108' height='108' rx='24' fill='%230B1220'/%3E%3Cpath d='M37 82V28h19a16.5 16.5 0 0 1 0 33H37' fill='none' stroke='%2335D7A0' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M78 24l2.2 5.3 5.3 2.2-5.3 2.2L78 39l-2.2-5.3-5.3-2.2 5.3-2.2z' fill='%23F2B441'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 [hidden]{display:none!important}
@@ -1291,7 +1291,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 <div class="wrap">
   <header class="xhead">
     <button class="ava menuB bell" type="button" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg><em class="ih" id="bellCount">0</em></button>
-    <div class="htitle"><b id="pageTitle">P2P Order Book</b><span><span class="sub" id="syncNote">Loading…</span><span id="todayLbl"></span></span></div>
+    <div class="htitle"><b id="pageTitle">Pexai</b><span><span class="sub" id="syncNote">Loading…</span><span id="todayLbl"></span></span></div>
     <button class="ibtn" type="button" id="searchBtn" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg></button>
   </header>
 
@@ -1669,6 +1669,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 <div class="ih toast" id="toast"></div>
 
 <script>
+const APP_NAME="Pexai";
 document.querySelectorAll(".ih").forEach(e=>{e.hidden=true;e.classList.remove("ih")});
 
 const $=s=>document.querySelector(s);
@@ -4111,7 +4112,7 @@ async function ask(q){
     if(!online){const stx=[];const ab=brAbout(q.toLowerCase(),stx);if(ab){out.textContent=ab;out.insertAdjacentHTML("beforeend",`<span class="labadge">P2P Brain · partial answer</span>`);brShowThink(out,stx);const d=document.createElement("div");out.appendChild(d);brainAsk(q,d);$("#askBtn").disabled=false;return}
       if(btok(q).length<=3){out.textContent=LA.t("Not sure what you meant, so here is the latest:","Pakka samajh nahi aaya, isliye abhi ka haal bata raha hoon:")+"\n"+brActivity();out.insertAdjacentHTML("beforeend",`<span class="labadge">P2P Brain</span>`);const d=document.createElement("div");out.appendChild(d);brainAsk(q,d);if(d.firstChild&&d.firstChild.nodeType===3)d.firstChild.textContent=LA.t("Or did you mean:","Ya aapka matlab tha:");$("#askBtn").disabled=false;return}
       brainAsk(q,out);$("#askBtn").disabled=false;return;out.textContent=LA.t("I can't answer that offline. Ask about profit, parties, banks, limits, stock, traders, rates, target, or give a command like \"500 usdt 93 pe becha Ravi ko\". Type help for examples.","Ye main bina AI ke nahi samajh paaya. Profit, party, bank, limit, stock, trader, rate, target ke baare me poocho, ya command do jaise \"500 usdt 93 pe becha Ravi ko\". Examples ke liye help likho.");$("#askBtn").disabled=false;return}}
-  const prompt=`You are the AI agent inside "P2P Order Book", an app for an Indian P2P crypto merchant (exchange P2P, direct deals, cash deals). ${aiStyle()} Amounts in ₹ with Indian formatting. Keep JSON keys and action fields in English.
+  const prompt=`You are the AI agent inside "${APP_NAME}", an app for an Indian P2P crypto merchant (exchange P2P, direct deals, cash deals). ${aiStyle()} Amounts in ₹ with Indian formatting. Keep JSON keys and action fields in English.
 Follow the user's taught rules in MEMORY.
 You can ANSWER questions from the data, and you can PREPARE ACTIONS when the user tells you something happened or asks you to record/change something. The user confirms actions before they are saved, so prepare them when the intent is clear; if a key detail is missing (side, quantity, rate, amount, which party), ask for it instead of guessing. Use exact bank and party names from the data. Never invent numbers. Do not give firm investment advice.
 Allowed actions (JSON objects):
@@ -4325,7 +4326,7 @@ function gtLabel(h){h=h==null?new Date().getHours():h;return h>=5&&h<12?["Good m
 function gtName(){const o=String(pref("owner")||"").trim().split(/\s+/)[0]||"";return o?o.charAt(0).toUpperCase()+o.slice(1).toLowerCase():String(pref("biz")||"").trim()}
 const GT_ICON={m:'<g class="rays"><path d="M12 3v2M4.2 7.2l1.4 1.4M19.8 7.2l-1.4 1.4M2 15h2M20 15h2"/></g><path d="M7 18a5 5 0 0 1 10 0M3 18h18"/>',a:'<circle cx="12" cy="12" r="4"/><g class="rays"><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g>',e:'<path d="M7 16a5 5 0 0 1 10 0M3 16h18M6 20h12M12 6v2M5.5 9.5l1.4 1.4M18.5 9.5l-1.4 1.4"/>',n:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 4v3M15.5 5.5h3"/>'};
 var gtKey="";
-function homeTitle(anim){const b=document.getElementById("pageTitle"),h=document.querySelector("header.xhead");if(!b||!h)return;const[l,k]=gtLabel(),n=gtName()||"P2P Order Book";const key=l+"|"+n;if(!anim&&key===gtKey&&b.querySelector(".gt-n"))return;gtKey=key;
+function homeTitle(anim){const b=document.getElementById("pageTitle"),h=document.querySelector("header.xhead");if(!b||!h)return;const[l,k]=gtLabel(),n=gtName()||APP_NAME;const key=l+"|"+n;if(!anim&&key===gtKey&&b.querySelector(".gt-n"))return;gtKey=key;
  h.classList.add("gr");b.innerHTML=`<span class="gt-l"><svg class="gt-i ${k}" viewBox="0 0 24 24" aria-hidden="true">${GT_ICON[k]}</svg>${l}</span><span class="gt-n">${esc(n)}</span>`;const ht=b.parentElement;ht.setAttribute("role","button");ht.tabIndex=0;ht.setAttribute("aria-label","Today's targets");ht.setAttribute("aria-haspopup","dialog")}
 setInterval(()=>{try{const h=document.querySelector("header.xhead");if(h&&h.classList.contains("gr"))homeTitle(false)}catch(e){}},60000);
 // ===== Greeting accordion: today's targets =====
@@ -4359,13 +4360,13 @@ function tgClick(e){const b=e.target.closest&&e.target.closest("[data-tg]");if(!
 function tgSheet(){const h=document.querySelector("header.xhead");if(!h||!h.classList.contains("gr"))return;clearInterval(tgT);tgEdit=false;
  openSheet('<div class="insw" id="gtBody"></div>',el=>{el.addEventListener("click",tgClick);el.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("input"))tgClick({target:el.querySelector("[data-tg=save]")})});tgRender(true);tgT=setInterval(()=>{if(!tgEl()){clearInterval(tgT);return}if(!tgEdit)tgRender(false)},30000)})}
 (function(){let last=0;const go=()=>{const t=document.querySelector(".htitle");if(!t)return setTimeout(go,300);t.addEventListener("click",()=>{const n=Date.now();if(n-last<380){last=0;tgSheet()}else last=n});t.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tgSheet()}})};go()})();
-const PAGE_NAMES={intake:"Smart intake",settings:"Settings",home:"P2P Order Book",orders:"Orders",add:"New order",coins:"Coins",wallet:"Wallet",direct:"Direct payments",ai:"AI Agent",ideas:"Ideas"};
+const PAGE_NAMES={intake:"Smart intake",settings:"Settings",home:APP_NAME,orders:"Orders",add:"New order",coins:"Coins",wallet:"Wallet",direct:"Direct payments",ai:"AI Agent",ideas:"Ideas"};
 function updateChrome(){
   const cur=Object.keys(PAGE_NAMES).find(k=>{const el=$("#p-"+k);return el&&!el.hidden})||"home";
   if(cur==="intake"&&!cloudReady()&&!ocrWorker&&!ocrPromise&&!(aiCfg.prov!=="builtin"||i2Max>0))setTimeout(()=>ocrInit().catch(()=>{}),300);
   if(cur==="home")homeTitle(true);else{const hh=document.querySelector("header.xhead");if(hh){hh.classList.remove("gr","gro");const ht=hh.querySelector(".htitle");if(ht){ht.removeAttribute("role");ht.removeAttribute("tabindex");ht.removeAttribute("aria-haspopup")}}tgOpen=false;{const q=document.getElementById("gtPanel");if(q)q.classList.remove("open")}clearInterval(tgT);$("#pageTitle").textContent=cur==="add"&&typeof editingId!=="undefined"&&editingId?"Edit order":PAGE_NAMES[cur]}
   document.querySelectorAll("#topmenu [data-go]").forEach(b=>b.classList.toggle("on",b.dataset.go===cur));
-  document.title=cur==="home"?"P2P Order Book":PAGE_NAMES[cur]+" · P2P Order Book";
+  document.title=cur==="home"?APP_NAME:PAGE_NAMES[cur]+" · "+APP_NAME;
 }
 // menu drawer
 function openDrawer(){
@@ -4482,7 +4483,7 @@ function loadSettingsForm(){
   $("#st-learn").checked=!!pref("learn");$("#st-auto").checked=pref("autoIntake")!==false;$("#st-mem").checked=!!pref("mem");
   $("#st-theme").value=devGet("p2p_theme","dark");$("#st-hide").checked=devGet("p2p_hide_default","0")==="1";
   renderNotes();
-  $("#aboutLine").textContent=`P2P Order Book · ${orders.length} orders · ${banks.length} banks · ${parties.length} parties · ${exps.length} expenses`;
+  $("#aboutLine").textContent=`${APP_NAME} · ${orders.length} orders · ${banks.length} banks · ${parties.length} parties · ${exps.length} expenses`;
 }
 const bindPref=(id,k,map)=>{const e=$("#"+id);e.addEventListener("change",()=>setPref(k,map?map(e.value):e.value))};
 bindPref("st-biz","biz",v=>v.trim().slice(0,40));bindPref("st-owner","owner",v=>v.trim().slice(0,40));
@@ -4532,7 +4533,7 @@ $("#csvExport").onclick=()=>{const head=["Date","Time","Mode","Side","Coin","Qua
   const rows=[...orders].sort((a,b)=>a.time-b.time).map(o=>{const d=new Date(o.time);return[d.toLocaleDateString("en-CA"),d.toLocaleTimeString("en-GB"),modeOf(o),o.side,o.coin,o.qty,o.rate,(orderTotal(o)).toFixed(2),o.status,o.platform,o.pay,o.cp,(o.splits||[]).map(x=>bankName(x.bank)+" "+x.amt+" "+(x.method||"")).join("; "),o.note].map(q).join(",")});
   saveFile(`p2p-orders-${new Date().toLocaleDateString("en-CA")}.csv`,"﻿"+[head.join(","),...rows].join("\n"))};
 $("#bkImport").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;let data;try{data=JSON.parse(await f.text())}catch(err){$("#bkNote").textContent="This file isn't a valid backup.";return}
-  const list=Array.isArray(data)?data:data&&Array.isArray(data.records)?data.records:null;if(!list){$("#bkNote").textContent="This file isn't a P2P Order Book backup.";return}
+  const list=Array.isArray(data)?data:data&&Array.isArray(data.records)?data.records:null;if(!list){$("#bkNote").textContent="This file isn't a backup from this app.";return}
   const ok=list.filter(x=>x&&typeof x.id==="string"&&x.id.length<=200&&/^[A-Za-z0-9_\-.~]+$/.test(x.id));let n=0;
   if(col){let i=0;const w=async()=>{while(i<ok.length){const x=ok[i++];try{await col.doc(x.id).set(x)}catch(err){}n++;if(n%25===0)$("#bkNote").textContent=`Restoring ${n} of ${ok.length}…`}};await Promise.all([w(),w(),w(),w()])}
   else{const idx=new Map(recs.map((r,k)=>[r.id,k]));ok.forEach(x=>{if(idx.has(x.id))recs[idx.get(x.id)]=x;else recs.push(x)});n=ok.length;lsSave();splitRecs();applyPrefs();render()}
@@ -4694,7 +4695,7 @@ async function legacyIntake(){
     }
     {const pl=[];ocrTexts.forEach((t,i)=>{const p=payParse(t);if(p.ok)pl.push([p,i2Files[i]])});if(text&&!pl.length){const p=payParse(text);if(p.ok)pl.push([p,null])}
      pl.reverse().forEach(([p,fl])=>res0.after(payCard(p,fl,"phone")))}
-    const prompt=`You are the SMART INTAKE of "P2P Order Book", an app for an Indian P2P crypto merchant. The user has given ${i2Files.length?i2Files.length+" screenshot(s)"+(vision?" (attached as images)":" (their text was read by OCR, see SCREENSHOT sections)"):"no screenshots"}${text?" and the pasted text below":""}. They can be: bank or UPI SMS/notifications, UPI app payment screenshots (GPay, PhonePe, Paytm, bank apps), exchange P2P order screenshots (Binance, Bybit, OKX, KuCoin…), bank statements, WhatsApp messages or a list of deals.
+    const prompt=`You are the SMART INTAKE of "${APP_NAME}", an app for an Indian P2P crypto merchant. The user has given ${i2Files.length?i2Files.length+" screenshot(s)"+(vision?" (attached as images)":" (their text was read by OCR, see SCREENSHOT sections)"):"no screenshots"}${text?" and the pasted text below":""}. They can be: bank or UPI SMS/notifications, UPI app payment screenshots (GPay, PhonePe, Paytm, bank apps), exchange P2P order screenshots (Binance, Bybit, OKX, KuCoin…), bank statements, WhatsApp messages or a list of deals.
 Read everything carefully and turn it into records. Rules:
 - AUTO-LINK: if one screenshot is an exchange order and another is the payment for it (same amount ±₹1, or the payer/receiver name matches the counterparty's real name), create ONE add_order with "banks" filled from the payment (which of MY banks, amount, method UPI/IMPS) and the UTR/ref + order number in note. Do not create a separate payment record for it.
 - If the order already exists in DATA.recent_orders (same order number in note, or same side+qty+rate within the last days) do NOT add it again: use assign_banks on that order_id (and set "status" if the screenshot shows completed/cancelled).
@@ -4992,7 +4993,7 @@ async function partyPdf(p,R,incAcc,ret){const {jsPDF}=await loadJsPDF();const d=
   const accName=x=>{const a=(p.accounts||[]).find(k=>k.id===x.account)||{};return a.bankName||a.upi||"account"};
   // header band
   d.setFillColor(...ink);d.rect(0,0,W,30,"F");d.setTextColor(255,255,255);d.setFont("helvetica","bold");d.setFontSize(17);d.text("Party Statement",M,14);
-  d.setFont("helvetica","normal");d.setFontSize(9);d.setTextColor(200,205,215);d.text("P2P Order Book - Direct payments",M,21);
+  d.setFont("helvetica","normal");d.setFontSize(9);d.setTextColor(200,205,215);d.text(APP_NAME+" - Direct payments",M,21);
   d.text("Generated "+cl(tm(Date.now())),W-M,14,{align:"right"});d.text("Period: "+cl(R.label),W-M,21,{align:"right"});
   let y=42;d.setTextColor(...ink);d.setFont("helvetica","bold");d.setFontSize(15);d.text(cl(p.name)||"Party",M,y);
   const DAYS_=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];const dd=p.dueDay!==""&&p.dueDay!=null?DAYS_[+p.dueDay]:"";
@@ -5264,13 +5265,13 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
       q("#wa-save").onclick=()=>{read();if(mode==="api"&&!waApiOn()){toast("Add Phone number ID and token");return}toast("WhatsApp settings saved");sheets.wa("home")};
       q("#wa-test").onclick=async e=>{read();const b=e.currentTarget,s=q("#wa-tst");const n=waNum(q("#wa-tn").value);if(!waApiOn()){s.textContent="Fill Phone number ID and token first.";return}if(!n){s.textContent="Enter a valid number.";return}
         b.disabled=true;b.textContent="Sending…";s.className="note wsst";s.textContent="";
-        try{const msg=(pref("biz")||"P2P Order Book")+" · WhatsApp connected ✅";if(waCfg.tpl)await waApiTpl(n,msg);else await waApiText(n,msg);s.className="note wsst ok";s.textContent="✓ Test sent to "+waShowNum(n)+". Check WhatsApp.";waLog({to:"Test",n,k:"Test",via:"api",ok:true})}
+        try{const msg=(pref("biz")||APP_NAME)+" · WhatsApp connected ✅";if(waCfg.tpl)await waApiTpl(n,msg);else await waApiText(n,msg);s.className="note wsst ok";s.textContent="✓ Test sent to "+waShowNum(n)+". Check WhatsApp.";waLog({to:"Test",n,k:"Test",via:"api",ok:true})}
         catch(err){s.className="note wsst bad";s.textContent=waErrText(err)+(err.api&&!waCfg.tpl&&+err.code===131047?"":(err.api?"":""));waLog({to:"Test",n,k:"Test",via:"api",ok:false,err:String(err.message||err).slice(0,120)})}
         b.disabled=false;b.textContent="Send test"}}
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=45;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=46;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5329,7 +5330,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
       el.querySelectorAll("[data-apply]").forEach(b=>b.onclick=async()=>{if(!mcp){toast("Open the app in Claude and reply “apply” to the update message");return}
         if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="Tap again to apply";setTimeout(()=>{b.dataset.c="";b.textContent="Apply to my app"},3500);return}
         b.disabled=true;b.textContent="Applying…";try{await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:TRIG,text:"APPLY "+b.dataset.apply},{cache:false});b.textContent="Applying… (few minutes)";toast("Apply started. The app reloads with the new version in a few minutes.")}catch(err){b.disabled=false;b.textContent="Apply to my app";toast(err&&err.code==="not_granted"?"Allow the Claude Code Remote permission and try again":"Couldn't start. Try again.")}});
-      if(q("#fb-copy"))q("#fb-copy").onclick=()=>copyText("P2P Order Book feedback (v"+APP_VER+"):\n"+L.map((x,i)=>`${i+1}. [${(FB_T[x.type]||FB_T.feat)[0]}${x.area?" · "+x.area:""}${x.prio==="urgent"?" · URGENT":""}] ${x.text}`).join("\n"));
+      if(q("#fb-copy"))q("#fb-copy").onclick=()=>copyText(APP_NAME+" feedback (v"+APP_VER+"):\n"+L.map((x,i)=>`${i+1}. [${(FB_T[x.type]||FB_T.feat)[0]}${x.area?" · "+x.area:""}${x.prio==="urgent"?" · URGENT":""}] ${x.text}`).join("\n"));
     }
     if(tab==="how"&&q("#fb-now"))q("#fb-now").onclick=async e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Starting…";
       try{await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:TRIG,text:"Instant run requested from the app's Feedback menu."},{cache:false});b.textContent="Started ✓";toast("Update started. Preview link in about 10–20 minutes.")}
@@ -5337,6 +5338,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00046","6 Oct 2026",["New name and logo: the app is now called Pexai, with a new green P icon. Your data and settings are unchanged. Install the new APK to see the new icon on your phone"]],
   ["0.0.0.00045","6 Oct 2026",["Removed the screen zoom and calm mode again, as requested. Everything else is unchanged"]],
   ["0.0.0.00044","6 Oct 2026",["Double-tap the greeting at the top of Home to open today's targets in a pop-up: profit, completed orders and volume fill up with a smooth animation. Set your own daily targets there; it also shows open orders and alerts"]],
   ["0.0.0.00043","6 Oct 2026",["The save status now lives in the greeting icon: it stays calm when everything is saved, pulses amber while syncing and red if saving fails. The green dot on the menu button is gone"]],
@@ -5392,7 +5394,7 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
   const st=prev.length?["Update ready","ready"]:work?["Update being built","work"]:["Up to date","ok"];
   openSheet(`<div class="insw abw">
     <div class="abh"><span class="dlogo dl2 abl"><svg width="30" height="30" viewBox="0 0 20 20"><rect x="2" y="11" width="4" height="7" rx="1.2" fill="#23c58f"/><rect x="8" y="6" width="4" height="12" rx="1.2" fill="#f2b441"/><rect x="14" y="2" width="4" height="16" rx="1.2" fill="#f0596b"/></svg></span>
-      <b>P2P Order Book</b><small>Version ${APP_VER}</small><span class="abs ${st[1]}">${st[1]==="ok"?"✓ ":""}${st[0]}</span></div>
+      <b>${APP_NAME}</b><small>Version ${APP_VER}</small><span class="abs ${st[1]}">${st[1]==="ok"?"✓ ":""}${st[0]}</span></div>
     <div class="pcsec">Updates</div>
     <div class="icard abu">
       ${prev.length?`<div class="abnew"><b>🎉 New version ready</b><small>${prev.length} change${prev.length>1?"s":""} from your feedback:</small><ul>${prev.slice(0,5).map(x=>`<li>${esc(x.reply||x.text)}</li>`).join("")}</ul><div class="fbact"><a class="mini ghost" href="${esc(pv)}" target="_blank" rel="noopener">Try preview</a><button type="button" class="mini psdl" id="ab-apply">Apply update</button></div></div>`:""}
@@ -5409,7 +5411,7 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
       <div class="abr"><span>Saved</span><b>${col?"Cloud sync":"This device"}</b></div>
       ${col?`<div class="abr"><span>Space used</span><b>${used.toLocaleString("en-IN")} / ${cap.toLocaleString("en-IN")}</b></div><div class="pvbar"><i style="width:${Math.min(100,used/cap*100).toFixed(1)}%"></i></div>`:""}
       <div class="abbtn"><button type="button" class="mini ghost" id="ab-bk">Backup now</button><button type="button" class="mini ghost" data-sheet="imphist">Import history</button></div></div>
-    <p class="note abf">Made for P2P merchants${pref("owner")?" · "+esc(pref("owner")):""}<br>P2P Order Book v${APP_VER}</p></div>`,el=>{const q=s=>el.querySelector(s);
+    <p class="note abf">Made for P2P merchants${pref("owner")?" · "+esc(pref("owner")):""}<br>${APP_NAME} v${APP_VER}</p></div>`,el=>{const q=s=>el.querySelector(s);
     if(q("#ab-apply"))q("#ab-apply").onclick=e=>appApply(pv,e.currentTarget);
     if(q("#ab-chk"))q("#ab-chk").onclick=e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Checking…";try{window.P2PNative.checkUpdate()}catch(err){b.disabled=false;b.textContent="Check for updates"}};
     q("#ab-fb").onclick=()=>sheets.feedback();q("#ab-bk").onclick=()=>{closeSheet();$("#bkExport").click()};
@@ -5763,7 +5765,7 @@ sheets.glance=function(){const g=glanceData();const nat=!!(window.P2PNative&&typ
   <div class="pvk"><div><span>Today's profit</span><b class="${g.neg?"neg":"pos"}">${esc(g.profit)}</b></div><div><span>Open orders</span><b>${g.pend}</b></div><div><span>Orders today</span><b>${g.orders}</b></div></div>
   ${(lastAlerts||[]).slice(0,5).map(a=>`<div class="p7chk"><i class="${a.hi?"bad":"warn"}">${a.hi?"!":"•"}</i><p>${esc(a.t)}</p></div>`).join("")||'<p class="note">All clear. Nothing needs attention.</p>'}
   <div class="pcsec">Home-screen widget</div>
-  <p class="note">${nat?"Long-press your phone's home screen, tap Widgets, find P2P Order Book and place it. It shows today's profit, open orders and alerts, and opens the app when tapped. It refreshes every time you use the app.":"The home-screen widget works in the Android app. Install the latest APK, then long-press the home screen and add the P2P Order Book widget."}</p></div>`)};
+  <p class="note">${nat?"Long-press your phone's home screen, tap Widgets, find ${APP_NAME} and place it. It shows today's profit, open orders and alerts, and opens the app when tapped. It refreshes every time you use the app.":"The home-screen widget works in the Android app. Install the latest APK, then long-press the home screen and add the P2P Order Book widget."}</p></div>`)};
 
 // ===== Smart Intake extras: live fields, two scores, debug screen =====
 (function(){if(!document.getElementById("p7css2")){const s=document.createElement("style");s.id="p7css2";s.textContent=`.ixlive{display:grid;gap:8px;margin-top:8px}.ixlv{border:1px solid var(--line);border-radius:12px;padding:8px 10px}.ixlv>b{display:block;font:700 .72rem var(--body);margin-bottom:4px}.ixlv div{display:flex;justify-content:space-between;gap:10px;font:500 .78rem var(--body);padding:2px 0}.ixlv span{color:var(--muted)}.ixlv em{font-style:normal;color:var(--accent);font-weight:600;text-align:right}.ixlv i{font-style:normal;color:var(--warn);text-align:right}.ixsc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.ixsc1{border:1px solid var(--line);border-radius:12px;padding:8px 10px}.ixsc1 span{display:block;font:600 .66rem var(--body);color:var(--muted)}.ixsc1 b{font:800 1.1rem var(--body)}.ixsc1 u{display:block;height:5px;border-radius:5px;background:var(--soft);margin-top:5px;text-decoration:none;overflow:hidden}.ixsc1 u i{display:block;height:100%;background:var(--accent)}.ixdbg pre{white-space:pre-wrap;word-break:break-word;font:500 .7rem/1.4 ui-monospace,monospace;background:var(--soft);border-radius:10px;padding:8px;max-height:220px;overflow:auto}`;document.head.appendChild(s)}})();
@@ -6192,7 +6194,7 @@ function buildReport(p){
   const dp=ppays.filter(x=>inR(x.time)).reduce((t,x)=>t+(+x.amt||0),0);
   const {bal}=balances();const money=banks.reduce((t,k)=>t+bal[k.id],0);const usdt=stockLeft().USDT||0;
   const fmtD=t=>new Date(t).toLocaleDateString("en-IN",{day:"numeric",month:"short"});
-  const lines=[`📊 ${pref("biz")||"P2P Order Book"} · ${L}${p!=="all"?` (${fmtD(a)}${b-a>DAY+1?" – "+fmtD(Math.min(b,Date.now())-1):""})`:""}`,"",
+  const lines=[`📊 ${pref("biz")||APP_NAME} · ${L}${p!=="all"?` (${fmtD(a)}${b-a>DAY+1?" – "+fmtD(Math.min(b,Date.now())-1):""})`:""}`,"",
     `Orders: ${ol.length} (completed ${done.length}, cancelled ${ol.filter(o=>o.status==="Cancelled").length}, pending ${ol.filter(o=>o.status==="Pending"||o.status==="Appeal").length})`,
     `Bought: ${fmtQ(+st.b.q.toFixed(4))} @ avg ₹${st.b.avg.toFixed(2)} = ${inr(Math.round(st.b.v))}`,
     `Sold: ${fmtQ(+st.s.q.toFixed(4))} @ avg ₹${st.s.avg.toFixed(2)} = ${inr(Math.round(st.s.v))}`,
