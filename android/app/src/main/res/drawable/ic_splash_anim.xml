@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_splash_vec">
+    <target android:name="p" android:animation="@animator/splash_p" />
+    <target android:name="star" android:animation="@animator/splash_star" />
+</animated-vector>

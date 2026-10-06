@@ -1,17 +1,17 @@
 {
- "web": "0.0052",
- "build": 52,
- "display": "0.0.0.00052",
+ "web": "0.0053",
+ "build": 53,
+ "display": "0.0.0.00053",
  "files": {
-  "index.html": "3a15cb21b2271fc49dec46b852e85005e1532847",
+  "index.html": "b9e055047e032815a9e71a468360fb7eaa2eae8f",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
  },
  "apk": {
-  "code": 13,
-  "name": "0.0.0.00052",
+  "code": 14,
+  "name": "0.0.0.00053",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Splash waits for app ready"
+  "notes": "Animated Android splash"
  }
 }
