@@ -110,6 +110,9 @@ public class MainActivity extends Activity {
         // Match the opening colour to the app theme (light or dark) so there is no dark-to-white flash.
         final int bgc = Color.parseColor("light".equals(prefs.getString("theme", "dark")) ? "#f4f5f7" : "#0c0d0e");
         web.setBackgroundColor(bgc);
+        web.setVerticalScrollBarEnabled(false);
+        web.setHorizontalScrollBarEnabled(false);
+        web.setOverScrollMode(android.view.View.OVER_SCROLL_NEVER);
         getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(bgc));
 
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
