@@ -9,9 +9,9 @@
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
  },
  "apk": {
-  "code": 6,
+  "code": 9,
   "name": "0.0.0.00036",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Pro tools: chat replies, one client many names, udhar khata, day close, insights, bank health, at a glance + home-screen widget"
+  "notes": "OCR back to ML Kit (arm64 only, 18 MB)"
  }
 }
