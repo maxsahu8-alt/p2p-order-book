@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="14dp"
+    android:background="@drawable/widget_bg">
+    <TextView
+        android:id="@+id/w_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Today's profit"
+        android:textColor="#9AA6B8"
+        android:textSize="12sp" />
+    <TextView
+        android:id="@+id/w_profit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="—"
+        android:textColor="#FFFFFF"
+        android:textSize="28sp"
+        android:textStyle="bold" />
+    <TextView
+        android:id="@+id/w_line"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="Open the app once"
+        android:textColor="#D5DCE8"
+        android:textSize="13sp" />
+    <TextView
+        android:id="@+id/w_alert"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text=""
+        android:textColor="#FFB86B"
+        android:textSize="12sp" />
+</LinearLayout>

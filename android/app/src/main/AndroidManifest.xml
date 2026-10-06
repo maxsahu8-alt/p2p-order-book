@@ -24,6 +24,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <receiver android:name=".P2PWidget" android:exported="false">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/p2p_widget_info" />
+        </receiver>
         <provider android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"
             android:exported="false" android:grantUriPermissions="true">

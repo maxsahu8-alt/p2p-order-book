@@ -514,6 +514,15 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------- bridge for the web app
     class Bridge {
         @JavascriptInterface
+        public String setWidget(String json) {
+            try {
+                getSharedPreferences(P2PWidget.PREF, MODE_PRIVATE).edit().putString("json", json).apply();
+                P2PWidget.refresh(getApplicationContext());
+                return "ok";
+            } catch (Exception e) { return "error"; }
+        }
+
+        @JavascriptInterface
         public String loadData() {
             try {
                 File f = new File(getFilesDir(), "data.json");
