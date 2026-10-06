@@ -1669,7 +1669,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 <div class="ih toast" id="toast"></div>
 
 <script>
-const APP_NAME="Pexai";
+const APP_NAME="Pexai";const PX_LOGO='<svg width="40" height="40" viewBox="22 14 64 76" aria-hidden="true"><defs><linearGradient id="pxg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7BF0C8"/><stop offset="1" stop-color="#1FB887"/></linearGradient></defs><path d="M37 82V28h19a16.5 16.5 0 0 1 0 33H37" fill="none" stroke="url(#pxg)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M78 24l2.2 5.3 5.3 2.2-5.3 2.2L78 39l-2.2-5.3-5.3-2.2 5.3-2.2z" fill="#F2B441"/></svg>';
 document.querySelectorAll(".ih").forEach(e=>{e.hidden=true;e.classList.remove("ih")});
 
 const $=s=>document.querySelector(s);
@@ -5271,7 +5271,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=46;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=47;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5338,6 +5338,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00047","6 Oct 2026",["The new Pexai logo now shows inside the app too (About and Update screens)"]],
   ["0.0.0.00046","6 Oct 2026",["New name and logo: the app is now called Pexai, with a new green P icon. Your data and settings are unchanged. Install the new APK to see the new icon on your phone"]],
   ["0.0.0.00045","6 Oct 2026",["Removed the screen zoom and calm mode again, as requested. Everything else is unchanged"]],
   ["0.0.0.00044","6 Oct 2026",["Double-tap the greeting at the top of Home to open today's targets in a pop-up: profit, completed orders and volume fill up with a smooth animation. Set your own daily targets there; it also shows open orders and alerts"]],
@@ -5393,7 +5394,7 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
   const pv=prev.length?prev[0].preview:"";const used=recs.length,cap=25000,cl=Object.keys(cpBook()).length;
   const st=prev.length?["Update ready","ready"]:work?["Update being built","work"]:["Up to date","ok"];
   openSheet(`<div class="insw abw">
-    <div class="abh"><span class="dlogo dl2 abl"><svg width="30" height="30" viewBox="0 0 20 20"><rect x="2" y="11" width="4" height="7" rx="1.2" fill="#23c58f"/><rect x="8" y="6" width="4" height="12" rx="1.2" fill="#f2b441"/><rect x="14" y="2" width="4" height="16" rx="1.2" fill="#f0596b"/></svg></span>
+    <div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span>
       <b>${APP_NAME}</b><small>Version ${APP_VER}</small><span class="abs ${st[1]}">${st[1]==="ok"?"✓ ":""}${st[0]}</span></div>
     <div class="pcsec">Updates</div>
     <div class="icard abu">
@@ -6484,7 +6485,7 @@ if(APK){const N=window.P2PNative;document.body.classList.add("apk");
   try{const o=document.querySelector('#ai-prov option[value="builtin"]');if(o)o.remove();if(aiCfg.prov==="builtin"){aiCfg.prov="brain";localStorage.setItem(AIK,JSON.stringify(aiCfg))}$("#ai-prov").value=aiCfg.prov;aiFormSync()}catch(e){}
   // called by the Android side
   window.P2PUpdated=v=>{const t=document.createElement("div");t.className="apkup";t.innerHTML=`<b>✓ Update ready · v${esc(String(v))}</b><button type="button">Reload</button>`;t.querySelector("button").onclick=()=>location.reload();document.body.appendChild(t);setTimeout(()=>t.remove(),20000)};
-  window.P2PApkUpdate=info=>{info=info||{};openSheet(`<div class="insw"><div class="abh"><span class="dlogo dl2 abl"><svg width="30" height="30" viewBox="0 0 20 20"><rect x="2" y="11" width="4" height="7" rx="1.2" fill="#23c58f"/><rect x="8" y="6" width="4" height="12" rx="1.2" fill="#f2b441"/><rect x="14" y="2" width="4" height="16" rx="1.2" fill="#f0596b"/></svg></span><b>New app version</b><small>${esc(info.name||"")}</small></div>
+  window.P2PApkUpdate=info=>{info=info||{};openSheet(`<div class="insw"><div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span><b>New app version</b><small>${esc(info.name||"")}</small></div>
     ${info.notes?`<div class="icard"><p class="note" style="margin:0;white-space:pre-wrap">${esc(info.notes)}</p></div>`:""}<p class="note">Download, then tap Install. It installs over this app — your data stays.</p>
     <div class="row2"><button type="button" class="mini ghost" data-close>Later</button><button type="button" class="mini psdl" id="apk-dl">Download update</button></div></div>`,el=>{el.querySelector("#apk-dl").onclick=()=>{N.openUrl(info.url||"");closeSheet()}})};
   window.P2PBack=()=>{const lk=$("#lock");if(lk&&!lk.hidden)return false;const fo=$("#dFold");if(fo&&!fo.hidden){closeFolder();return true}
