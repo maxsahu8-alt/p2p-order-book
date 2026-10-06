@@ -29,6 +29,12 @@ async def main():
     await pg.evaluate("setPref('owner','deepak kumar')");await pg.wait_for_timeout(300)
     chk("name change updates live","Deepak" in await pg.inner_text("#pageTitle"))
     chk("saved dot instead of text",await pg.evaluate("getComputedStyle(document.getElementById('syncNote')).display==='none'"))
+    chk("state ok when saved",await pg.evaluate("document.querySelector('.xhead').dataset.gs")=="ok")
+    await pg.evaluate("(()=>{const n=document.getElementById('syncNote');n.classList.remove('ok');n.textContent='Syncing…'})()");await pg.wait_for_timeout(100)
+    chk("state sync",await pg.evaluate("document.querySelector('.xhead').dataset.gs")=="sync")
+    await pg.evaluate("document.getElementById('syncNote').textContent='Save failed'");await pg.wait_for_timeout(100)
+    chk("state bad",await pg.evaluate("document.querySelector('.xhead').dataset.gs")=="bad")
+    chk("icon turns red",await pg.evaluate("getComputedStyle(document.querySelector('.gt-i')).stroke")!=await pg.evaluate("getComputedStyle(document.querySelector('#menuBtn')).color"))
     chk("no page errors",not errs)
     if errs:print(errs)
     for h in (6,14,19,22):
