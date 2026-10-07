@@ -610,7 +610,7 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .night input{width:20px;height:20px;min-height:0;flex:none;accent-color:var(--accent)}
 .night .warnline{color:var(--sell);font-weight:700;font-size:.86rem}
 .lock{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px}
-.lock b{font-size:1.1rem}
+.lock b{font-size:1.1rem}.lkb{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:10px}.lkb .dlogo{width:76px;height:76px;border-radius:23px}.lkb svg{width:48px;height:48px}.lkb .pxw{font:800 1.6rem var(--display);letter-spacing:-.02em}.lkb small{color:var(--muted);font-weight:600;font-size:.8rem}
 .dots{display:flex;gap:14px}
 .dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--fg)}
 .dots i.on{background:var(--fg)}
@@ -1249,7 +1249,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 .dhd b{font:800 .95rem var(--display)!important;letter-spacing:-.01em}
 .dhd em{font:600 .7rem var(--body);font-style:normal;color:var(--muted);font-variant-numeric:tabular-nums}
 .fbab{font-weight:700;color:var(--primary)}
-.abh{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:8px 0 4px}.abl{width:72px!important;height:72px!important;border-radius:22px!important;margin-bottom:8px}.abh b{font:800 1.3rem var(--display);letter-spacing:-.02em}.abh small{color:var(--muted);font-weight:600;font-size:.84rem}
+.abh{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:8px 0 4px}.abl{width:88px!important;height:88px!important;border-radius:27px!important;margin-bottom:8px}.abl svg{width:54px;height:54px}.abt{font-style:normal;font:600 .84rem var(--body);color:var(--muted);margin:-2px 0 2px}.abh b{font:800 1.3rem var(--display);letter-spacing:-.02em}.abh small{color:var(--muted);font-weight:600;font-size:.84rem}
 .abs{margin-top:8px;font:700 .74rem var(--body);padding:5px 12px;border-radius:99px}.abs.ok{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}.abs.ready{color:#d97706;background:#f59e0b24}.abs.work{color:#3b82f6;background:#3b82f61f}
 .abr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:.86rem}.abr:last-of-type{border-bottom:0}.abr span{color:var(--muted)}.abr b{text-align:right}
 .abbtn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.abbtn>*{padding:11px 8px!important}.abbtn>*:only-child{grid-column:1/-1}
@@ -1666,7 +1666,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
   <div class="us-chips" id="usChips"></div>
   <div class="us-body" id="usBody"></div>
 </div>
-<div class="ih lock" id="lock"><b id="lockTitle">Enter PIN</b><div class="dots" id="lockDots"></div><div class="pad" id="lockPad"></div><button type="button" class="link" id="lockForgot">Forgot PIN?</button></div>
+<div class="ih lock" id="lock"><div class="lkb" id="lockBrand"></div><b id="lockTitle">Enter PIN</b><div class="dots" id="lockDots"></div><div class="pad" id="lockPad"></div><button type="button" class="link" id="lockForgot">Forgot PIN?</button></div>
 <div class="ih tip" id="tip"></div>
 <div class="ih toast" id="toast"></div>
 
@@ -3009,7 +3009,7 @@ Object.assign(sheets,{
         g.fillStyle="#fff";g.fillRect(0,0,W,H);g.fillStyle="#111";for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(qr.isDark(r,k))g.fillRect(pad+k*cs,pad+r*cs,cs,cs);
         g.textAlign="center";g.font="bold 40px sans-serif";g.fillText(c.amt?"₹"+c.amt.toLocaleString("en-IN"):"Scan to pay",W/2,W+30);
         g.font="24px sans-serif";g.fillStyle="#444";g.fillText([c.name,c.id].filter(Boolean).join(" · "),W/2,W+72);if(c.note)g.fillText(c.note,W/2,W+108);
-        cv.toBlob(b=>saveFile("upi-qr-"+(c.amt?Math.round(c.amt)+"-":"")+new Date().toLocaleDateString("en-CA")+".png",b),"image/png")};
+        cv.toBlob(b=>saveFile("Pexai-upi-qr-"+(c.amt?Math.round(c.amt)+"-":"")+new Date().toLocaleDateString("en-CA")+".png",b),"image/png")};
     })},
   conv(){let dir="inr",coin=pref("coin")||"USDT";const r0=convRate(coin);
     openSheet(`<h3>₹ ⇄ ${esc(coin)} converter</h3>
@@ -3979,7 +3979,7 @@ sheets.brain=function(){const st=brPending||brStats(),B=brainRecs(),al=B.filter(
     <div class="pcact" style="grid-template-columns:1fr 1fr"><button type="button" class="mini ghost" id="br-exp">Export brain</button><button type="button" class="mini ghost" id="br-reset" style="color:var(--sell)">Reset brain</button></div></div>`,el=>{
     const sm=el.querySelector("#br-smart");if(sm)sm.onchange=()=>{setPref("brainSmart",sm.checked);toast(sm.checked?"Smart mode on":"Smart mode off");setTimeout(()=>{$("#apSub")&&($("#apSub").textContent=aiOnline()?"P2P Brain + Claude":"P2P Brain · offline")},50)};
     el.querySelectorAll("[data-brdel]").forEach(b=>b.onclick=async()=>{try{await delRec(b.dataset.brdel);sheets.brain()}catch(e){}});
-    el.querySelector("#br-exp").onclick=()=>saveFile("p2p-brain-"+new Date().toLocaleDateString("en-CA")+".json",JSON.stringify({brain:brainRecs(),stats:brPending||brStats()},null,1));
+    el.querySelector("#br-exp").onclick=()=>saveFile("Pexai-brain-"+new Date().toLocaleDateString("en-CA")+".json",JSON.stringify({brain:brainRecs(),stats:brPending||brStats()},null,1));
     twoTap(el.querySelector("#br-reset"),async()=>{for(const r of [...brainRecs(),...recs.filter(r=>r.id==="br_stats")])await delRec(r.id);brPending=null;toast("Brain reset");sheets.brain()});
   })};
 // ---- P2P Brain v3: conversation, context, maths, compare, multi-ask, dates
@@ -4565,11 +4565,11 @@ ACT.remember={d:a=>`Remember: “${a.note}”`,run:async a=>{if(!a.note)throw ne
 // ---------- data tools ----------
 let dlApi=null;
 var saveFile=async function(name,data){if(!dlApi){toast("Download isn't available here");return}try{await dlApi.save({filename:name,data});}catch(e){if(e&&e.code!=="cancelled"&&e.code!=="declined")toast("Couldn't download")}}
-$("#bkExport").onclick=()=>saveFile(`p2p-backup-${new Date().toLocaleDateString("en-CA")}.json`,JSON.stringify({app:"P2P Order Book",version:1,exported:new Date().toISOString(),records:recs},null,1));
+$("#bkExport").onclick=()=>saveFile(`Pexai-backup-${new Date().toLocaleDateString("en-CA")}.json`,JSON.stringify({app:"Pexai",version:1,exported:new Date().toISOString(),records:recs},null,1));
 $("#csvExport").onclick=()=>{const head=["Date","Time","Mode","Side","Coin","Quantity","Rate","Total INR","Status","Platform","Payment","Counterparty","Banks","Note"];
   const q=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   const rows=[...orders].sort((a,b)=>a.time-b.time).map(o=>{const d=new Date(o.time);return[d.toLocaleDateString("en-CA"),d.toLocaleTimeString("en-GB"),modeOf(o),o.side,o.coin,o.qty,o.rate,(orderTotal(o)).toFixed(2),o.status,o.platform,o.pay,o.cp,(o.splits||[]).map(x=>bankName(x.bank)+" "+x.amt+" "+(x.method||"")).join("; "),o.note].map(q).join(",")});
-  saveFile(`p2p-orders-${new Date().toLocaleDateString("en-CA")}.csv`,"﻿"+[head.join(","),...rows].join("\n"))};
+  saveFile(`Pexai-orders-${new Date().toLocaleDateString("en-CA")}.csv`,"﻿"+[head.join(","),...rows].join("\n"))};
 $("#bkImport").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;let data;try{data=JSON.parse(await f.text())}catch(err){$("#bkNote").textContent="This file isn't a valid backup.";return}
   const list=Array.isArray(data)?data:data&&Array.isArray(data.records)?data.records:null;if(!list){$("#bkNote").textContent="This file isn't a backup from this app.";return}
   const ok=list.filter(x=>x&&typeof x.id==="string"&&x.id.length<=200&&/^[A-Za-z0-9_\-.~]+$/.test(x.id));let n=0;
@@ -5030,15 +5030,16 @@ function partyStmt(p,per){const now=Date.now(),d0=new Date();d0.setHours(0,0,0,0
   const first=from||(all[0]?all[0].time:now);const fd=t=>new Date(t).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
   const byPerson={};rows.filter(x=>x._t==="pay").forEach(x=>{const n=payerName(x);byPerson[n]=(byPerson[n]||0)+(+x.amt||0)});
   return{from,open,added,paid,close:bal,rows,byPerson,label:fd(first)+" to "+fd(now),per}}
-async function partyPdf(p,R,incAcc,ret){const {jsPDF}=await loadJsPDF();const d=new jsPDF({unit:"mm",format:"a4"});
+function pxLogoPng(){return new Promise(ok=>{try{const svg=PX_LOGO.replace(/pxg/g,"pxe").replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ').replace('width="40" height="40"','width="160" height="190"');const im=new Image();im.onload=()=>{try{const c=document.createElement("canvas");c.width=160;c.height=190;c.getContext("2d").drawImage(im,0,0,160,190);ok(c.toDataURL("image/png"))}catch(e){ok(null)}};im.onerror=()=>ok(null);im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)}catch(e){ok(null)}})}
+async function partyPdf(p,R,incAcc,ret){const {jsPDF}=await loadJsPDF();const LG=await pxLogoPng();const d=new jsPDF({unit:"mm",format:"a4"});
   const W=210,M=14,cl=t=>String(t==null?"":t).replace(/₹/g,"Rs. ").replace(/[→➜]/g,"to").replace(/[–—]/g,"-").replace(/[^\x20-\x7E\xA0-\xFF]/g,"").trim();
   const rs=n=>(n<-0.5?"-":"")+"Rs. "+Math.abs(Math.round(n)).toLocaleString("en-IN");
   const ink=[17,24,39],mut=[107,114,128],line=[229,231,235],grn=[5,150,105],red=[220,38,38],amb=[180,110,10];
   const tm=t=>new Date(t).toLocaleString("en-IN",{day:"2-digit",month:"short",year:"2-digit",hour:"2-digit",minute:"2-digit"});
   const accName=x=>{const a=(p.accounts||[]).find(k=>k.id===x.account)||{};return a.bankName||a.upi||"account"};
   // header band
-  d.setFillColor(...ink);d.rect(0,0,W,30,"F");d.setTextColor(255,255,255);d.setFont("helvetica","bold");d.setFontSize(17);d.text("Party Statement",M,14);
-  d.setFont("helvetica","normal");d.setFontSize(9);d.setTextColor(200,205,215);d.text(APP_NAME+" - Direct payments",M,21);
+  d.setFillColor(...ink);d.rect(0,0,W,30,"F");const TX=LG?M+15:M;if(LG)try{d.addImage(LG,"PNG",M,8,10.5,12.5)}catch(e){}d.setTextColor(255,255,255);d.setFont("helvetica","bold");d.setFontSize(17);d.text("Party Statement",TX,14);
+  d.setFont("helvetica","normal");d.setFontSize(9);d.setTextColor(200,205,215);d.text(APP_NAME+" - Direct payments",TX,21);
   d.text("Generated "+cl(tm(Date.now())),W-M,14,{align:"right"});d.text("Period: "+cl(R.label),W-M,21,{align:"right"});
   let y=42;d.setTextColor(...ink);d.setFont("helvetica","bold");d.setFontSize(15);d.text(cl(p.name)||"Party",M,y);
   const DAYS_=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];const dd=p.dueDay!==""&&p.dueDay!=null?DAYS_[+p.dueDay]:"";
@@ -5070,8 +5071,8 @@ async function partyPdf(p,R,incAcc,ret){const {jsPDF}=await loadJsPDF();const d=
   d.setFillColor(240,242,245);d.rect(M,y,W-2*M,8,"F");d.setFont("helvetica","bold");d.setTextColor(...ink);d.text("Total",cx.det,y+5.3);d.setTextColor(...amb);d.text(rs(R.added),cx.add,y+5.3,{align:"right"});d.setTextColor(...grn);d.text(rs(R.paid),cx.paid,y+5.3,{align:"right"});d.setTextColor(...(R.close>0.5?red:ink));d.text(rs(R.close),cx.bal-2,y+5.3,{align:"right"});y+=14;
   const pb=Object.entries(R.byPerson);if(pb.length){if(y+8+pb.length*5>285){d.addPage();y=16}d.setFontSize(10);d.setTextColor(...ink);d.text("Paid by",M,y);y+=5;d.setFont("helvetica","normal");d.setFontSize(9);
     pb.sort((a,b)=>b[1]-a[1]).forEach(([n,v])=>{d.setTextColor(...mut);d.text(cl(n),M,y);d.setTextColor(...ink);d.text(rs(v),M+60,y,{align:"right"});y+=5})}
-  const n=d.getNumberOfPages();for(let i=1;i<=n;i++){d.setPage(i);d.setFont("helvetica","normal");d.setFontSize(7.5);d.setTextColor(...mut);d.setDrawColor(...line);d.line(M,288,W-M,288);d.text("Computer generated statement - "+cl(p.name),M,292);d.text("Page "+i+" of "+n,W-M,292,{align:"right"})}
-  const fn=("Statement-"+cl(p.name).replace(/[^A-Za-z0-9]+/g,"-")+"-"+new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10)+".pdf").replace(/-+/g,"-");
+  const n=d.getNumberOfPages();for(let i=1;i<=n;i++){d.setPage(i);d.setFont("helvetica","normal");d.setFontSize(7.5);d.setTextColor(...mut);d.setDrawColor(...line);d.line(M,288,W-M,288);d.text("Generated by "+APP_NAME+" - computer generated statement - "+cl(p.name),M,292);d.text("Page "+i+" of "+n,W-M,292,{align:"right"})}
+  const fn=("Pexai-Statement-"+cl(p.name).replace(/[^A-Za-z0-9]+/g,"-")+"-"+new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10)+".pdf").replace(/-+/g,"-");
   if(ret)return{blob:d.output("blob"),name:fn};
   if(dlApi)await saveFile(fn,d.output("blob"));else d.save(fn);
   return d}
@@ -5316,7 +5317,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=69;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=70;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5383,6 +5384,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00070","8 Oct 2026",["Pexai branding: logo and name on the PIN lock screen, bigger logo and tagline in About, logo on PDF statements, Pexai-named backup and export files, Pexai wording in update messages and the home-screen widget"]],
   ["0.0.0.00069","7 Oct 2026",["Smart intake understands part payments: when two or more payment screenshots (other banks, other amounts) add up to exactly one order, they are linked to that order and each is saved as its own bank split"]],
   ["0.0.0.00068","7 Oct 2026",["Settings > Theme now shows what Auto sees (phone is dark or light) and tells you if the installed app is too old for Auto"]],
   ["0.0.0.00067","7 Oct 2026",["Theme set to Auto now follows the phone: it switches live when the phone goes light or dark, and when you return to the app (needs the new APK to read the phone theme correctly)"]],
@@ -5462,7 +5464,7 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
   const st=prev.length?["Update ready","ready"]:work?["Update being built","work"]:["Up to date","ok"];
   openSheet(`<div class="insw abw">
     <div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span>
-      <b>${pxWord()}</b><small>Version ${APP_VER}</small><span class="abs ${st[1]}">${st[1]==="ok"?"✓ ":""}${st[0]}</span></div>
+      <b>${pxWord()}</b><em class="abt">Your P2P business, always in order</em><small>Version ${APP_VER}</small><span class="abs ${st[1]}">${st[1]==="ok"?"✓ ":""}${st[0]}</span></div>
     <div class="pcsec">Updates</div>
     <div class="icard abu">
       ${prev.length?`<div class="abnew"><b>🎉 New version ready</b><small>${prev.length} change${prev.length>1?"s":""} from your feedback:</small><ul>${prev.slice(0,5).map(x=>`<li>${esc(x.reply||x.text)}</li>`).join("")}</ul><div class="fbact"><a class="mini ghost" href="${esc(pv)}" target="_blank" rel="noopener">Try preview</a><button type="button" class="mini psdl" id="ab-apply">Apply update</button></div></div>`:""}
@@ -5833,7 +5835,7 @@ sheets.glance=function(){const g=glanceData();const nat=!!(window.P2PNative&&typ
   <div class="pvk"><div><span>Today's profit</span><b class="${g.neg?"neg":"pos"}">${esc(g.profit)}</b></div><div><span>Open orders</span><b>${g.pend}</b></div><div><span>Orders today</span><b>${g.orders}</b></div></div>
   ${(lastAlerts||[]).slice(0,5).map(a=>`<div class="p7chk"><i class="${a.hi?"bad":"warn"}">${a.hi?"!":"•"}</i><p>${esc(a.t)}</p></div>`).join("")||'<p class="note">All clear. Nothing needs attention.</p>'}
   <div class="pcsec">Home-screen widget</div>
-  <p class="note">${nat?"Long-press your phone's home screen, tap Widgets, find ${APP_NAME} and place it. It shows today's profit, open orders and alerts, and opens the app when tapped. It refreshes every time you use the app.":"The home-screen widget works in the Android app. Install the latest APK, then long-press the home screen and add the P2P Order Book widget."}</p></div>`)};
+  <p class="note">${nat?"Long-press your phone's home screen, tap Widgets, find "+APP_NAME+" and place it. It shows today's profit, open orders and alerts, and opens the app when tapped. It refreshes every time you use the app.":"The home-screen widget works in the Android app. Install the latest APK, then long-press the home screen and add the "+APP_NAME+" widget."}</p></div>`)};
 
 // ===== Smart Intake extras: live fields, two scores, debug screen =====
 (function(){if(!document.getElementById("p7css2")){const s=document.createElement("style");s.id="p7css2";s.textContent=`.ixlive{display:grid;gap:8px;margin-top:8px}.ixlv{border:1px solid var(--line);border-radius:12px;padding:8px 10px}.ixlv>b{display:block;font:700 .72rem var(--body);margin-bottom:4px}.ixlv div{display:flex;justify-content:space-between;gap:10px;font:500 .78rem var(--body);padding:2px 0}.ixlv span{color:var(--muted)}.ixlv em{font-style:normal;color:var(--accent);font-weight:600;text-align:right}.ixlv i{font-style:normal;color:var(--warn);text-align:right}.ixsc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.ixsc1{border:1px solid var(--line);border-radius:12px;padding:8px 10px}.ixsc1 span{display:block;font:600 .66rem var(--body);color:var(--muted)}.ixsc1 b{font:800 1.1rem var(--body)}.ixsc1 u{display:block;height:5px;border-radius:5px;background:var(--soft);margin-top:5px;text-decoration:none;overflow:hidden}.ixsc1 u i{display:block;height:100%;background:var(--accent)}.ixdbg pre{white-space:pre-wrap;word-break:break-word;font:500 .7rem/1.4 ui-monospace,monospace;background:var(--soft);border-radius:10px;padding:8px;max-height:220px;overflow:auto}`;document.head.appendChild(s)}})();
@@ -6307,7 +6309,7 @@ sheets.report=function(){let p="today";
     el.querySelector("#repCopy").onclick=()=>copyText(buildReport(p).text,el.querySelector("#repTxt"));
     el.querySelector("#repCsv").onclick=()=>{const R=buildReport(p);const q=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
       const rows=[...R.orders].sort((a,b)=>a.time-b.time).map(o=>{const d=new Date(o.time);return[d.toLocaleDateString("en-CA"),d.toLocaleTimeString("en-GB"),modeOf(o),o.side,o.coin,o.qty,o.rate,orderTotal(o).toFixed(2),o.status,o.platform,o.pay,o.cp,(o.splits||[]).map(x=>bankName(x.bank)+" "+x.amt).join("; "),o.note].map(q).join(",")});
-      saveFile(`p2p-${R.label.toLowerCase().replace(/\s+/g,"-")}-${new Date().toLocaleDateString("en-CA")}.csv`,"﻿"+["Date,Time,Mode,Side,Coin,Quantity,Rate,Total INR,Status,Platform,Payment,Counterparty,Banks,Note",...rows].join("\n"))};
+      saveFile(`Pexai-${R.label.toLowerCase().replace(/\s+/g,"-")}-${new Date().toLocaleDateString("en-CA")}.csv`,"﻿"+["Date,Time,Mode,Side,Coin,Quantity,Rate,Total INR,Status,Platform,Payment,Counterparty,Banks,Note",...rows].join("\n"))};
   })};
 
 // ---------- bank statement match ----------
@@ -6342,7 +6344,7 @@ sheets.stmt=function(bid){const b=banks.find(x=>x.id===bid);if(!b)return;
 async function sha(t){try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("p2p:"+t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){let h=0;for(const c of "p2p:"+t)h=(h*31+c.charCodeAt(0))|0;return "x"+h}}
 let lockMode="unlock",pinBuf="",pinFirst="",hiddenAt=0;
 function lockDraw(){$("#lockDots").innerHTML=[0,1,2,3].map(i=>`<i class="${i<pinBuf.length?"on":""}"></i>`).join("")}
-function showLock(mode){lockMode=mode;pinBuf="";pinFirst="";$("#lockTitle").textContent=mode==="set"?"Choose a 4-digit PIN":"Enter PIN";$("#lockForgot").hidden=mode!=="unlock";$("#lock").hidden=false;lockDraw()}
+function showLock(mode){lockMode=mode;try{$("#lockBrand").innerHTML=`<span class="dlogo dl2 abl">${PX_LOGO.replace(/pxg/g,"pxl")}</span>${pxWord()}`}catch(e){}pinBuf="";pinFirst="";$("#lockTitle").textContent=mode==="set"?"Choose a 4-digit PIN":"Enter PIN";$("#lockForgot").hidden=mode!=="unlock";$("#lock").hidden=false;lockDraw()}
 $("#lockPad").innerHTML=[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button" data-k="${n}">${n}</button>`).join("")+`<button type="button" class="ghost" data-k="c">Cancel</button><button type="button" data-k="0">0</button><button type="button" class="ghost" data-k="b">⌫</button>`;
 $("#lockPad").onclick=async e=>{const b=e.target.closest("[data-k]");if(!b)return;const k=b.dataset.k;
   if(k==="b"){pinBuf=pinBuf.slice(0,-1);lockDraw();return}
@@ -6552,8 +6554,8 @@ if(APK){const N=window.P2PNative;document.body.classList.add("apk");
   // AI: Claude's built-in AI only exists inside Claude → P2P Brain (offline) or your own key
   try{const o=document.querySelector('#ai-prov option[value="builtin"]');if(o)o.remove();if(aiCfg.prov==="builtin"){aiCfg.prov="brain";localStorage.setItem(AIK,JSON.stringify(aiCfg))}$("#ai-prov").value=aiCfg.prov;aiFormSync()}catch(e){}
   // called by the Android side
-  window.P2PUpdated=v=>{const t=document.createElement("div");t.className="apkup";t.innerHTML=`<b>✓ Update ready · v${esc(String(v))}</b><button type="button">Reload</button>`;t.querySelector("button").onclick=()=>location.reload();document.body.appendChild(t);setTimeout(()=>t.remove(),20000)};
-  window.P2PApkUpdate=info=>{info=info||{};openSheet(`<div class="insw"><div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span><b>New app version</b><small>${esc(info.name||"")}</small></div>
+  window.P2PUpdated=v=>{const t=document.createElement("div");t.className="apkup";t.innerHTML=`<b>✓ ${APP_NAME} updated · v${esc(String(v))}</b><button type="button">Reload</button>`;t.querySelector("button").onclick=()=>location.reload();document.body.appendChild(t);setTimeout(()=>t.remove(),20000)};
+  window.P2PApkUpdate=info=>{info=info||{};openSheet(`<div class="insw"><div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span><b>New ${APP_NAME} version</b><small>${esc(info.name||"")}</small></div>
     ${info.notes?`<div class="icard"><p class="note" style="margin:0;white-space:pre-wrap">${esc(info.notes)}</p></div>`:""}<p class="note">Download, then tap Install. It installs over this app — your data stays.</p>
     <div class="row2"><button type="button" class="mini ghost" data-close>Later</button><button type="button" class="mini psdl" id="apk-dl">Download update</button></div></div>`,el=>{el.querySelector("#apk-dl").onclick=()=>{N.openUrl(info.url||"");closeSheet()}})};
   window.P2PBack=()=>{const lk=$("#lock");if(lk&&!lk.hidden)return false;const fo=$("#dFold");if(fo&&!fo.hidden){closeFolder();return true}

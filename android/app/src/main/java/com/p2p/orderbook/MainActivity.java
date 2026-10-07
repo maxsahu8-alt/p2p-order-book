@@ -531,7 +531,7 @@ public class MainActivity extends Activity {
                     runOnUiThread(() -> web.evaluateJavascript("window.P2PApkUpdate&&P2PApkUpdate(" + a + ")", null));
                 }
             }
-            if (manual && !updated) js("P2PCheckResult", "You have the latest version (v" + prefs.getString("webVer", "") + ")");
+            if (manual && !updated) js("P2PCheckResult", "Pexai is up to date (v" + prefs.getString("webVer", "") + ")");
             else if (manual) js("P2PCheckResult", "Updated to v" + remote + ". Tap Reload.");
         } catch (Exception e) {
             if (manual) js("P2PCheckResult", "Couldn't check for updates: " + e.getMessage());
