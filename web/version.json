@@ -1,9 +1,9 @@
 {
- "web": "0.0067",
- "build": 67,
- "display": "0.0.0.00067",
+ "web": "0.0068",
+ "build": 68,
+ "display": "0.0.0.00068",
  "files": {
-  "index.html": "9a6d8c5bf72d2485877d70de4fc7e51569c28523",
+  "index.html": "165e2fdcd7232be5354e7f908bf18fbc80b9fb94",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 20,
   "name": "0.0.0.00067",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Auto theme follows phone live"
+  "notes": "Theme note shows what Auto sees"
  }
 }

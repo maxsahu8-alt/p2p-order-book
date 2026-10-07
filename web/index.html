@@ -1587,7 +1587,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
       <div class="srow2"><div><b>Starts at</b></div><input id="st-nightat" class="sinp sm" type="time" style="width:110px"></div>
     </div>
     <div class="sgroup"><h3>Appearance & privacy</h3>
-      <div class="srow2"><div><b>Theme</b><small>This device only</small></div><select id="st-theme" class="ssel"><option value="dark">Dark</option><option value="light">Light</option><option value="system">Same as phone</option></select></div>
+      <div class="srow2"><div><b>Theme</b><small id="st-themeNote">This device only</small></div><select id="st-theme" class="ssel"><option value="dark">Dark</option><option value="light">Light</option><option value="system">Same as phone</option></select></div>
       <div class="srow2"><div><b>Hide amounts when app opens</b><small>This device only</small></div><label class="tog"><input type="checkbox" id="st-hide"><span></span></label></div>
     </div>
     <div class="sgroup"><h3>AI</h3>
@@ -4487,7 +4487,7 @@ function sysDark(){try{if(window.P2PNative&&typeof P2PNative.sysDark==="function
 window.P2PSys=function(){try{if(devGet("p2p_theme","dark")==="system")applyTheme()}catch(e){}};
 try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>window.P2PSys())}catch(e){}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)window.P2PSys()});
-function applyTheme(){const t=devGet("p2p_theme","dark");const want=t==="system"?(sysDark()?"dark":"light"):t;document.documentElement.setAttribute("data-theme",want);try{if(window.P2PNative&&typeof P2PNative.setTheme==="function")P2PNative.setTheme(want);if(window.P2PNative&&typeof P2PNative.setThemeMode==="function")P2PNative.setThemeMode(t)}catch(e){}try{renderCharts()}catch(e){}}
+function applyTheme(){const t=devGet("p2p_theme","dark");const want=t==="system"?(sysDark()?"dark":"light"):t;document.documentElement.setAttribute("data-theme",want);try{const nn=document.getElementById("st-themeNote");if(nn){const nat=!!(window.P2PNative&&typeof P2PNative.sysDark==="function");nn.textContent=t==="system"?"Auto · phone is "+(sysDark()?"dark":"light")+(window.P2PNative&&!nat?" · install the newest app (APK) so Auto works":""):"This device only"}}catch(e){}try{if(window.P2PNative&&typeof P2PNative.setTheme==="function")P2PNative.setTheme(want);if(window.P2PNative&&typeof P2PNative.setThemeMode==="function")P2PNative.setThemeMode(t)}catch(e){}try{renderCharts()}catch(e){}}
 function fillSelect(el,list,cur){if(!el)return;const v=cur!=null?cur:el.value;el.innerHTML=list.map(x=>`<option>${esc(x)}</option>`).join("");if(list.includes(v))el.value=v}
 function applyPrefs(){
   const coins=pref("coins"),plats=pref("plats");
@@ -5296,7 +5296,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=67;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=68;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5363,6 +5363,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00068","7 Oct 2026",["Settings > Theme now shows what Auto sees (phone is dark or light) and tells you if the installed app is too old for Auto"]],
   ["0.0.0.00067","7 Oct 2026",["Theme set to Auto now follows the phone: it switches live when the phone goes light or dark, and when you return to the app (needs the new APK to read the phone theme correctly)"]],
   ["0.0.0.00066","7 Oct 2026",["Opening screen now tries to follow the theme you chose inside the app (Light / Dark / Auto), not only the phone theme. Needs the new APK; works on Android 12 and newer when the phone allows it"]],
   ["0.0.0.00065","7 Oct 2026",["Opening screen now follows the phone theme: dark phone gets a dark opening screen with a brighter green P, so there is no white flash (needs the new APK; set Theme to Auto for a perfect match)"]],
