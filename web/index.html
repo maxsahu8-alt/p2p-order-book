@@ -5292,7 +5292,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=64;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=65;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5359,6 +5359,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00065","7 Oct 2026",["Opening screen now follows the phone theme: dark phone gets a dark opening screen with a brighter green P, so there is no white flash (needs the new APK; set Theme to Auto for a perfect match)"]],
   ["0.0.0.00064","7 Oct 2026",["Share screenshots straight from the phone gallery: Share > Pexai opens Smart intake and starts reading them (needs the new APK)"]],
   ["0.0.0.00063","6 Oct 2026",["Removed the blue box that flashed on every tap (Today / 7D / 30D / All and all other buttons); taps now give a small press animation instead"]],
   ["0.0.0.00062","6 Oct 2026",["Pop-up sheets: removed the shadow that drew dark patches at the rounded top corners, so the corners are clean"]],
