@@ -112,7 +112,7 @@ public class MainActivity extends Activity {
         // Match the opening colour to the app theme (light or dark) so there is no dark-to-white flash.
         String tm = prefs.getString("tmode", prefs.getString("theme", "dark"));
         boolean lightNow = "light".equals(tm) || ("system".equals(tm)
-                && (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES);
+                && !phoneIsDark());
         final int bgc = Color.parseColor(lightNow ? "#f4f5f7" : "#0c0d0e");
         web.setBackgroundColor(bgc);
         web.setVerticalScrollBarEnabled(false);
@@ -183,6 +183,19 @@ public class MainActivity extends Activity {
     }
 
     // ---------------------------------------------------------------- screenshots shared from the gallery
+    /** The phone's real theme (not Pexai's own), because WebView often reports "dark" whatever the phone says. */
+    static boolean phoneIsDark() {
+        try {
+            return (android.content.res.Resources.getSystem().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        } catch (Exception e) { return true; }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration c) {
+        super.onConfigurationChanged(c);
+        try { if (web != null) web.evaluateJavascript("window.P2PSys&&P2PSys()", null); } catch (Exception e) { }
+    }
+
     @Override
     protected void onNewIntent(Intent it) {
         super.onNewIntent(it);
@@ -571,6 +584,9 @@ public class MainActivity extends Activity {
         }
 
         /** The theme chosen inside Pexai ("light", "dark" or "system"). Also tells Android, so the opening screen matches next time. */
+        @JavascriptInterface
+        public boolean sysDark() { return phoneIsDark(); }
+
         @JavascriptInterface
         public void setThemeMode(String t) {
             final String m = "light".equals(t) ? "light" : "system".equals(t) ? "system" : "dark";
