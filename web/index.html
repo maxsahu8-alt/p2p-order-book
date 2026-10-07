@@ -5292,7 +5292,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=63;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=64;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5359,6 +5359,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00064","7 Oct 2026",["Share screenshots straight from the phone gallery: Share > Pexai opens Smart intake and starts reading them (needs the new APK)"]],
   ["0.0.0.00063","6 Oct 2026",["Removed the blue box that flashed on every tap (Today / 7D / 30D / All and all other buttons); taps now give a small press animation instead"]],
   ["0.0.0.00062","6 Oct 2026",["Pop-up sheets: removed the shadow that drew dark patches at the rounded top corners, so the corners are clean"]],
   ["0.0.0.00061","6 Oct 2026",["Pop-up menus: fixed the black corners at the top edge of the sheet (the scrolling area moved inside the sheet so the rounded corners are drawn cleanly)"]],
@@ -6571,6 +6572,24 @@ sheets.dbphone=function(){const ago=dbsCfg.last?Math.round((Date.now()-dbsCfg.la
 // boot
 applyTheme();if(devGet("p2p_hide_default","0")==="1")hideAmt=true;
 lsLoad();applyPrefs();applyFormDefaults();render();updateChrome();
+// Pictures shared from the phone gallery (Share > Pexai) go straight into Smart intake and are read at once
+window.P2PCheckShared=async function(){
+  try{
+    if(!(window.P2PNative&&typeof P2PNative.takeShared==="function"))return;
+    const names=JSON.parse(P2PNative.takeShared()||"[]");if(!names.length)return;
+    const files=[];
+    for(const n of names){try{const r=await fetch("/_blob/"+encodeURIComponent(n));if(!r.ok)continue;const b=await r.blob();files.push(new File([b],n,{type:b.type&&/^image\//.test(b.type)?b.type:"image/jpeg"}))}catch(e){}}
+    try{P2PNative.dropShared(JSON.stringify(names))}catch(e){}
+    if(!files.length){toast("Could not read the shared picture");return}
+    if(!$("#sheetBg").hidden)closeSheet();
+    goPage("intake");
+    i2Add(files);
+    toast(files.length>1?"Reading "+files.length+" screenshots…":"Reading your screenshot…");
+    setTimeout(()=>{try{if(i2Files.length&&!ixS.busy)ixRun()}catch(e){}},500);
+  }catch(e){console.error(e)}
+};
+setTimeout(()=>{try{P2PCheckShared()}catch(e){}},900);
+
 (async()=>{
   const C=window.claude;
   if(!C||!C.use){($("#syncNote").classList.add("ok"),$("#syncNote").textContent="Saved on this device");if(aiCfg.prov==="builtin"||isBrain())setAiState(true,isBrain()?(aiOnline()?(aiCfg.prov==="braingemini"?"P2P Brain + Gemini (smart)":"P2P Brain + Claude (smart)"):"P2P Brain · offline"):"App assistant · offline");return}

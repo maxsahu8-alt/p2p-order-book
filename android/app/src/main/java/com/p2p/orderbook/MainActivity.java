@@ -82,6 +82,7 @@ public class MainActivity extends Activity {
     SharedPreferences prefs;
     volatile boolean checking = false;
     volatile boolean webReady = false;
+    final ArrayList<String> sharedQ = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle state) {
@@ -174,6 +175,62 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new Bridge(), "P2PNative");
         setContentView(web);
         web.loadUrl(START);
+        if (state == null) handleShare(getIntent());
+    }
+
+    // ---------------------------------------------------------------- screenshots shared from the gallery
+    @Override
+    protected void onNewIntent(Intent it) {
+        super.onNewIntent(it);
+        setIntent(it);
+        handleShare(it);
+    }
+
+    /** Copies pictures shared to Pexai (Share > Pexai) into the app's private blob folder and tells the web app. */
+    void handleShare(Intent it) {
+        if (it == null) return;
+        final String act = it.getAction();
+        if (!Intent.ACTION_SEND.equals(act) && !Intent.ACTION_SEND_MULTIPLE.equals(act)) return;
+        final ArrayList<Uri> uris = new ArrayList<>();
+        try {
+            if (Intent.ACTION_SEND.equals(act)) {
+                Uri u = it.getParcelableExtra(Intent.EXTRA_STREAM);
+                if (u != null) uris.add(u);
+            } else {
+                ArrayList<Uri> l = it.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+                if (l != null) uris.addAll(l);
+            }
+            ClipData cd = it.getClipData();
+            if (uris.isEmpty() && cd != null) for (int i = 0; i < cd.getItemCount(); i++) { Uri u = cd.getItemAt(i).getUri(); if (u != null) uris.add(u); }
+        } catch (Exception e) { }
+        it.setAction(Intent.ACTION_MAIN); // do not handle the same share twice
+        if (uris.isEmpty()) return;
+        new Thread(() -> {
+            int n = 0;
+            try {
+                File d = dir("blobs");
+                File[] old = d.listFiles();
+                if (old != null) for (File f : old) if (f.getName().startsWith("share_") && System.currentTimeMillis() - f.lastModified() > 86400000L) f.delete();
+                for (Uri u : uris) {
+                    if (n >= 10) break;
+                    try {
+                        String mt = getContentResolver().getType(u);
+                        if (mt != null && !mt.startsWith("image/")) continue;
+                        String ext = mt != null && mt.contains("png") ? "png" : mt != null && mt.contains("webp") ? "webp" : "jpg";
+                        File out = new File(d, "share_" + System.currentTimeMillis() + "_" + n + "." + ext);
+                        try (InputStream in = getContentResolver().openInputStream(u); OutputStream os = new FileOutputStream(out)) {
+                            if (in == null) continue;
+                            byte[] buf = new byte[16384]; int r; long tot = 0;
+                            while ((r = in.read(buf)) > 0) { tot += r; if (tot > 25L * 1024 * 1024) break; os.write(buf, 0, r); }
+                        }
+                        synchronized (sharedQ) { sharedQ.add(out.getName()); }
+                        n++;
+                    } catch (Exception e) { }
+                }
+            } catch (Exception e) { }
+            if (n > 0) runOnUiThread(() -> web.evaluateJavascript("window.P2PCheckShared&&P2PCheckShared()", null));
+            else runOnUiThread(() -> toast("Could not read the shared picture"));
+        }).start();
     }
 
     static void mime(String t, List<String> out) {
@@ -490,6 +547,24 @@ public class MainActivity extends Activity {
     class Bridge {
         @JavascriptInterface
         public void appReady() { webReady = true; }
+
+        /** Names of pictures shared to Pexai that the web app has not picked up yet (JSON array). */
+        @JavascriptInterface
+        public String takeShared() {
+            synchronized (sharedQ) { String r = new JSONArray(sharedQ).toString(); sharedQ.clear(); return r; }
+        }
+
+        /** The web app has read the shared pictures; delete the private copies. */
+        @JavascriptInterface
+        public void dropShared(String json) {
+            try {
+                JSONArray a = new JSONArray(json);
+                for (int i = 0; i < a.length(); i++) {
+                    String n = a.getString(i);
+                    if (n.startsWith("share_") && n.indexOf('/') < 0 && n.indexOf("..") < 0) new File(dir("blobs"), n).delete();
+                }
+            } catch (Exception e) { }
+        }
 
         @JavascriptInterface
         public void setTheme(String t) {
