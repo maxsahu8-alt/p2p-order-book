@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -109,7 +110,10 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(false);
         s.setTextZoom(100);
         // Match the opening colour to the app theme (light or dark) so there is no dark-to-white flash.
-        final int bgc = Color.parseColor("light".equals(prefs.getString("theme", "dark")) ? "#f4f5f7" : "#0c0d0e");
+        String tm = prefs.getString("tmode", prefs.getString("theme", "dark"));
+        boolean lightNow = "light".equals(tm) || ("system".equals(tm)
+                && (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES);
+        final int bgc = Color.parseColor(lightNow ? "#f4f5f7" : "#0c0d0e");
         web.setBackgroundColor(bgc);
         web.setVerticalScrollBarEnabled(false);
         web.setHorizontalScrollBarEnabled(false);
@@ -564,6 +568,22 @@ public class MainActivity extends Activity {
                     if (n.startsWith("share_") && n.indexOf('/') < 0 && n.indexOf("..") < 0) new File(dir("blobs"), n).delete();
                 }
             } catch (Exception e) { }
+        }
+
+        /** The theme chosen inside Pexai ("light", "dark" or "system"). Also tells Android, so the opening screen matches next time. */
+        @JavascriptInterface
+        public void setThemeMode(String t) {
+            final String m = "light".equals(t) ? "light" : "system".equals(t) ? "system" : "dark";
+            try { prefs.edit().putString("tmode", m).apply(); } catch (Exception e) { }
+            if (Build.VERSION.SDK_INT < 31) return;
+            runOnUiThread(() -> {
+                try {
+                    android.app.UiModeManager um = (android.app.UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+                    int mode = "light".equals(m) ? 1 : "dark".equals(m) ? 2 : 0; // NIGHT_NO, NIGHT_YES, AUTO (follow phone)
+                    java.lang.reflect.Method f = android.app.UiModeManager.class.getMethod("setApplicationNightMode", int.class);
+                    f.invoke(um, mode);
+                } catch (Throwable e) { /* not allowed on this Android: the opening screen then follows the phone theme */ }
+            });
         }
 
         @JavascriptInterface

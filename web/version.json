@@ -1,17 +1,17 @@
 {
- "web": "0.0065",
- "build": 65,
- "display": "0.0.0.00065",
+ "web": "0.0066",
+ "build": 66,
+ "display": "0.0.0.00066",
  "files": {
-  "index.html": "86be0178ef5577a640ac359e35a00105ef0dd8ad",
+  "index.html": "261489cdaf61db363c52f3c05fd1557b79705d76",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
  },
  "apk": {
-  "code": 18,
-  "name": "0.0.0.00065",
+  "code": 19,
+  "name": "0.0.0.00066",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Dark opening screen for dark phones"
+  "notes": "Opening screen follows in-app theme"
  }
 }
