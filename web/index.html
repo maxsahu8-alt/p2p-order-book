@@ -1392,6 +1392,8 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
         <label class="full">Exchange order ID<input id="f-exid" type="text" inputmode="text" autocomplete="off" placeholder="Order number from the exchange"></label>
         <label class="full">UTR / payment reference<input id="f-utr" type="text" autocomplete="off" placeholder="Reference number from the bank"></label>
         <label>Fee ₹<input id="f-fee" type="number" inputmode="decimal" step="any" placeholder="Counted in profit"></label>
+        <label>TDS deducted ₹<input id="f-tds" type="number" inputmode="decimal" step="any" placeholder="Sell only. Tax credit"></label>
+        <button type="button" class="link full" id="f-tds1" style="text-align:left;margin:-4px 0 4px">Fill 1% of total</button>
         <label>Payment check<select id="f-pv"><option value="">Not checked</option><option value="ai">AI-read, not checked</option><option value="received">Received</option><option value="verified">Verified</option></select></label>
         <div class="full dupwarn" id="dupWarn" hidden></div></div></details>
       <div class="calc"><span>Total amount</span><b class="num" id="f-total">₹0</b></div>
@@ -1935,8 +1937,8 @@ $("#form").onsubmit=async e=>{
   if(sp.sum>qty*rate+0.5){toast("Bank amounts are more than the order total");return}
   o.splits=isDirect()?[]:sp.splits;
   if(isDirect()){o.party=$("#dir-party").value||"";o.dueLink=!!o.party&&$("#dir-due").checked;o.payAcc=o.side==="SELL"&&!$("#dirAccL").hidden?$("#dir-acc").value:""}else{delete o.party;delete o.dueLink}
-  {const ex=$("#f-exid").value.trim(),ut=$("#f-utr").value.trim(),fe=+$("#f-fee").value||0,pv=$("#f-pv").value;
-   if(ex)o.exId=ex;else delete o.exId;if(ut)o.utr=ut;else delete o.utr;if(fe>0)o.fee=fe;else delete o.fee;if(pv)o.pv=pv;else delete o.pv}
+  {const ex=$("#f-exid").value.trim(),ut=$("#f-utr").value.trim(),fe=+$("#f-fee").value||0,pv=$("#f-pv").value,td=side==="SELL"?(+$("#f-tds").value||0):0;
+   if(ex)o.exId=ex;else delete o.exId;if(ut)o.utr=ut;else delete o.utr;if(fe>0)o.fee=fe;else delete o.fee;if(td>0)o.tds=td;else delete o.tds;if(pv)o.pv=pv;else delete o.pv}
   const rule=old?statusRule(old.status,o.status):{ok:true};if(formProof&&!old){o.shots=[...(o.shots||[]),...formProof.hashes]}if(!rule.ok){toast(rule.why);return}
   const WR=[...(rule.confirm?[{k:"rev",msg:rule.confirm}]:[]),...orderWarn(o)];let ovrWhy="";
   if(WR.length){const c=await confirmRisk(WR,"Check this order","Save anyway");if(!c)return;ovrWhy=c.why;if(WR.some(w=>w.k!=="rev"))o.ovr=true}else delete o.ovr;
@@ -1944,7 +1946,7 @@ $("#form").onsubmit=async e=>{
   if(formProof&&!old){o.proofs=[...(o.proofs||[]),...formProof.ids];o.shots=[...(o.shots||[]),...formProof.hashes];if(formProof.time)o.payAt=formProof.time;if(o.pv!=="verified")o.pv="verified"}
   $("#saveBtn").disabled=true;
   try{await saveOrder(o);
-    {const T=[["status","status"],["qty","qty"],["rate","rate"],["cp","name"],["exId","order ID"],["utr","UTR"],["fee","fee"],["pv","payment check"],["platform","platform"],["mode","mode"]];
+    {const T=[["status","status"],["qty","qty"],["rate","rate"],["cp","name"],["exId","order ID"],["utr","UTR"],["fee","fee"],["tds","TDS"],["pv","payment check"],["platform","platform"],["mode","mode"]];
      if(!old)await auditLog(o,"create",{});
      else{const chg=T.filter(([k])=>String(old[k]??"")!==String(o[k]??"")).map(([k,n])=>`${n} ${old[k]??"–"} → ${o[k]??"–"}`);if(Math.round(allocated(old))!==Math.round(allocated(o)))chg.push(`banks ${Math.round(allocated(old))} → ${Math.round(allocated(o))}`);if(chg.length)await auditLog(o,"edit",{chg:chg.join(", ").slice(0,300)})}
      if(WR.some(w=>w.k!=="rev"))await auditLog(o,"override",{why:ovrWhy,warn:WR.filter(w=>w.k!=="rev").map(w=>w.msg)})}
@@ -2050,7 +2052,7 @@ function profitReport(a,b){
   const inR=t=>t>=a&&t<b;const P=ACC().sellP;
   const ds=orders.filter(o=>o.status==="Completed"&&inR(doneTime(o)));const sells=ds.filter(o=>o.side==="SELL");
   const gross=sells.reduce((t,o)=>t+(P[o.id]||0),0);
-  const fees=ds.reduce((t,o)=>t+(+o.fee||0),0);
+  const fees=ds.reduce((t,o)=>t+(+o.fee||0),0);const tds=sells.reduce((t,o)=>t+(+o.tds||0),0);
   const mvs=moves.filter(x=>inR(x.time)&&+x.cost>0);const xfer=mvs.reduce((t,x)=>t+(+x.cost||0),0);
   const bizL=exps.filter(x=>x.biz&&inR(x.time)),biz=bizL.reduce((t,x)=>t+(+x.amt||0),0);
   const pers=exps.filter(x=>!x.biz&&inR(x.time)).reduce((t,x)=>t+(+x.amt||0),0);
@@ -2058,7 +2060,7 @@ function profitReport(a,b){
   const vol=ds.reduce((t,o)=>t+(+o.qty||0)*(+o.rate||0),0);
   const skipped=orders.filter(o=>inR(o.time)&&(o.status==="Cancelled"||o.status==="Appeal"||o.status==="Pending")).length;
   const noCost=sells.filter(o=>!(o.id in P)||P[o.id]===0&&!ACC().avgCost[o.coin]).length;
-  return{gross,fees,xfer,biz,pers,net,soldQ,vol,n:ds.length,sellN:sells.length,perOrder:ds.length?net/ds.length:0,perUsdt:soldQ?net/soldQ:0,spread:soldQ?gross/soldQ:0,skipped,takeHome:net-pers,noCost,ds};
+  return{gross,fees,tds,xfer,biz,pers,net,soldQ,vol,n:ds.length,sellN:sells.length,perOrder:ds.length?net/ds.length:0,perUsdt:soldQ?net/soldQ:0,spread:soldQ?gross/soldQ:0,skipped,takeHome:net-pers,noCost,ds};
 }
 function listProfit(list){const P=ACC().sellP;return list.reduce((t,o)=>t+(o.status==="Completed"&&o.side==="SELL"?(P[o.id]||0):0),0)}
 function sheetNetWorth(){const A=ACC();const L=(k,v,c)=>`<div class="dqr"><span>${k}</span><b class="${c||""}">${v}</b></div>`;
@@ -2139,7 +2141,7 @@ function sheetOrderDetail(id){const o=orders.find(x=>x.id===id);if(!o)return;con
   openSheet(`<div class="insw"><div class="insh"><h3>${o.side} ${fmtQ(o.qty)} ${esc(o.coin)} @ ₹${fmtR(o.rate)}</h3></div>
     <div class="rml">${R("Status",esc(o.status))}${R("Exchange",esc(o.platform||modeOf(o)))}${R("Exchange order ID",esc(exIdOf(o)))}${R("UTR",esc(o.utr||""))}${R("Client / party",esc(o.cp||""))}${R("Total",inr(Math.round(orderTotal(o))))}${R("Recorded in banks",allocated(o)?inr(Math.round(allocated(o))):"")}
     ${R("Payment check",({verified:"Verified by you",ai:"AI extracted · not checked by you",received:"Received"})[pvOf(o)]||"Not checked")}${o.payAt?R("Payment time",fdt(o.payAt)):""}${R("Created",fdt(o.time))}${o.status==="Completed"&&o.doneAt?R("Completed",fdt(o.doneAt)):""}
-    ${gross!=null?R("Gross profit",sgn(gross)):""}${fee?R("Fee","−"+inr(fee)):""}${gross!=null&&fee?R("Net profit",sgn(gross-fee)):""}${R("Note",esc(o.note||""))}</div>
+    ${gross!=null?R("Gross profit",sgn(gross)):""}${fee?R("Fee","−"+inr(fee)):""}${+o.tds>0?R("TDS deducted",inr(Math.round(+o.tds*100)/100)):""}${gross!=null&&fee?R("Net profit",sgn(gross-fee)):""}${R("Note",esc(o.note||""))}</div>
     <div class="pcsec">Risk</div><div class="rml">${W.length?W.map(w=>`<div class="dqr"><span>⚠️ ${esc(w.msg)}</span></div>`).join(""):'<div class="dqr"><span>No problems found</span><b class="pos">Clear</b></div>'}${o.ovr?'<div class="dqr"><span>You saved this despite a warning</span></div>':""}</div>
     <div class="pcsec">Activity</div><div class="rml">${H.length?H.map(a=>`<div class="dqr"><span>${esc(auTxt(a))}${a.warn&&a.warn.length?`<br><small class="note" style="margin:0">${esc(a.warn.join(" "))}</small>`:""}</span><b style="font-weight:500;color:var(--muted);white-space:nowrap">${fdt(a.time)}</b></div>`).join(""):'<div class="dqr"><span class="note" style="margin:0">No history yet. Changes from now on are recorded here.</span></div>'}</div></div>`)}
 const RISK_L={utr:"Duplicate UTR",ex:"Duplicate exchange order ID",shot:"Duplicate screenshot",amt:"Amount mismatch",big:"Unusual size",nopay:"Completed, no payment"};
@@ -2375,7 +2377,8 @@ function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," "
   let ts=payTime(t);if(!ts){const m=flat.match(/(\d{4})-(\d{2})-(\d{2})[ T]+(\d{1,2}):(\d{2})/);if(m)ts=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).getTime()}
   {const LB=ixlGet().lab.ord||{};if(!id&&LB.id)id=ixlGrab(t,LB.id,"id");if(fiat==null&&LB.fiat)fiat=ixlGrab(t,LB.fiat,"num");if(price==null&&LB.price)price=ixlGrab(t,LB.price,"num");if(crypto==null&&LB.crypto)crypto=ixlGrab(t,LB.crypto,"num");if(!cp&&LB.cp)cp=ixlGrab(t,LB.cp,"name");if(price==null&&fiat&&crypto)price=+(fiat/crypto).toFixed(2)}
   let why=null;{const L=t.split(/\n+/).map(x=>x.trim()),i=L.findIndex(l=>/reason\s*for\s*cancel/i.test(l));if(i>=0){let r=L[i].replace(/^.*reason\s*for\s*cancel\w*\s*[:：]?\s*/i,"");if(L[i+1]&&L[i+1].length<30&&!/[:：]/.test(L[i+1])&&/^[a-z]/.test(L[i+1]))r+=" "+L[i+1];why=r.replace(/\s+/g," ").trim().slice(0,140)||null}}
-  return{nick,why,id,status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,conf:conf}}
+  let tds=null;{const m=flat.match(new RegExp("\\b(?:TDS|tax\\s*deducted(?:\\s*at\\s*source)?|1\\s*%\\s*tax)\\b\\D{0,16}"+CUR+"?\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)","i"));if(m){const v=num(m[1]);if(v>0&&(!fiat||v<fiat*0.05))tds=v}}
+  return{nick,why,tds,id,status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,conf:conf}}
 // ---- OCR: on-phone ML Kit when the app has it, otherwise the tesseract engine; one result per picture, never throws
 const ixOcrCache=new Map();let ixNative=0;
 function ixNativeOcr(blob,ms){return new Promise((ok,no)=>{if(!(window.P2POcr&&P2POcr.recognize))return no(new Error("none"));
@@ -4911,7 +4914,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       if(split.length>1)notes.push("Paid from "+split.length+" banks")}catch(e){}}
     if(g.target){const t=g.target;
       if(P.utr&&t.utr&&normRef(t.utr)===normRef(P.utr))return{state:"skipped",msg:"Already recorded on that order"};
-      const vpaN=(ixSide(g)==="BUY"||t.side==="BUY")?(P.vpa||pp.vpa||""):"";const patch={...(vpaN&&!t.vpa?{vpa:vpaN}:{}),shots:[...new Set([...(t.shots||[]),...shots])],proofs:[...(t.proofs||[]),...proofs],pv,...(P.utr&&!t.utr?{utr:P.utr}:{}),...(!exIdOf(t)&&O.id?{exId:O.id}:{}),...(P.date?{payAt:verWhen(P.date,P.time)||undefined}:{})};
+      const vpaN=(ixSide(g)==="BUY"||t.side==="BUY")?(P.vpa||pp.vpa||""):"";const patch={...(vpaN&&!t.vpa?{vpa:vpaN}:{}),shots:[...new Set([...(t.shots||[]),...shots])],proofs:[...(t.proofs||[]),...proofs],pv,...(P.utr&&!t.utr?{utr:P.utr}:{}),...(O.tds>0&&t.side==="SELL"&&!t.tds?{tds:O.tds}:{}),...(!exIdOf(t)&&O.id?{exId:O.id}:{}),...(P.date?{payAt:verWhen(P.date,P.time)||undefined}:{})};
       if(split.length&&allocated(t)<orderTotal(t)-0.5){const have=new Set((t.splits||[]).map(x=>x.bank+"|"+x.amt));patch.splits=[...(t.splits||[]),...split.filter(x=>!have.has(x.bank+"|"+x.amt))]}
       await patchRec(t.id,patch);await auditLog(t,"intake_attach",{result:g.cmp.overall,risk:g.risk.level});g.savedId=t.id;notes.unshift("Added to your existing order")}
     else{const side=ixSide(g);if(!side)return{state:"failed",msg:"Choose whether you bought or sold, then save"};
@@ -4922,7 +4925,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       if(!(qty2>0&&rate2>0))return{state:"failed",msg:"Order quantity or price couldn't be read. Run Deep AI check or add the order by hand."}
       const cp=side==="SELL"?(O.buyer||P.sender||""):(O.seller||P.receiver||"");
       const no={id:newId("o"),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:[estNote,O.why?"Reason: "+O.why:""].filter(Boolean).join(" · "),splits:split,proofs,shots,pv,time:ixOrdTime(X,P.date?verWhen(P.date,P.time):0)||Date.now(),src:"ai"};
-      if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
+      if(side==="SELL"&&O.tds>0)no.tds=O.tds;if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
       await putRec(no);await auditLog(no,"create",{by:"intake",result:g.cmp.overall,risk:g.risk.level});g.savedId=no.id}
     try{const nk=(g.order&&g.order.ord&&g.order.ord.nick)||O.nick||"";const real=g.target?g.target.cp:(O.buyer&&ixSide(g)==="SELL"?O.buyer:O.seller)||"";if(nk&&real&&ixlN(nk)!==ixlN(real))await ixLinkNames(nk,real)}catch(e){}
     try{const ln=await ixlOnSave(g);if(ln)notes.push(ln)}catch(e){}
@@ -4984,7 +4987,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     ${g.unknown&&g.unknown.length&&(g.order||g.pays.length)?`<div class="note">Couldn't tell what ${g.unknown.length>1?"some pictures are":"one picture is"}. Tell me: ${g.unknown.map(u=>`<button class="mini ghost" data-ix="type:${u.hash}:PAY_RECEIPT">${"Payment"}</button><button class="mini ghost" data-ix="type:${u.hash}:EX_ORDER">Order</button>`).join(" ")}</div>`:""}
     ${g.dups.length?`<div class="ixdup"><b>⚠ POSSIBLE DUPLICATE</b>${g.dups.map(d=>`<div>${esc(d.msg)}</div>`).join("")}</div>`:""}
     ${g.pays.length||g.order?`<div class="pcsec">Payment</div><div class="ixks">${ck("Amount",P.amount)}${ck("UTR",P.utr)}${ck("Sender",P.sender)}${ck("Receiver",P.receiver)}${ck("Status",P.status)}</div>`:""}
-    ${g.order?`<div class="pcsec">Order</div><div class="ixks">${ck("Order ID",O.id)}${ck("Amount",O.fiat)}${ck("Buyer",O.buyer)}${ck("Seller",O.seller)}</div>`:""}
+    ${g.order?`<div class="pcsec">Order</div><div class="ixks">${ck("Order ID",O.id)}${ck("Amount",O.fiat)}${ck("Buyer",O.buyer)}${ck("Seller",O.seller)}${O.tds>0?ck("TDS",O.tds):""}</div>`:""}
     <div class="pcsec">Match analysis</div><div class="vtab">${g.cmp.fields.filter(f=>g.order||!["buyer","seller","method","acct"].includes(f.k)).map(f=>`<div class="vrow ${f.res}"><div class="vk">${esc(f.label)} ${ixSrc(g,f.k)}</div><div class="vv"><span>${esc(f.pay)}</span><span>${esc(f.ord)}</span></div><div class="vr">${ixRes(f)}</div>${f.note?`<div class="vn">${esc(f.note)}</div>`:""}</div>`).join("")}</div>
     <div class="pcsec">Risk analysis</div><div class="ixrisk ${g.risk.level}"><b>${g.risk.level} RISK</b>${g.risk.reasons.length?`<ul>${g.risk.reasons.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>`:"<div>No warning signs found in what is visible.</div>"}</div>
     <p class="note">Screenshot analysis cannot independently prove that a payment actually settled. Check your bank app or SMS before releasing coins.</p>
@@ -5089,17 +5092,18 @@ function fillForm(o,edit){
   $("#f-coin").value=o.coin;$("#f-status").value=edit?o.status:pref("status");$("#f-qty").value=o.qty;$("#f-rate").value=edit?o.rate:(lastRate(o.coin,o.side)||o.rate);
   if(o.pay)$("#f-pay").value=o.pay;if(o.platform)$("#f-plat").value=o.platform;
   $("#f-cp").value=o.cp||"";$("#f-note").value=edit?(o.note||""):"";
-  $("#f-exid").value=edit?exIdOf(o):"";$("#f-utr").value=edit?(o.utr||""):"";$("#f-fee").value=edit?(o.fee||""):"";$("#f-pv").value=edit?pvOf(o):"";$("#pdet").open=!!(edit&&(exIdOf(o)||o.utr||o.fee||o.pv));dupHint();
+  $("#f-exid").value=edit?exIdOf(o):"";$("#f-utr").value=edit?(o.utr||""):"";$("#f-fee").value=edit?(o.fee||""):"";$("#f-tds").value=edit?(o.tds||""):"";$("#f-pv").value=edit?pvOf(o):"";$("#pdet").open=!!(edit&&(exIdOf(o)||o.utr||o.fee||o.tds||o.pv));dupHint();
   formSplit.set(edit?o.splits:[]);upd();cpCheck();pairUpd();
   $("#formTitle").textContent=edit?"Edit order":"Repeat order";$("#formTitle").classList.toggle("editing",edit);$("#editCancel").hidden=!edit;$("#saveBtn").textContent=edit?"Update order":"Save order";
   if(!edit)toast("Copied. Change the quantity if needed and save");
 }
 function endEdit(clear){editingId=null;if(clear)formProof=null;try{$("#dir-acc").dataset.u=""}catch(e){}$("#formTitle").textContent="New order";$("#formTitle").classList.remove("editing");$("#editCancel").hidden=true;$("#saveBtn").textContent="Save order";
-  if(clear){["#f-qty","#f-cp","#f-note","#f-rate","#f-exid","#f-utr","#f-fee"].forEach(s=>$(s).value="");$("#f-pv").value="";$("#pdet").open=false;$("#dupWarn").hidden=true;formSplit.reset();upd();applyFormDefaults();rateHintUpd();cpCheck()}}
+  if(clear){["#f-qty","#f-cp","#f-note","#f-rate","#f-exid","#f-utr","#f-fee","#f-tds"].forEach(s=>$(s).value="");$("#f-pv").value="";$("#pdet").open=false;$("#dupWarn").hidden=true;formSplit.reset();upd();applyFormDefaults();rateHintUpd();cpCheck()}}
 $("#editCancel").onclick=()=>{endEdit(true);$("#t-orders").click()};
 function dupHint(){const el=$("#dupWarn");if(!el)return;const D=dupFlags({id:editingId||"__new",exId:$("#f-exid").value.trim(),utr:$("#f-utr").value.trim(),status:"Pending"});
   if(!D.length){el.hidden=true;return}el.hidden=false;el.textContent=D.map(d=>d.k==="utr"?`⚠️ This UTR was already used in ${shortO(d.o)}.`:`⚠️ This order ID is already saved: ${shortO(d.o)}.`).join(" ")}
 ["#f-exid","#f-utr"].forEach(q=>$(q).addEventListener("input",dupHint));
+$("#f-tds1").onclick=()=>{const q=+$("#f-qty").value,r=+$("#f-rate").value;if(!(q>0&&r>0)){toast("Enter quantity and rate first");return}$("#f-tds").value=+(q*r*0.01).toFixed(2)};
 $("#f-coin").addEventListener("change",()=>{$("#f-rate").value="";rateHintUpd()});
 $("#sideSeg").addEventListener("click",()=>setTimeout(()=>{if(!editingId){$("#f-rate").value="";rateHintUpd()}},0));
 $("#t-add").addEventListener("click",()=>setTimeout(()=>{if(!editingId&&!$("#f-qty").value)rateHintUpd()},0));
@@ -5435,7 +5439,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=74;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=75;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5502,6 +5506,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00075","8 Oct 2026",["New TDS field on sell orders (order form, Order ID, UTR & fee section): type the amount or tap Fill 1% of total","Smart intake reads TDS from the exchange order page and saves it on sell orders","Order details show TDS, and Profit analytics has a Tax section with total TDS deducted. It is a tax credit, so it is not taken off profit"]],
   ["0.0.0.00074","8 Oct 2026",["Sell orders: the exchange page shows only the buyer, so your side is always you and a nickname such as Sparkrudz is never taken for the seller; the real name is kept and the nickname is linked to it","A buyer's payment proof can now show a name that is not yours (like a family member's account): tap Yes once and that name and UPI ID are saved as your accounts, optionally with the bank","Payment pages with the name above the UPI ID (Paytm style) now give receiver, date without a year and success status; a buyer's bank is no longer mistaken for your bank on a sell"]],
   ["0.0.0.00073","8 Oct 2026",["Cancelled order screenshots (also the American spelling \"Canceled\") are saved by themselves with no questions: side, amount, rate, quantity, counterparty and order number are read, the cancel reason goes in the note, and the order keeps the time it was really created (10/08/2026 is read as 8 Oct, not 10 Aug)","Every order saved from Smart intake now keeps its real creation time from the screenshot instead of the time you saved it"]],
   ["0.0.0.00072","8 Oct 2026",["Smart intake now recognises a cancelled order screenshot even when little text is readable, can save it as a Cancelled order, and asks you at the top (payment or order?) when it cannot tell what a picture is"]],
@@ -6413,6 +6418,7 @@ sheets.profit=function(){let per="today",ca="",cb="";
     ${L("Transfer charges","−"+inr(Math.round(R.xfer)),R.xfer?"neg":"","bank charges on transfers")}
     ${L("Business costs","−"+inr(Math.round(R.biz)),R.biz?"neg":"","expenses marked Business")}
     ${L("<b>Net profit</b>",M(R.net),R.net<0?"neg":"")}</div>
+    ${R.tds?`<div class="pcsec">Tax</div><div class="rml">${L("TDS deducted on sells",inr(Math.round(R.tds)),"","a tax credit, not a cost. Not taken off profit")}</div>`:""}
     <div class="pcsec">Averages</div><div class="rml">
     ${L("Profit per order",M(R.perOrder))}${L("Net profit per USDT sold",R.soldQ?"₹"+R.perUsdt.toFixed(3):"—")}${L("Average spread per USDT",R.soldQ?"₹"+R.spread.toFixed(3):"—","","before fees and costs")}${L("USDT sold",fmtQ(+R.soldQ.toFixed(4)))}</div>
     <div class="pcsec">After personal spending</div><div class="rml">${L("Personal expenses","−"+inr(Math.round(R.pers)),R.pers?"neg":"")}${L("<b>Left after personal spending</b>",M(R.takeHome),R.takeHome<0?"neg":"")}</div>
