@@ -574,7 +574,7 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .ixline span{position:absolute;left:0;top:-1px;height:4px;width:28%;border-radius:4px;background:var(--accent);animation:ixflow 1.6s ease-out 1 both}
 @keyframes ixflow{from{left:0;opacity:1}to{left:72%;opacity:.15}}
 .vres.MISMATCH .ixline span{background:var(--sell)}.vres.REVIEW .ixline span{background:var(--warn)}
-.ixmine{margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--raised);border-left:4px solid var(--line-strong)}
+label.ixautot{display:grid;grid-template-columns:24px 1fr;align-items:center;gap:0 10px;margin:10px 2px;font-size:.9rem;font-weight:600;color:var(--fg);cursor:pointer;text-align:left}.ixautot input{width:20px;height:20px;margin:0;accent-color:var(--accent)}.ixautot span{display:block}.ixautot small{display:block;font-weight:500;color:var(--muted);font-size:.76rem}label.ixlr{display:grid;grid-template-columns:24px 1fr;gap:1px 10px;padding:10px 0;border-top:1px solid var(--line);font-size:.88rem;font-weight:500;color:var(--fg);align-items:start;text-align:left}.ixlr input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--accent)}.ixlr span{display:block}.ixlr small{grid-column:2;color:var(--muted);font-weight:500}.ixlr.dup{opacity:.5}.ixlist .primary{width:100%;margin-top:10px}.ixmine{margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--raised);border-left:4px solid var(--line-strong)}
 .ixmine.ok{border-left-color:var(--accent)}.ixmine.warn{border-left-color:var(--warn)}.ixmine.bad{border-left-color:var(--sell)}
 .ixown{display:flex;gap:8px;margin-top:6px;align-items:center}.ixown select{flex:1;min-width:0;min-height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:0 8px}.ixown .mini{white-space:nowrap}
 .ixmine b{font-size:.76rem;color:var(--muted)}.ixmine ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
@@ -1543,6 +1543,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
     <p class="ixready" id="i2-ready"></p>
     <details class="ixtxt" id="ix-txt"><summary>Paste an SMS or message instead</summary><textarea id="i2-text" rows="3" placeholder="Paste the bank SMS or the deal message here"></textarea></details>
     <div class="ixact"><button type="button" class="primary" id="i2-go">Add from text</button><button type="button" class="ixclear" id="i2-clear">Clear</button></div>
+    <label class="ixautot"><input type="checkbox" id="ix-auto" checked><span>Auto-save safe ones<small>Only verified, low risk. You can undo.</small></span></label>
     <div id="i2-ix" class="chat"></div>
     <div id="i2-out" class="chat"></div>
     <div id="i2-hist"></div>
@@ -2284,6 +2285,7 @@ const IX_TYPES={PAY_RECEIPT:"Payment receipt",BANK_TX:"Bank transaction",UPI:"UP
 const ixIsPay=t=>["PAY_RECEIPT","BANK_TX","UPI","IMPS"].includes(t),ixIsOrd=t=>["EX_ORDER","CRYPTO_ORDER"].includes(t);
 const IX_EXCH=/binance|kucoin|bybit|okx|mexc|bitget|gate\.?io|htx|huobi|coinswitch|wazirx|zebpay|bitfinex/i;
 function ixClassify(text){const t=String(text||"");if(t.trim().length<12)return{type:"UNKNOWN",conf:0,pay:0,ord:0};
+  {const lr=ixListRows(t);if(lr.length>=2)return{type:"EX_LIST",conf:0.8,pay:0,ord:0,rows:lr}}
   const cnt=(re)=>(t.match(re)||[]).length;
   const P=payParse(t);
   const pay=cnt(/upi ref|utr|transaction id|txn id|paid to|payment (?:successful|completed)|money sent|payment (?:to|from)|debited|credited|reference (?:no|number)|bank ref|google ?pay|phonepe|paytm|bhim|\bimps\b|\bneft\b|a\/c|ifsc|banking name/ig)+(P.ok?3:0)+(P.utr?1:0);
@@ -2353,7 +2355,7 @@ function ixlKnown(name,side){if(!name)return 0;return orders.filter(o=>o.status!
 const ixMs=ms=>{if(!ms)return null;const d=new Date(ms),p=n=>String(n).padStart(2,"0");return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
 // payment text → same shape verParse() gives
 function ixPayFrom(text,conf){const p=payParse(text),d=ixMs(p.time);
-  return{status:p.status==="Failed"?"FAILED":p.status==="Pending"?"PENDING":p.status==="Success"?"SUCCESS":null,amount:p.amount||null,currency:p.amount?"INR":null,sender:p.sender||null,receiver:p.receiver||null,utr:p.utr||null,method:p.method||null,bank:p.bank||null,date:d?d.slice(0,10):null,time:d?d.slice(11):null,acct:p.last4?"••"+p.last4:null,conf:conf,dir:p.dir||"",last4:p.last4||"",ok:p.ok}}
+  return{status:p.status==="Failed"?"FAILED":p.status==="Pending"?"PENDING":p.status==="Success"?"SUCCESS":null,amount:p.amount||null,currency:p.amount?"INR":null,sender:p.sender||null,receiver:p.receiver||null,utr:p.utr||null,method:p.method||null,bank:p.bank||null,date:d?d.slice(0,10):null,time:d?d.slice(11):null,acct:p.last4?"••"+p.last4:null,conf:conf,dir:p.dir||"",last4:p.last4||"",ok:p.ok,vpa:ixVpa(text)}}
 function ixOrdSide(flat){const C="(?:usdt|usdc|btc|eth|bnb|trx|xrp|sol|doge|dai|ltc|matic|shib)";const b=new RegExp("\\b(?:buy|buying|bought)\\s+"+C+"\\b","i").test(flat)||/\bBuy\s+[A-Z]{3,5}\b/.test(flat),s=new RegExp("\\b(?:sell|selling|sold)\\s+"+C+"\\b","i").test(flat)||/\bSell\s+[A-Z]{3,5}\b/.test(flat);
   if(b&&!s)return"BUY";if(s&&!b)return"SELL";if(!b&&!s){if(/you\s*pay\b/i.test(flat)&&!/you\s*(?:will\s*)?receive\s*(?:₹|rs|inr)/i.test(flat))return"BUY";if(/you\s*(?:will\s*)?receive\s*(?:₹|rs|inr)/i.test(flat))return"SELL"}return null}
 function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," ");const num=s=>{const n=parseFloat(String(s).replace(/,/g,""));return isFinite(n)?n:null};
@@ -2389,10 +2391,77 @@ async function ixOcr(it,skip){if(ixOcrCache.has(it.hash))return ixOcrCache.get(i
   if(r.status!=="fail")ixOcrCache.set(it.hash,r);return r}
 // ---- item = one picture: classify + extract
 function ixItem(it,forceType){const o=it.ocr||{text:"",conf:0};const c=ixClassify(o.text);it.cls=forceType?{type:forceType,conf:1,forced:true}:c;
-  it.pay=null;it.ord=null;const cf=o.conf==null?null:o.conf/100;
+  it.pay=null;it.ord=null;it.list=null;const cf=o.conf==null?null:o.conf/100;if(it.cls.type==="EX_LIST"){it.list=c.rows||ixListRows(o.text);it.ext=it.list.length?"ok":"fail";return it}
   if(ixIsPay(it.cls.type)||(it.cls.type==="UNKNOWN"&&payParse(o.text).ok&&!forceType)){it.pay=ixPayFrom(o.text,cf);if(it.cls.type==="UNKNOWN"){it.cls={type:"PAY_RECEIPT",conf:0.5}}}
   else if(ixIsOrd(it.cls.type)){it.ord=ixOrdFrom(o.text,cf)}
   it.ext=it.pay?(it.pay.amount!=null&&it.pay.utr?"ok":it.pay.amount!=null||it.pay.utr?"partial":"fail"):it.ord?(it.ord.fiat!=null&&it.ord.id?"ok":it.ord.fiat!=null||it.ord.id||it.ord.crypto!=null?"partial":"fail"):"fail";return it}
+
+// ---- v71: smarter intake helpers
+function ixTypRate(){try{const r=orders.filter(o=>o.status!=="Cancelled"&&o.rate>0).sort((a,b)=>b.time-a.time).slice(0,30).map(o=>+o.rate).sort((a,b)=>a-b);return r.length>=3?r[r.length>>1]:null}catch(e){return null}}
+// quantity × rate must equal the total: when one of the three was misread, the payment tells which
+function ixNumFix(g,X){g.fixes=[];g.numBad=false;const O=X.ord,P=X.pay;if(!O)return;const f=O.fiat,q=O.crypto,r=O.price;if(!(f>0&&q>0&&r>0))return;
+  const near=(a,b)=>Math.abs(a-b)<=Math.max(1.5,b*0.004);if(near(q*r,f))return;
+  const amt=P&&P.amount>0?P.amount:null,med=ixTypRate(),rr=n=>+n.toFixed(2),money=n=>"₹"+(+n.toFixed(2)).toLocaleString("en-IN");
+  if(amt&&near(q*r,amt)&&!near(f,amt)){O.fiat=amt;g.fixes.push(`Order total was read as ${money(f)} but quantity × rate and your payment both say ${money(amt)}. Corrected.`);return}
+  if(amt&&near(f,amt)){
+    const good=v=>med?Math.abs(v-med)/med<0.06:(v>=50&&v<=200);
+    const rateOk=good(r),newRate=f/q,qtyOk=good(newRate);
+    if(rateOk&&!qtyOk){O.crypto=rr(f/r);g.fixes.push(`Quantity was read as ${q} but total ${money(f)} ÷ rate ₹${r} gives ${O.crypto}. Corrected.`);return}
+    if(!rateOk&&qtyOk){O.price=rr(newRate);g.fixes.push(`Rate was read as ₹${r} but total ${money(f)} ÷ ${q} gives ₹${O.price}. Corrected.`);return}}
+  g.numBad=true}
+// UTR sanity: UPI / IMPS references are 12 digits
+function ixUtrOdd(u){u=String(u||"").replace(/\s+/g,"");if(!u)return"";
+  if(/^\d+$/.test(u)){if(u.length>=9&&u.length<=11||u.length>=13&&u.length<=15)return`UTR has ${u.length} digits (UPI and IMPS ones are usually 12). It may be misread or edited`;
+    if(/^(\d)\1{6,}$/.test(u)||/^0+\d?$/.test(u)||u==="123456789012"||u==="012345678901")return"UTR looks made up (repeating or sequential digits)"}return""}
+// the UPI id you paid: remember it per person and warn when it changes
+function ixVpa(t){try{const flat=String(t||"").replace(/\s+/g," ");for(const m of flat.matchAll(/([A-Za-z0-9._\-]{2,40})@([A-Za-z]{2,15})\b(?!\.)/g)){if(/^(gmail|yahoo|outlook|hotmail|icloud|proton|rediffmail)$/i.test(m[2]))continue;const pre=flat.slice(Math.max(0,m.index-32),m.index).toLowerCase();if(/\b(from|sender|debited|your)\b[^@]{0,28}$/.test(pre))continue;return(m[1]+"@"+m[2]).toLowerCase()}}catch(e){}return""}
+function ixAcctNew(g){try{const X=g.X,sd=ixSide(g);if(sd!=="BUY")return null;const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{},vpa=P.vpa||X.pay.vpa;if(!vpa)return null;
+  const name=X.ord.seller||X.pay.receiver||(g.target&&g.target.cp)||"";if(!name)return null;
+  const prev=orders.filter(o=>o.vpa&&o.side==="BUY"&&o.cp&&(!g.target||o.id!==g.target.id)),same=prev.filter(o=>verName(o.cp,name)==="M");
+  if(same.length&&!same.some(o=>o.vpa===vpa))return{name,vpa,old:same[0].vpa,kind:"new"};
+  const other=prev.find(o=>o.vpa===vpa&&verName(o.cp,name)==="X");if(other)return{name,vpa,other:other.cp,kind:"other"};return null}catch(e){return null}}
+// a payment alone: find the open order it settles (same side, remaining amount, name not contradicting)
+function ixAutoTarget(g,X){const P=X.pay;if(!(P&&P.amount>0))return;const pp=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{},dir=P.dir||pp.dir||"";
+  const sd=dir==="out"?"BUY":dir==="in"?"SELL":null;if(!sd)return;const pt=verWhen(P.date,P.time)||Date.now(),who=sd==="BUY"?P.receiver:P.sender;
+  const u=normRef(P.utr);
+  const c=orders.filter(o=>o.side===sd&&o.status!=="Cancelled"&&!(u&&normRef(o.utr)===u)&&o.time<=pt+15*60e3&&pt-o.time<=72*3600e3&&Math.abs((orderTotal(o)-allocated(o))-P.amount)<=Math.max(1,P.amount*0.002));
+  const nm=o=>who?verName(o.cp||"",who):"NF",ok=c.filter(o=>nm(o)!=="X");if(!ok.length)return;
+  const strong=ok.filter(o=>nm(o)==="M"),pick=strong.length===1?strong[0]:(ok.length===1?ok[0]:null);
+  if(pick){g.target=pick;g.autoT=true}else g.autoTHint=ok.length}
+function ixTargetOrd(t){const own=pref("owner")||pref("nick")||null;return{id:exIdOf(t)||null,status:null,fiat:+orderTotal(t).toFixed(2),crypto:t.qty,coin:t.coin,price:t.rate,buyer:t.side==="SELL"?t.cp:own,seller:t.side==="BUY"?t.cp:own,method:t.pay||null,when:ixMs(t.time),platform:t.platform||null,side:t.side,cp:t.cp||null,conf:1}}
+// ---- order-list screenshot: one picture, many orders
+function ixListRows(t){try{const L=String(t||"").split(/\n+/).map(x=>x.trim()).filter(Boolean),starts=[];
+  L.forEach((l,i)=>{if(l.length<=60&&/^(?:you\s+)?(?:buy|sell|buying|selling|bought|sold)\b/i.test(l)&&/\b(?:usdt|usdc|btc|eth|bnb|trx|xrp|sol)\b/i.test(l))starts.push(i)});
+  if(starts.length<2)return[];const rows=[];
+  starts.forEach((a,k)=>{const blk=L.slice(a,k+1<starts.length?starts[k+1]:L.length).slice(0,14);const o=ixOrdFrom(blk.join("\n"),null),qty=o.crypto,fiat=o.fiat;
+    if(!o.side||!(fiat>0)||!(qty>0))return;const ts=o.when?new Date(String(o.when).replace(" ","T")).getTime():0;
+    rows.push({side:o.side,coin:o.coin||"USDT",fiat,qty,rate:o.price||+(fiat/qty).toFixed(2),status:o.status,cp:o.cp||o.buyer||o.seller||null,id:o.id,ts:isFinite(ts)&&ts>0?ts:0,platform:o.platform})});
+  if(rows.length<2||new Set(rows.map(r=>r.fiat)).size<2)return[];return rows}catch(e){return[]}}
+function ixListDup(r){try{if(r.id){const m=riskIdx().e.get(normRef(r.id));if(m&&m.length)return true}
+  return orders.some(o=>o.side===r.side&&Math.abs(o.qty-r.qty)<0.011&&Math.abs(o.rate-r.rate)<0.011&&(!o.cp||!r.cp||verName(o.cp,r.cp)!=="X")&&(!r.ts||Math.abs(o.time-r.ts)<3*60e3))}catch(e){return false}}
+async function ixListSave(it){const rows=(it.list||[]).filter((r,i)=>it.listSel&&it.listSel.has(i)&&!ixListDup(r));let n=0;
+  for(const r of rows){try{const no={id:newId("o"),side:r.side,coin:r.coin,qty:r.qty,rate:r.rate,status:ixStatusOf(r.status),mode:"P2P",pay:"UPI",platform:r.platform?(r.platform[0].toUpperCase()+r.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp:r.cp||"",note:"From order list screenshot · bank not assigned",splits:[],proofs:[],shots:[it.hash],pv:"ai",time:r.ts||Date.now(),src:"ai"};
+    if(r.id)no.exId=String(r.id).slice(0,40);await putRec(no);await auditLog(no,"create",{by:"intake-list"});n++}catch(e){console.error(e)}}
+  it.listDone=n;return n}
+// ---- auto-save: only what is verified AND low risk, with undo
+const ixSafe=g=>!!(!g.saved&&g.cmp&&g.cmp.overall==="VERIFIED"&&g.risk&&g.risk.level==="LOW"&&!(g.dups||[]).length&&!(g.fixes||[]).length&&!g.numBad&&!(g.conflicts&&g.conflicts.length)&&(g.order||g.target)&&ixSide(g)&&g.conf>=80&&g.pays.length);
+async function ixAutoSafe(){if(pref("ixAuto")==="0"||ixS.autoOff)return;const done=[];
+  for(const g of ixS.groups){if(!ixSafe(g))continue;g.prevT=g.target?JSON.parse(JSON.stringify(g.target)):null;const r=await ixSave(g,true);g.save=r;if(r.state==="saved"){g.auto=true;done.push(g)}}
+  ixS.auto=done;if(done.length){ixDraw();renderIxHist();toast(`Auto-saved ${done.length} safe one${done.length>1?"s":""}`)}}
+async function ixAutoUndo(){const A=(ixS.auto||[]).filter(g=>g.saved&&g.auto);
+  for(const g of [...A].reverse()){try{if(g.prevT)await putRec(g.prevT);else if(g.savedId)await delRec(g.savedId);if(g.histId)await patchRec(g.histId,{saved:false,orderId:null})}catch(e){}g.saved=false;g.save=null;g.auto=false;g.savedId=null;g.target=g.prevT?null:g.target;}
+  ixS.auto=[];ixS.autoOff=true;ixS.groups.forEach(g=>{try{ixVerify(g)}catch(e){}});ixDraw();renderIxHist();toast("Auto-save undone")}
+function ixDrawExtras(out){
+  const A=(ixS.auto||[]).filter(g=>g.saved&&g.auto);
+  if(A.length){const c=document.createElement("div");c.className="acard ixautob";c.innerHTML=`<div class="ah">✓ AUTO-SAVED ${A.length} SAFE ${A.length>1?"ONES":"ONE"}</div><div class="note">Verified and low risk, so ${A.length>1?"they were":"it was"} saved for you. Anything else is waiting below for your check.</div><div class="row2"><button class="mini ghost" type="button" data-ixundo>Undo auto-save</button><button class="mini ghost" type="button" data-go="orders">View orders</button></div>`;twoTap(c.querySelector("[data-ixundo]"),ixAutoUndo);out.appendChild(c)}
+  (ixS.items||[]).filter(x=>x.list&&x.list.length).forEach(it=>{if(!it.listSel)it.listSel=new Set(it.list.map((r,i)=>i).filter(i=>!ixListDup(it.list[i])));
+    const c=document.createElement("div");c.className="acard ixlist";const rows=it.list;const n=[...it.listSel].filter(i=>!ixListDup(rows[i])).length;
+    c.innerHTML=`<div class="ah">ORDER LIST · ${rows.length} ORDERS FOUND</div>`+(it.listDone!=null?`<div class="note"><b>Added ${it.listDone} order${it.listDone===1?"":"s"}.</b> Assign banks later from the order.</div>`:`<div class="note">Tick the ones to add. Orders already in the app are greyed out.</div>`)+
+      rows.map((r,i)=>{const d=ixListDup(r);return`<label class="ixlr${d?" dup":""}"><input type="checkbox" data-li="${i}" ${it.listSel.has(i)&&!d?"checked":""} ${d||it.listDone!=null?"disabled":""}><span><b class="sd ${r.side}">${r.side}</b> ${fmtQ(r.qty)} ${esc(r.coin)} @ ₹${r.rate} = <b>${inr(r.fiat)}</b></span><small>${[r.cp?esc(r.cp):"",r.status?esc(r.status):"",r.ts?new Date(r.ts).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}):"time not read",d?"already in app":""].filter(Boolean).join(" · ")}</small></label>`}).join("")+
+      (it.listDone!=null?"":`<button class="primary" type="button" data-lisave ${n?"":"disabled"}>ADD ${n} ORDER${n===1?"":"S"}</button>`);
+    c.addEventListener("change",e=>{const b=e.target.closest("[data-li]");if(!b)return;const i=+b.dataset.li;if(b.checked)it.listSel.add(i);else it.listSel.delete(i);const k=[...it.listSel].filter(j=>!ixListDup(rows[j])).length,bt=c.querySelector("[data-lisave]");if(bt){bt.textContent=`ADD ${k} ORDER${k===1?"":"S"}`;bt.disabled=!k}});
+    const bt=c.querySelector("[data-lisave]");if(bt)bt.onclick=async()=>{bt.disabled=true;bt.textContent="Adding…";const k=await ixListSave(it);toast(`Added ${k} order${k===1?"":"s"}`);ixDraw();renderIxHist()};
+    out.appendChild(c)})}
 // ---- pairing: every payment against every order, best first
 function ixPairScore(p,o,pText){let s=0;const amt=o.fiat!=null?o.fiat:(o.crypto&&o.price?o.crypto*o.price:null);
   if(p.amount!=null&&amt!=null)s+=Math.abs(p.amount-amt)<=1?4:-3;
@@ -2408,7 +2477,7 @@ function ixHard(p,o){ // clear contradiction between a payment and an order
     return true}
   if(verName(p.sender,o.buyer)==="X"&&verName(p.receiver,o.seller)==="X")return true;
   return false}
-function ixGroup(items){const pays=items.filter(x=>x.pay),ords=items.filter(x=>x.ord),rest=items.filter(x=>!x.pay&&!x.ord);
+function ixGroup(items){items=items.filter(x=>!x.list);const pays=items.filter(x=>x.pay),ords=items.filter(x=>x.ord),rest=items.filter(x=>!x.pay&&!x.ord);
   const groups=ords.map(o=>({order:o,pays:[],unknown:[]}));
   const score=(p,j)=>ixPairScore(p.pay,ords[j].ord,p.ocr.text);
   const pairs=[];pays.forEach(p=>ords.forEach((o,j)=>pairs.push({p,j,s:score(p,j),hard:ixHard(p.pay,o.ord)})));pairs.sort((a,b)=>b.s-a.s);
@@ -2442,7 +2511,7 @@ function ixGroup(items){const pays=items.filter(x=>x.pay),ords=items.filter(x=>x
   if(rest.length){if(groups.length>=1)groups[0].unknown=rest;else groups.push({order:null,pays:[],unknown:rest})}
   groups.forEach((g,i)=>{g.id="g"+i;g.items=[g.order,...g.pays,...g.unknown].filter(Boolean)});return groups.filter(g=>g.items.length)}
 // After classifying ALL pictures: fix obvious type slips before anything is grouped
-function ixReconcile(items){const fam=x=>ixIsPay(x.cls.type)?"p":ixIsOrd(x.cls.type)?"o":"u";
+function ixReconcile(items){const ALL=items;items=items.filter(x=>!x.list);const fam=x=>ixIsPay(x.cls.type)?"p":ixIsOrd(x.cls.type)?"o":"u";
   const sc=x=>{const c=ixClassify(x.ocr&&x.ocr.text||"");return c.pay-c.ord};
   if(items.length===2){const [a,b]=items,fa=fam(a),fb=fam(b);
     if(fa==="u"&&fb!=="u"||fb==="u"&&fa!=="u"){const u=fa==="u"?a:b,k=fa==="u"?b:a;ixItem(u,fam(k)==="p"?"EX_ORDER":"PAY_RECEIPT")} // the other one must be the complement
@@ -2450,7 +2519,7 @@ function ixReconcile(items){const fam=x=>ixIsPay(x.cls.type)?"p":ixIsOrd(x.cls.t
     else if(fa==="u"&&fb==="u"){const [pay,ord]=sc(a)>=sc(b)?[a,b]:[b,a];ixItem(pay,"PAY_RECEIPT");ixItem(ord,"EX_ORDER")}}
   else{const hasP=items.some(x=>fam(x)==="p"),hasO=items.some(x=>fam(x)==="o");
     items.filter(x=>fam(x)==="u").forEach(u=>{if(hasO&&!hasP)ixItem(u,"PAY_RECEIPT");else if(hasP&&!hasO)ixItem(u,"EX_ORDER")})}
-  return items}
+  return ALL}
 // ---- merge AI-read values into what the phone read. Phone values win when the phone was sure; differences are reported
 function ixMerge(local,ai,conf){const out={...local},diffs=[],filled=[];Object.keys(ai||{}).forEach(k=>{if(k==="conf")return;const a=ai[k],l=local[k];
     if(l==null||l===""){if(a!=null){out[k]=a;filled.push(k)}}
@@ -2464,19 +2533,21 @@ function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(
   g.inferred=[];X.pay={...X.pay};X.ord={...X.ord};if(g.partSum&&X.pay)X.pay.amount=g.partSum;
   ["sender","receiver"].forEach(k=>{if(X.pay[k]){const c=ixNameClean(X.pay[k]);X.pay[k]=c||null}});["buyer","seller"].forEach(k=>{if(X.ord[k]){const c=ixNameClean(X.ord[k]);X.ord[k]=c||null}});
   try{if(X.ord.whenAlt&&X.ord.when&&X.pay.date){const pt=verWhen(X.pay.date,X.pay.time),T=v=>new Date(String(v).replace(" ","T")).getTime();if(pt&&Math.abs(T(X.ord.whenAlt)-pt)<Math.abs(T(X.ord.when)-pt))X.ord.when=X.ord.whenAlt}}catch(e){}
-  g.X=X;
+  g.X=X;try{ixNumFix(g,X)}catch(e){}
   try{const pp0=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{},dir0=X.pay.dir||pp0.dir||"",ow=pref("owner"),sd0=ixSide(g);
     const l4=String(pp0.last4||X.pay.acct||"").replace(/\D/g,"").slice(-4),mine=X.pay.amount!=null&&(l4||X.pay.bank)&&payBank({last4:l4,bank:X.pay.bank||""});
     if(ow&&mine){if(dir0==="out"&&!X.pay.sender){X.pay.sender=ow;g.inferred.push("sender")}else if(dir0==="in"&&!X.pay.receiver){X.pay.receiver=ow;g.inferred.push("receiver")}}
     if(sd0==="BUY"){if(!X.ord.seller&&X.ord.cp)X.ord.seller=X.ord.cp;if(!X.ord.buyer&&ow){X.ord.buyer=ow;g.inferred.push("buyer")}}
     else if(sd0==="SELL"){if(!X.ord.buyer&&X.ord.cp)X.ord.buyer=X.ord.cp;if(!X.ord.seller&&ow){X.ord.seller=ow;g.inferred.push("seller")}}}catch(e){}
+  try{if(!g.order&&!g.target&&g.pays.length)ixAutoTarget(g,X);if(!g.order&&g.target&&g.autoT)X.ord={...X.ord,...ixTargetOrd(g.target)}}catch(e){}
   const hashes=g.items.map(x=>x.hash);const cmp=verCompare(X,{hashes});
   cmp.fields.forEach(f=>{if((f.k==="buyer"&&(g.inferred.includes("buyer")||g.inferred.includes("sender")))||(f.k==="seller"&&(g.inferred.includes("seller")||g.inferred.includes("receiver"))))f.note=(f.note?f.note+" · ":"")+"Your side is worked out from your bank and your name"});
   // spec: different payment method or a partial name is never "verified"
+  if(g.autoT&&!g.order&&cmp.overall==="REVIEW"){const of=cmp.fields.find(f=>f.k==="orderid");if(of&&of.res==="NOTFOUND"&&!(g.target&&exIdOf(g.target))&&cmp.fields.filter(f=>f.major&&f.k!=="orderid").every(f=>f.res==="MATCH"||f.res==="FOUND"))cmp.overall="VERIFIED"} // your own order has no exchange id to compare, everything else agrees
   const soft=cmp.fields.some(f=>(f.k==="method"||f.k==="seller")&&f.res==="UNCLEAR");if(cmp.overall==="VERIFIED"&&soft)cmp.overall="REVIEW";
   if(cmp.overall!=="VERIFIED"&&!g.ai&&!g.reasonsAI0)g.needAI=true;
   if(g.conflicts&&g.conflicts.length&&cmp.overall==="VERIFIED"){cmp.overall="REVIEW"}
-  if(!g.order&&cmp.overall==="VERIFIED")cmp.overall="REVIEW"; // payment alone has nothing to be compared with
+  if(!g.order&&!g.target&&cmp.overall==="VERIFIED")cmp.overall="REVIEW"; // payment alone has nothing to be compared with
   g.cmp=cmp;g.dups=ixDups(g);g.risk=ixRisk(g);if(cmp.overall==='VERIFIED'&&g.risk.level!=='LOW')cmp.overall=g.risk.level==='HIGH'?'MISMATCH':'REVIEW';else if(cmp.overall==='REVIEW'&&g.risk.level==='HIGH')cmp.overall='MISMATCH';
   const confs=g.items.map(x=>x.ocr&&x.ocr.conf!=null?x.ocr.conf:null).filter(x=>x!=null);
   g.reasonsAI=[];const need=g.reasonsAI;if(g.needAI&&!g.ai)need.push(cmp.overall==='MISMATCH'?'result shows a mismatch (could be a reading error)':'result needs review');
@@ -2531,6 +2602,8 @@ function ixRisk(g){const F=g.cmp.fields,hi=[],me=[],fl=g.cmp.flags;const f=k=>F.
   ["CROPPED_DETAILS","INCONSISTENT_FONTS","SUSPICIOUS_AMOUNT_FORMAT","MULTIPLE_TRANSACTIONS","BLURRY"].forEach(k=>{if(fl.includes(k))me.push(VER_RISK[k])});
   {const M=ixMine(g);M.lines.forEach(l=>{if(l.s==="bad")hi.push(l.r);else if(l.s==="warn")me.push(l.r)})}
   if(g.conflicts&&g.conflicts.length)me.push("Phone reading and AI reading differ");
+  if((g.fixes||[]).length)me.push("A misread number was corrected automatically. Please check it");if(g.numBad)me.push("Quantity × rate does not equal the total, so a number may be misread");
+  {const uo=ixUtrOdd(g.X.pay.utr);if(uo)me.push(uo);const an=ixAcctNew(g);g.acctNew=an;if(an)me.push(an.kind==="new"?`New UPI ID for ${an.name}: ${an.vpa} (before: ${an.old}). Make sure it is really theirs`:`This UPI ID ${an.vpa} was earlier used for ${an.other}, not ${an.name}`)}
   if(g.pays.some(p=>p.uncertain))me.push("Screenshots may belong to another order");
   const level=hi.length?"HIGH":me.length?"MEDIUM":"LOW";return{level,reasons:[...hi,...me]}}
 
@@ -4570,6 +4643,7 @@ $("#csvExport").onclick=()=>{const head=["Date","Time","Mode","Side","Coin","Qua
   const q=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   const rows=[...orders].sort((a,b)=>a.time-b.time).map(o=>{const d=new Date(o.time);return[d.toLocaleDateString("en-CA"),d.toLocaleTimeString("en-GB"),modeOf(o),o.side,o.coin,o.qty,o.rate,(orderTotal(o)).toFixed(2),o.status,o.platform,o.pay,o.cp,(o.splits||[]).map(x=>bankName(x.bank)+" "+x.amt+" "+(x.method||"")).join("; "),o.note].map(q).join(",")});
   saveFile(`Pexai-orders-${new Date().toLocaleDateString("en-CA")}.csv`,"﻿"+[head.join(","),...rows].join("\n"))};
+try{$("#ix-auto").onchange=e=>setPref("ixAuto",e.target.checked?"1":"0")}catch(e){}
 $("#bkImport").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;let data;try{data=JSON.parse(await f.text())}catch(err){$("#bkNote").textContent="This file isn't a valid backup.";return}
   const list=Array.isArray(data)?data:data&&Array.isArray(data.records)?data.records:null;if(!list){$("#bkNote").textContent="This file isn't a backup from this app.";return}
   const ok=list.filter(x=>x&&typeof x.id==="string"&&x.id.length<=200&&/^[A-Za-z0-9_\-.~]+$/.test(x.id));let n=0;
@@ -4806,7 +4880,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       if(split.length>1)notes.push("Paid from "+split.length+" banks")}catch(e){}}
     if(g.target){const t=g.target;
       if(P.utr&&t.utr&&normRef(t.utr)===normRef(P.utr))return{state:"skipped",msg:"Already recorded on that order"};
-      const patch={shots:[...new Set([...(t.shots||[]),...shots])],proofs:[...(t.proofs||[]),...proofs],pv,...(P.utr&&!t.utr?{utr:P.utr}:{}),...(!exIdOf(t)&&O.id?{exId:O.id}:{}),...(P.date?{payAt:verWhen(P.date,P.time)||undefined}:{})};
+      const vpaN=(ixSide(g)==="BUY"||t.side==="BUY")?(P.vpa||pp.vpa||""):"";const patch={...(vpaN&&!t.vpa?{vpa:vpaN}:{}),shots:[...new Set([...(t.shots||[]),...shots])],proofs:[...(t.proofs||[]),...proofs],pv,...(P.utr&&!t.utr?{utr:P.utr}:{}),...(!exIdOf(t)&&O.id?{exId:O.id}:{}),...(P.date?{payAt:verWhen(P.date,P.time)||undefined}:{})};
       if(split.length&&allocated(t)<orderTotal(t)-0.5){const have=new Set((t.splits||[]).map(x=>x.bank+"|"+x.amt));patch.splits=[...(t.splits||[]),...split.filter(x=>!have.has(x.bank+"|"+x.amt))]}
       await patchRec(t.id,patch);await auditLog(t,"intake_attach",{result:g.cmp.overall,risk:g.risk.level});g.savedId=t.id;notes.unshift("Added to your existing order")}
     else{const side=ixSide(g);if(!side)return{state:"failed",msg:"Choose whether you bought or sold, then save"};
@@ -4815,7 +4889,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       if(!(qty>0&&rate>0))return{state:"failed",msg:"Order quantity or price couldn't be read. Run Deep AI check or add the order by hand."}
       const cp=side==="SELL"?(O.buyer||P.sender||""):(O.seller||P.receiver||"");
       const no={id:newId("o"),side,coin:O.coin||"USDT",qty,rate,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:"",splits:split,proofs,shots,pv,time:Date.now(),src:"ai"};
-      if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
+      if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
       await putRec(no);await auditLog(no,"create",{by:"intake",result:g.cmp.overall,risk:g.risk.level});g.savedId=no.id}
     try{const ln=await ixlOnSave(g);if(ln)notes.push(ln)}catch(e){}
     g.saved=true;ixHistUpdate(g);return{state:"saved",msg:notes.join(" · ")||"Saved"}
@@ -4862,6 +4936,9 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     <div class="vt">${deal?esc(deal)+" · ":""}${g.cmp.overall==="VERIFIED"?"Screenshots appear consistent":g.cmp.overall==="REVIEW"?"Needs your review":"Potential inconsistency detected"}${g.order?"":" · payment only"}</div>
     ${ixScoreHtml(g)}
     ${ixLinkHtml(g)}
+    ${(g.fixes||[]).length?`<div class="ixmine warn"><b>Numbers fixed for you</b><ul>${g.fixes.map(x=>`<li class="warn">${esc(x)}</li>`).join("")}</ul></div>`:""}
+    ${g.autoT&&g.target?`<div class="ixmine ok"><b>Matched to your open order</b><ul><li class="ok">${esc(shortO(g.target))} · ${inr(orderTotal(g.target))}</li></ul></div>`:g.autoTHint?`<div class="ixmine warn"><b>Which order?</b><ul><li class="warn">${g.autoTHint} open orders have this amount. Choose the right one below.</li></ul></div>`:""}
+    ${g.auto&&g.saved?`<div class="ixmine ok"><b>Saved automatically</b><ul><li class="ok">Verified and low risk. Use Undo auto-save at the top if it is wrong.</li></ul></div>`:""}
     ${M.lines.length?`<div class="ixmine ${M.verdict}"><b>Your account check</b><ul>${M.lines.map(l=>`<li class="${l.s}">${esc(l.t)}${l.own?ixOwnRow(l.own):""}</li>`).join("")}</ul></div>`:""}
     <div class="ixwhy"><b>WHY</b><ul>${ixWhy(g).map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>
     <div class="ixai">${g.ai==="ok"?"✨ Checked by AI vision on top of the phone reading":g.ai==="unavailable"?"⚠ Cloud AI unavailable"+(g.aiErr==="bad_key"?" (key rejected)":g.aiErr==="rate_limited"?" (no free requests left)":g.aiErr==="busy"?" (busy or slow)":"")+": results below are from on-device analysis":g.ai==="na"?"AI not connected: results are from on-device analysis":"📷 Read on your phone"}${g.items[0]&&g.items[0].ocr?` · ${esc(g.items.map(x=>x.ocr&&x.ocr.engine).filter((v,i,a)=>v&&a.indexOf(v)===i).join(" + "))}`:""}</div>
@@ -4880,7 +4957,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     <div class="row2" style="margin-top:10px">${g.order||g.target?`<button class="primary" type="button" data-ix="save" ${g.saved?"disabled":""}>${saveLbl}</button>`:""}<button class="mini ghost" type="button" data-ix="recheck">RECHECK</button></div>${!g.order&&!g.target?`<div class="note" style="margin-top:6px">Payment only: choose the order it belongs to below, then confirm.</div><div data-paycard></div>`:""}
     <div class="row2" style="margin-top:6px"><button class="mini ${g.cmp.overall!=="VERIFIED"&&g.ai!=="ok"?"":"ghost"}" type="button" data-ix="deep">${g.ai==="ok"?"DEEP AI CHECK AGAIN":"DEEP AI CHECK"}</button><button class="mini ghost" type="button" data-ix="raw">VIEW RAW DATA</button>${pref("dev")?'<button class="mini ghost" type="button" data-ix="debug">DEBUG</button>':""}</div>
     <div class="ixraw" hidden><pre>${esc(JSON.stringify({ocr:g.items.map(x=>({type:x.cls.type,engine:x.ocr&&x.ocr.engine,conf:x.ocr&&x.ocr.conf,text:x.ocr&&x.ocr.text})),payment:P,order:O,flags:g.cmp.flags,risk:g.risk,duplicates:g.dups.map(d=>d.msg),aiReasons:g.reasonsAI,aiConflicts:g.conflicts||[]},null,1))}</pre></div>`}
-function ixDraw(){try{ixRail()}catch(e){}const out=$("#i2-ix");if(!out)return;out.innerHTML="";const G=ixS.groups;
+function ixDraw(){try{ixRail()}catch(e){}const out=$("#i2-ix");if(!out)return;out.innerHTML="";const G=ixS.groups;try{const ca=$("#ix-auto");if(ca)ca.checked=pref("ixAuto")!=="0";ixDrawExtras(out)}catch(e){console.error(e)}
   if(G.length>1){const h=document.createElement("div");h.className="acard ixhead";h.innerHTML=`<div class="ah">${G.length} TRANSACTIONS DETECTED</div><div class="row2"><button class="primary" type="button" data-ixall="save">SAVE ALL</button><button class="mini ghost" type="button" data-ixall="review">REVIEW INDIVIDUALLY</button></div><div class="note" data-ixallmsg></div>`;
     h.querySelector('[data-ixall="save"]').onclick=ixSaveAll;h.querySelector('[data-ixall="review"]').onclick=()=>{out.querySelectorAll(".ixg").forEach((e,i)=>{e.open=i===0});h.querySelector("[data-ixallmsg]").textContent="Open each transaction below and check it before saving."};out.appendChild(h)}
   G.forEach((g,i)=>{const d=document.createElement(G.length>1?"details":"div");d.className="acard ixg";d.dataset.gid=g.id;if(G.length>1){d.open=ixS.open===g.id||G.length<=2;d.innerHTML=`<summary><b>TRANSACTION ${i+1}</b> · ${g.items.length} screenshot${g.items.length>1?"s":""} · ${g.X.pay.amount!=null?inr(g.X.pay.amount):g.X.ord.fiat!=null?inr(g.X.ord.fiat):"?"} · ${VER_TXT[g.cmp.overall][1]}${g.saved?" · saved":""}</summary><div class="ixb">${ixCardHtml(g,true)}</div>`}else d.innerHTML=`<div class="ixb"><div class="pcsec" style="margin-top:0">TRANSACTION 1 · ${g.items.length} screenshot${g.items.length>1?"s":""}</div>${ixCardHtml(g,false)}</div>`;
@@ -4943,7 +5020,7 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
       await ixFinish(ixS.groups,true);
     }
     if(run!==ixS.run)return;ixS.T.done=Date.now()-t0;ixS.groups.forEach(g=>{g.T={...ixS.T}});
-    clearInterval(tick);card.remove();ixDraw();renderIxHist();
+    clearInterval(tick);card.remove();ixS.autoOff=false;ixDraw();renderIxHist();try{await ixAutoSafe()}catch(e){console.error(e)}
     try{const first=out.querySelector(".ixg, .ixhead");if(first)first.scrollIntoView({block:"start",behavior:"smooth"})}catch(e){}
   }catch(e){console.error(e);clearInterval(tick);card.innerHTML=`<div class="ah">ANALYSIS INTERRUPTED</div><div class="note">${esc(e&&e.code==="busy"?"The AI is busy or slow right now.":e&&e.code==="bad_json"?e.text:"Something went wrong while reading. Your screenshots are kept.")}</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ixS.busy=false;ixRun()}}
   finally{clearInterval(tick);if(run===ixS.run)ixS.busy=false;try{ixRail()}catch(e){}ocrListeners=[];if(ixS.again){ixS.again=false;setTimeout(()=>ixRun(),60)}}}
@@ -5317,7 +5394,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=70;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=71;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5384,6 +5461,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00071","8 Oct 2026",["Smart intake level 1: fixes a misread quantity, rate or total when the other two numbers and your payment agree; warns about odd UTRs (wrong length, repeating digits); remembers the UPI ID you paid each person and warns when it changes or belongs to someone else","Smart intake level 2: verified and low-risk items are saved automatically (switch on the Intake page, one tap to undo); a payment screenshot alone is matched to your open order with the same remaining amount; one screenshot of an order list adds many orders at once"]],
   ["0.0.0.00070","8 Oct 2026",["Pexai branding: logo and name on the PIN lock screen, bigger logo and tagline in About, logo on PDF statements, Pexai-named backup and export files, Pexai wording in update messages and the home-screen widget"]],
   ["0.0.0.00069","7 Oct 2026",["Smart intake understands part payments: when two or more payment screenshots (other banks, other amounts) add up to exactly one order, they are linked to that order and each is saved as its own bank split"]],
   ["0.0.0.00068","7 Oct 2026",["Settings > Theme now shows what Auto sees (phone is dark or light) and tells you if the installed app is too old for Auto"]],

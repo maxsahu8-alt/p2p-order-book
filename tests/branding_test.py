@@ -24,7 +24,7 @@ async def main():
     await pg.evaluate("closeSheet()")
     png=await pg.evaluate("pxLogoPng()")
     chk("pdf logo png made",bool(png) and png.startswith("data:image/png"))
-    chk("widget help uses name",await pg.evaluate("!/\\$\\{APP_NAME\\}/.test(document.body.innerHTML)"))
+    await pg.evaluate("sheets.glance()");await pg.wait_for_timeout(300);chk("widget help uses name",("add the Pexai widget" in await pg.inner_text("#sheetBody")) or ("find Pexai" in await pg.inner_text("#sheetBody")))
     chk("no page errors",not errs)
     print(errs)
     await b.close()
