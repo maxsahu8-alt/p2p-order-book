@@ -86,6 +86,20 @@ async def main():
     # E3: only another person's order is open: never matched
     pg,e=await scen(b,[SET,B1,ANITA],{"p.png":pay},["p.png"])
     g=(await pg.evaluate(G))[0];chk("E3 other person's order is not touched",g["tgt"] is None and not g["saved"])
+    # I: a cancelled order on its own
+    CAN1="Order Cancelled\nBuy USDT\n₹2,500.00\n27.50 USDT\nCancelled by system, payment timeout\nOrder No. 1851234567890123499"
+    CAN2="Order Cancelled\n₹2,500.00\n27.50 USDT\nYou cancelled this order"
+    for nm,txt in (("I1",CAN1),("I2",CAN2)):
+      pg,e=await scen(b,[SET,B1],{"c.png":txt},["c.png"])
+      t=await pg.evaluate("ixS.items[0].cls.type");print(nm,"type",t)
+      chk(nm+" recognised as an order",t in("EX_ORDER","CRYPTO_ORDER"))
+      chk(nm+" not stuck as unknown",await pg.evaluate("ixS.groups[0].order!=null"))
+      if nm=="I2":
+        await pg.evaluate("document.querySelector('[data-ix=\"side:BUY\"]').click()");await pg.wait_for_timeout(300)
+      await pg.evaluate("document.querySelector('[data-ix=save]').click()");await pg.wait_for_timeout(900)
+      r=await pg.evaluate("orders.map(o=>[o.status,o.side,o.qty,o.rate,o.note])");print(nm,"saved",r)
+      chk(nm+" saved as a Cancelled order",len(r)==1 and r[0][0]=="Cancelled")
+      chk(nm+" no errors",not e)
     # F: new UPI id for a known person
     OLD={**OPEN,"id":"o_old","status":"Completed","vpa":"ravi.old@ybl","time":now-5*864e5,"splits":[{"bank":"B1","amt":2500,"method":"UPI"}]}
     NEWP=pay.replace("RAVI KUMAR","RAVI KUMAR\nravi.new@okaxis")

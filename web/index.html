@@ -2289,10 +2289,11 @@ function ixClassify(text){const t=String(text||"");if(t.trim().length<12)return{
   const cnt=(re)=>(t.match(re)||[]).length;
   const P=payParse(t);
   const pay=cnt(/upi ref|utr|transaction id|txn id|paid to|payment (?:successful|completed)|money sent|payment (?:to|from)|debited|credited|reference (?:no|number)|bank ref|google ?pay|phonepe|paytm|bhim|\bimps\b|\bneft\b|a\/c|ifsc|banking name/ig)+(P.ok?3:0)+(P.utr?1:0);
-  const ord=cnt(/order (?:no|id|number|#)|\bbuyer\b|\bseller\b|total price|unit price|\bquantity\b|usdt|crypto|\bp2p\b|escrow|release|appeal|you (?:buy|sell)|counterparty|fiat amount|transfer notice/ig)+(IX_EXCH.test(t)?2:0)+(/\b\d{16,24}\b/.test(t)?1:0);
+  const ord=cnt(/order (?:no|id|number|#)|\bbuyer\b|\bseller\b|total price|unit price|\bquantity\b|usdt|crypto|\bp2p\b|escrow|release|appeal|you (?:buy|sell)|counterparty|fiat amount|transfer notice|cancell?ed|cancellation|expired|time ?out|timed out|order closed|\b(?:buy|sell)\s+(?:usdt|usdc|btc|eth|bnb|trx)\b|payment (?:window|time limit|deadline)|unit price/ig)+(IX_EXCH.test(t)?2:0)+(/\b\d{16,24}\b/.test(t)?1:0);
   let type="UNKNOWN",conf=0.4;
   if(pay>=2&&pay>=ord+2){type=/imps/i.test(t)?"IMPS":/upi|gpay|google ?pay|phonepe|paytm|bhim/i.test(t)?"UPI":/a\/c|account|ifsc|neft|debited|credited|bank/i.test(t)?"BANK_TX":"PAY_RECEIPT";conf=Math.min(0.99,0.55+0.07*(pay-ord))}
   else if(ord>=2&&ord>=pay+2){type=IX_EXCH.test(t)?"EX_ORDER":"CRYPTO_ORDER";conf=Math.min(0.99,0.55+0.07*(ord-pay))}
+  if(type==="UNKNOWN"&&ord>=1&&pay===0&&/cancell?ed|expired|time ?out|timed out|appeal|dispute|released|order closed/i.test(t)){type=IX_EXCH.test(t)?"EX_ORDER":"CRYPTO_ORDER";conf=0.5}
   return{type,conf,pay,ord}}
 // ---- names: drop field labels and icon noise that OCR glues onto a person's name
 const IX_LABELISH=/\b(transaction|txn|utr|debited|credited|banking|reference|ref|number|created|order|amount|total|price|rate|quantity|date|time|phonepe|google|gpay|paytm|bhim|transfer|details|status|successful|success|completed|upi|bank|account|payment|method|counterparty|merchant|released|chat|funding|assets|support|receipt|history|expense|expense|share|again|send)\b/i;
@@ -4886,9 +4887,11 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
     else{const side=ixSide(g);if(!side)return{state:"failed",msg:"Choose whether you bought or sold, then save"};
       const fiat=O.fiat!=null?O.fiat:P.amount,qty=O.crypto||(fiat&&O.price?+(fiat/O.price).toFixed(2):null),rate=O.price||(fiat&&O.crypto?+(fiat/O.crypto).toFixed(2):null);
       if(!g.order){return{state:"failed",msg:"There is no order screenshot for this payment. Use the payment card to attach it to an order."}}
-      if(!(qty>0&&rate>0))return{state:"failed",msg:"Order quantity or price couldn't be read. Run Deep AI check or add the order by hand."}
+      let qty2=qty,rate2=rate,estNote="";
+      if(!(qty2>0&&rate2>0)&&ixStatusOf(O.status)==="Cancelled"&&fiat>0){const tr=rate2>0?rate2:ixTypRate();if(tr>0){rate2=rate2>0?rate2:tr;qty2=qty2>0?qty2:+(fiat/rate2).toFixed(2);estNote="Cancelled order. "+(rate?"":"Rate estimated from your recent orders")}}
+      if(!(qty2>0&&rate2>0))return{state:"failed",msg:"Order quantity or price couldn't be read. Run Deep AI check or add the order by hand."}
       const cp=side==="SELL"?(O.buyer||P.sender||""):(O.seller||P.receiver||"");
-      const no={id:newId("o"),side,coin:O.coin||"USDT",qty,rate,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:"",splits:split,proofs,shots,pv,time:Date.now(),src:"ai"};
+      const no={id:newId("o"),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:estNote,splits:split,proofs,shots,pv,time:Date.now(),src:"ai"};
       if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
       await putRec(no);await auditLog(no,"create",{by:"intake",result:g.cmp.overall,risk:g.risk.level});g.savedId=no.id}
     try{const ln=await ixlOnSave(g);if(ln)notes.push(ln)}catch(e){}
@@ -4935,6 +4938,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     <div class="ixflow">${party(L)}<div class="ixmid"><div class="ixamt">${amt!=null?inr(amt):"Amount not read"}</div><div class="ixline"><span></span></div>${O.fiat!=null&&P.amount!=null&&Math.abs(O.fiat-P.amount)>1?`<small>order says ${inr(O.fiat)}</small>`:""}</div>${party(R)}</div>
     <div class="vt">${deal?esc(deal)+" · ":""}${g.cmp.overall==="VERIFIED"?"Screenshots appear consistent":g.cmp.overall==="REVIEW"?"Needs your review":"Potential inconsistency detected"}${g.order?"":" · payment only"}</div>
     ${ixScoreHtml(g)}
+    ${g.unknown&&g.unknown.length&&!g.order&&!g.pays.length?`<div class="ixmine warn"><b>Couldn't tell what this picture is</b><div style="margin:6px 0">Is it a payment, or an exchange order (a cancelled order is an order too)?</div><div class="row2">${g.unknown.map(u=>`<button class="mini ghost" data-ix="type:${u.hash}:PAY_RECEIPT">Payment</button><button class="mini ghost" data-ix="type:${u.hash}:EX_ORDER">Order</button>`).join("")}</div></div>`:""}
     ${ixLinkHtml(g)}
     ${(g.fixes||[]).length?`<div class="ixmine warn"><b>Numbers fixed for you</b><ul>${g.fixes.map(x=>`<li class="warn">${esc(x)}</li>`).join("")}</ul></div>`:""}
     ${g.autoT&&g.target?`<div class="ixmine ok"><b>Matched to your open order</b><ul><li class="ok">${esc(shortO(g.target))} · ${inr(orderTotal(g.target))}</li></ul></div>`:g.autoTHint?`<div class="ixmine warn"><b>Which order?</b><ul><li class="warn">${g.autoTHint} open orders have this amount. Choose the right one below.</li></ul></div>`:""}
@@ -4945,7 +4949,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     ${aiNote&&g.ai!=="unavailable"&&g.ai!=="na"&&partial?`<div class="note" style="margin:6px 0 0"><b>PARTIAL READING</b><br>Some information could not be confidently read.</div>`:""}
     <div class="ixchips">${ixChip("OCR",S.ocr,"OCR_STATUS")}${ixChip("Type",S.cls,"CLASSIFICATION_STATUS")}${ixChip("Extract",S.ext,"EXTRACTION_STATUS")}${ixChip("AI",S.ai,"AI_STATUS")}${ixChip("Verify",S.ver,"VERIFICATION_STATUS")}${ixChip("Save",S.sv,"SAVE_STATUS")}</div></div>
     <div class="pvs">${g.items.map(x=>`<span class="pv"><img src="${URL.createObjectURL(x.file)}" alt=""><small class="ixt">${esc(IX_TYPES[x.cls.type])}</small></span>`).join("")}</div>
-    ${g.unknown&&g.unknown.length?`<div class="note">Couldn't tell what ${g.unknown.length>1?"some pictures are":"one picture is"}. Tell me: ${g.unknown.map(u=>`<button class="mini ghost" data-ix="type:${u.hash}:PAY_RECEIPT">${"Payment"}</button><button class="mini ghost" data-ix="type:${u.hash}:EX_ORDER">Order</button>`).join(" ")}</div>`:""}
+    ${g.unknown&&g.unknown.length&&(g.order||g.pays.length)?`<div class="note">Couldn't tell what ${g.unknown.length>1?"some pictures are":"one picture is"}. Tell me: ${g.unknown.map(u=>`<button class="mini ghost" data-ix="type:${u.hash}:PAY_RECEIPT">${"Payment"}</button><button class="mini ghost" data-ix="type:${u.hash}:EX_ORDER">Order</button>`).join(" ")}</div>`:""}
     ${g.dups.length?`<div class="ixdup"><b>⚠ POSSIBLE DUPLICATE</b>${g.dups.map(d=>`<div>${esc(d.msg)}</div>`).join("")}</div>`:""}
     ${g.pays.length||g.order?`<div class="pcsec">Payment</div><div class="ixks">${ck("Amount",P.amount)}${ck("UTR",P.utr)}${ck("Sender",P.sender)}${ck("Receiver",P.receiver)}${ck("Status",P.status)}</div>`:""}
     ${g.order?`<div class="pcsec">Order</div><div class="ixks">${ck("Order ID",O.id)}${ck("Amount",O.fiat)}${ck("Buyer",O.buyer)}${ck("Seller",O.seller)}</div>`:""}
@@ -5394,7 +5398,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=71;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=72;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5461,6 +5465,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00072","8 Oct 2026",["Smart intake now recognises a cancelled order screenshot even when little text is readable, can save it as a Cancelled order, and asks you at the top (payment or order?) when it cannot tell what a picture is"]],
   ["0.0.0.00071","8 Oct 2026",["Smart intake level 1: fixes a misread quantity, rate or total when the other two numbers and your payment agree; warns about odd UTRs (wrong length, repeating digits); remembers the UPI ID you paid each person and warns when it changes or belongs to someone else","Smart intake level 2: verified and low-risk items are saved automatically (switch on the Intake page, one tap to undo); a payment screenshot alone is matched to your open order with the same remaining amount; one screenshot of an order list adds many orders at once"]],
   ["0.0.0.00070","8 Oct 2026",["Pexai branding: logo and name on the PIN lock screen, bigger logo and tagline in About, logo on PDF statements, Pexai-named backup and export files, Pexai wording in update messages and the home-screen widget"]],
   ["0.0.0.00069","7 Oct 2026",["Smart intake understands part payments: when two or more payment screenshots (other banks, other amounts) add up to exactly one order, they are linked to that order and each is saved as its own bank split"]],

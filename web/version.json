@@ -1,9 +1,9 @@
 {
- "web": "0.0071",
- "build": 71,
- "display": "0.0.0.00071",
+ "web": "0.0072",
+ "build": 72,
+ "display": "0.0.0.00072",
  "files": {
-  "index.html": "cf7a3df944ff1e75a4c0fb2e5e24fe89afbf270d",
+  "index.html": "203c88cadf30958100f3ecff11b7ad0efb0fcd6d",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 21,
   "name": "0.0.0.00070",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Smart intake: number fix, UTR and UPI id checks, auto-save safe ones with undo, payment-only match to open order, order list screenshot"
+  "notes": "Smart intake: recognise cancelled order screenshots, save as Cancelled, ask at top when unsure"
  }
 }
