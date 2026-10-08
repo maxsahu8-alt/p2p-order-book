@@ -2374,7 +2374,8 @@ function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," "
   let whenAlt=null;{const dm=t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(dm&&+dm[1]<=12&&+dm[2]<=12&&dm[1]!==dm[2]){const sw=payTime(t.replace(dm[0],dm[2]+"/"+dm[1]+"/"+dm[3]));if(sw)whenAlt=ixMs(sw)}}
   let ts=payTime(t);if(!ts){const m=flat.match(/(\d{4})-(\d{2})-(\d{2})[ T]+(\d{1,2}):(\d{2})/);if(m)ts=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).getTime()}
   {const LB=ixlGet().lab.ord||{};if(!id&&LB.id)id=ixlGrab(t,LB.id,"id");if(fiat==null&&LB.fiat)fiat=ixlGrab(t,LB.fiat,"num");if(price==null&&LB.price)price=ixlGrab(t,LB.price,"num");if(crypto==null&&LB.crypto)crypto=ixlGrab(t,LB.crypto,"num");if(!cp&&LB.cp)cp=ixlGrab(t,LB.cp,"name");if(price==null&&fiat&&crypto)price=+(fiat/crypto).toFixed(2)}
-  return{id,status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,conf:conf}}
+  let why=null;{const L=t.split(/\n+/).map(x=>x.trim()),i=L.findIndex(l=>/reason\s*for\s*cancel/i.test(l));if(i>=0){let r=L[i].replace(/^.*reason\s*for\s*cancel\w*\s*[:：]?\s*/i,"");if(L[i+1]&&L[i+1].length<30&&!/[:：]/.test(L[i+1])&&/^[a-z]/.test(L[i+1]))r+=" "+L[i+1];why=r.replace(/\s+/g," ").trim().slice(0,140)||null}}
+  return{why,id,status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,conf:conf}}
 // ---- OCR: on-phone ML Kit when the app has it, otherwise the tesseract engine; one result per picture, never throws
 const ixOcrCache=new Map();let ixNative=0;
 function ixNativeOcr(blob,ms){return new Promise((ok,no)=>{if(!(window.P2POcr&&P2POcr.recognize))return no(new Error("none"));
@@ -2398,6 +2399,9 @@ function ixItem(it,forceType){const o=it.ocr||{text:"",conf:0};const c=ixClassif
   it.ext=it.pay?(it.pay.amount!=null&&it.pay.utr?"ok":it.pay.amount!=null||it.pay.utr?"partial":"fail"):it.ord?(it.ord.fiat!=null&&it.ord.id?"ok":it.ord.fiat!=null||it.ord.id||it.ord.crypto!=null?"partial":"fail"):"fail";return it}
 
 // ---- v71: smarter intake helpers
+// when an order was created: of the two readings of 10/08/2026 (day-first or month-first) take the real, recent one
+function ixOrdTime(X,ref){const O=X&&X.ord;if(!O)return 0;const T=v=>{const t=new Date(String(v).replace(" ","T")).getTime();return isFinite(t)?t:0},now=Date.now();
+  const c=[O.when,O.whenAlt].filter(Boolean).map(T).filter(t=>t>0&&t<=now+36e5&&now-t<400*864e5);if(!c.length)return 0;const r=ref||now;c.sort((a,b)=>Math.abs(a-r)-Math.abs(b-r));return c[0]}
 function ixTypRate(){try{const r=orders.filter(o=>o.status!=="Cancelled"&&o.rate>0).sort((a,b)=>b.time-a.time).slice(0,30).map(o=>+o.rate).sort((a,b)=>a-b);return r.length>=3?r[r.length>>1]:null}catch(e){return null}}
 // quantity × rate must equal the total: when one of the three was misread, the payment tells which
 function ixNumFix(g,X){g.fixes=[];g.numBad=false;const O=X.ord,P=X.pay;if(!O)return;const f=O.fiat,q=O.crypto,r=O.price;if(!(f>0&&q>0&&r>0))return;
@@ -2445,7 +2449,7 @@ async function ixListSave(it){const rows=(it.list||[]).filter((r,i)=>it.listSel&
     if(r.id)no.exId=String(r.id).slice(0,40);await putRec(no);await auditLog(no,"create",{by:"intake-list"});n++}catch(e){console.error(e)}}
   it.listDone=n;return n}
 // ---- auto-save: only what is verified AND low risk, with undo
-const ixSafe=g=>!!(!g.saved&&g.cmp&&g.cmp.overall==="VERIFIED"&&g.risk&&g.risk.level==="LOW"&&!(g.dups||[]).length&&!(g.fixes||[]).length&&!g.numBad&&!(g.conflicts&&g.conflicts.length)&&(g.order||g.target)&&ixSide(g)&&g.conf>=80&&g.pays.length);
+const ixSafe=g=>!!(!g.saved&&g.cmp&&g.cmp.overall==="VERIFIED"&&g.risk&&g.risk.level==="LOW"&&!(g.dups||[]).length&&!(g.fixes||[]).length&&!g.numBad&&!(g.conflicts&&g.conflicts.length)&&(g.order||g.target)&&ixSide(g)&&(g.cancelOnly||(g.conf>=80&&g.pays.length)));
 async function ixAutoSafe(){if(pref("ixAuto")==="0"||ixS.autoOff)return;const done=[];
   for(const g of ixS.groups){if(!ixSafe(g))continue;g.prevT=g.target?JSON.parse(JSON.stringify(g.target)):null;const r=await ixSave(g,true);g.save=r;if(r.state==="saved"){g.auto=true;done.push(g)}}
   ixS.auto=done;if(done.length){ixDraw();renderIxHist();toast(`Auto-saved ${done.length} safe one${done.length>1?"s":""}`)}}
@@ -2535,6 +2539,7 @@ function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(
   ["sender","receiver"].forEach(k=>{if(X.pay[k]){const c=ixNameClean(X.pay[k]);X.pay[k]=c||null}});["buyer","seller"].forEach(k=>{if(X.ord[k]){const c=ixNameClean(X.ord[k]);X.ord[k]=c||null}});
   try{if(X.ord.whenAlt&&X.ord.when&&X.pay.date){const pt=verWhen(X.pay.date,X.pay.time),T=v=>new Date(String(v).replace(" ","T")).getTime();if(pt&&Math.abs(T(X.ord.whenAlt)-pt)<Math.abs(T(X.ord.when)-pt))X.ord.when=X.ord.whenAlt}}catch(e){}
   g.X=X;try{ixNumFix(g,X)}catch(e){}
+  try{if(X.ord.whenAlt&&X.ord.when&&!X.pay.date){const nt=ixOrdTime(X,0);if(nt)X.ord.when=ixMs(nt)}}catch(e){}
   try{const pp0=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{},dir0=X.pay.dir||pp0.dir||"",ow=pref("owner"),sd0=ixSide(g);
     const l4=String(pp0.last4||X.pay.acct||"").replace(/\D/g,"").slice(-4),mine=X.pay.amount!=null&&(l4||X.pay.bank)&&payBank({last4:l4,bank:X.pay.bank||""});
     if(ow&&mine){if(dir0==="out"&&!X.pay.sender){X.pay.sender=ow;g.inferred.push("sender")}else if(dir0==="in"&&!X.pay.receiver){X.pay.receiver=ow;g.inferred.push("receiver")}}
@@ -2550,6 +2555,8 @@ function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(
   if(g.conflicts&&g.conflicts.length&&cmp.overall==="VERIFIED"){cmp.overall="REVIEW"}
   if(!g.order&&!g.target&&cmp.overall==="VERIFIED")cmp.overall="REVIEW"; // payment alone has nothing to be compared with
   g.cmp=cmp;g.dups=ixDups(g);g.risk=ixRisk(g);if(cmp.overall==='VERIFIED'&&g.risk.level!=='LOW')cmp.overall=g.risk.level==='HIGH'?'MISMATCH':'REVIEW';else if(cmp.overall==='REVIEW'&&g.risk.level==='HIGH')cmp.overall='MISMATCH';
+  g.cancelOnly=!!(g.order&&!g.pays.length&&ixStatusOf(X.ord.status)==="Cancelled"&&X.ord.fiat>0&&(X.ord.crypto>0||X.ord.price>0));
+  if(g.cancelOnly){const dp=g.dups||[];g.risk={level:dp.length?"MEDIUM":"LOW",reasons:dp.map(d=>d.msg)};cmp.overall=dp.length?"REVIEW":"VERIFIED";g.needAI=false} // nothing to verify: no money moves on a cancelled order
   const confs=g.items.map(x=>x.ocr&&x.ocr.conf!=null?x.ocr.conf:null).filter(x=>x!=null);
   g.reasonsAI=[];const need=g.reasonsAI;if(g.needAI&&!g.ai)need.push(cmp.overall==='MISMATCH'?'result shows a mismatch (could be a reading error)':'result needs review');
   if(g.items.some(x=>x.ocr&&x.ocr.engine==="Tesseract"&&x.ocr.conf<85&&x.ocr.status!=="fail"))need.push("OCR confidence below 85%");
@@ -4891,7 +4898,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       if(!(qty2>0&&rate2>0)&&ixStatusOf(O.status)==="Cancelled"&&fiat>0){const tr=rate2>0?rate2:ixTypRate();if(tr>0){rate2=rate2>0?rate2:tr;qty2=qty2>0?qty2:+(fiat/rate2).toFixed(2);estNote="Cancelled order. "+(rate?"":"Rate estimated from your recent orders")}}
       if(!(qty2>0&&rate2>0))return{state:"failed",msg:"Order quantity or price couldn't be read. Run Deep AI check or add the order by hand."}
       const cp=side==="SELL"?(O.buyer||P.sender||""):(O.seller||P.receiver||"");
-      const no={id:newId("o"),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:estNote,splits:split,proofs,shots,pv,time:Date.now(),src:"ai"};
+      const no={id:newId("o"),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:[estNote,O.why?"Reason: "+O.why:""].filter(Boolean).join(" · "),splits:split,proofs,shots,pv,time:ixOrdTime(X,P.date?verWhen(P.date,P.time):0)||Date.now(),src:"ai"};
       if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
       await putRec(no);await auditLog(no,"create",{by:"intake",result:g.cmp.overall,risk:g.risk.level});g.savedId=no.id}
     try{const ln=await ixlOnSave(g);if(ln)notes.push(ln)}catch(e){}
@@ -4934,9 +4941,9 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
   const party=x=>`<div class="ixp${x.me?" me":""}"><span class="av">${esc(ini(x.n))}</span><b>${esc(x.n)}</b><small>${esc(x.sub)}</small></div>`;
   const C=2*Math.PI*19,off=C*(1-Math.max(0,Math.min(100,g.conf))/100),col=g.cmp.overall==="VERIFIED"?"var(--accent)":g.cmp.overall==="REVIEW"?"var(--warn)":"var(--sell)";
   const deal0=O.crypto&&O.price?`${sd==="SELL"?"Selling":sd==="BUY"?"Buying":"Trade"} ${O.crypto} ${O.coin||"USDT"} @ ₹${O.price}`:"";const partL=g.partSum?g.pays.filter(x=>x.part).map(x=>"₹"+(+(+x.pay.amount).toFixed(2)).toLocaleString("en-IN")).join(" + "):"";const deal=deal0+(partL?(deal0?" · ":"")+"Paid in "+g.pays.filter(x=>x.part).length+" parts: "+partL:"");
-  return`<div class="vres ${g.cmp.overall}"><div class="ixtop">${sd?`<button type="button" class="ixside ${sd}" data-ix="flip" title="Wrong? Tap to switch">${sd} <i>⇄</i></button>`:""}<span class="vchip">${T[0]} ${g.cmp.overall==="VERIFIED"?"VERIFIED":T[1]}</span><span class="ixring" title="${g.conf}% overall trust"><svg viewBox="0 0 48 48" width="48" height="48"><circle cx="24" cy="24" r="19" fill="none" stroke="var(--line)" stroke-width="4"/><circle class="rg" cx="24" cy="24" r="19" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" style="--c:${C.toFixed(1)}" transform="rotate(-90 24 24)"/></svg><b>${g.conf}</b></span></div>
+  return`<div class="vres ${g.cmp.overall}"><div class="ixtop">${sd?`<button type="button" class="ixside ${sd}" data-ix="flip" title="Wrong? Tap to switch">${sd} <i>⇄</i></button>`:""}<span class="vchip">${g.cancelOnly?"⛔ CANCELLED ORDER":T[0]+" "+(g.cmp.overall==="VERIFIED"?"VERIFIED":T[1])}</span><span class="ixring" title="${g.conf}% overall trust"><svg viewBox="0 0 48 48" width="48" height="48"><circle cx="24" cy="24" r="19" fill="none" stroke="var(--line)" stroke-width="4"/><circle class="rg" cx="24" cy="24" r="19" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" style="--c:${C.toFixed(1)}" transform="rotate(-90 24 24)"/></svg><b>${g.conf}</b></span></div>
     <div class="ixflow">${party(L)}<div class="ixmid"><div class="ixamt">${amt!=null?inr(amt):"Amount not read"}</div><div class="ixline"><span></span></div>${O.fiat!=null&&P.amount!=null&&Math.abs(O.fiat-P.amount)>1?`<small>order says ${inr(O.fiat)}</small>`:""}</div>${party(R)}</div>
-    <div class="vt">${deal?esc(deal)+" · ":""}${g.cmp.overall==="VERIFIED"?"Screenshots appear consistent":g.cmp.overall==="REVIEW"?"Needs your review":"Potential inconsistency detected"}${g.order?"":" · payment only"}</div>
+    <div class="vt">${deal?esc(deal)+" · ":""}${g.cancelOnly?"Nothing to verify, no money moves on a cancelled order":g.cmp.overall==="VERIFIED"?"Screenshots appear consistent":g.cmp.overall==="REVIEW"?"Needs your review":"Potential inconsistency detected"}${g.order?"":" · payment only"}</div>
     ${ixScoreHtml(g)}
     ${g.unknown&&g.unknown.length&&!g.order&&!g.pays.length?`<div class="ixmine warn"><b>Couldn't tell what this picture is</b><div style="margin:6px 0">Is it a payment, or an exchange order (a cancelled order is an order too)?</div><div class="row2">${g.unknown.map(u=>`<button class="mini ghost" data-ix="type:${u.hash}:PAY_RECEIPT">Payment</button><button class="mini ghost" data-ix="type:${u.hash}:EX_ORDER">Order</button>`).join("")}</div></div>`:""}
     ${ixLinkHtml(g)}
@@ -5398,7 +5405,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=72;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=73;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5465,6 +5472,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00073","8 Oct 2026",["Cancelled order screenshots (also the American spelling \"Canceled\") are saved by themselves with no questions: side, amount, rate, quantity, counterparty and order number are read, the cancel reason goes in the note, and the order keeps the time it was really created (10/08/2026 is read as 8 Oct, not 10 Aug)","Every order saved from Smart intake now keeps its real creation time from the screenshot instead of the time you saved it"]],
   ["0.0.0.00072","8 Oct 2026",["Smart intake now recognises a cancelled order screenshot even when little text is readable, can save it as a Cancelled order, and asks you at the top (payment or order?) when it cannot tell what a picture is"]],
   ["0.0.0.00071","8 Oct 2026",["Smart intake level 1: fixes a misread quantity, rate or total when the other two numbers and your payment agree; warns about odd UTRs (wrong length, repeating digits); remembers the UPI ID you paid each person and warns when it changes or belongs to someone else","Smart intake level 2: verified and low-risk items are saved automatically (switch on the Intake page, one tap to undo); a payment screenshot alone is matched to your open order with the same remaining amount; one screenshot of an order list adds many orders at once"]],
   ["0.0.0.00070","8 Oct 2026",["Pexai branding: logo and name on the PIN lock screen, bigger logo and tagline in About, logo on PDF statements, Pexai-named backup and export files, Pexai wording in update messages and the home-screen widget"]],

@@ -100,6 +100,19 @@ async def main():
       r=await pg.evaluate("orders.map(o=>[o.status,o.side,o.qty,o.rate,o.note])");print(nm,"saved",r)
       chk(nm+" saved as a Cancelled order",len(r)==1 and r[0][0]=="Cancelled")
       chk(nm+" no errors",not e)
+    # J: the real cancelled order from the exchange app (read with tesseract): saved with no questions
+    REAL=open(FX+"order_cancel_real.txt").read()
+    pg,e=await scen(b,[SET,B1],{"c.png":REAL},["c.png"])
+    r=await pg.evaluate("orders.map(o=>[o.status,o.side,o.qty,o.rate,o.cp,o.exId,new Date(o.time).getMonth()+1,new Date(o.time).getDate(),o.note])");print("J",r)
+    chk("J saved by itself as a Cancelled SELL",len(r)==1 and r[0][0]=="Cancelled" and r[0][1]=="SELL")
+    chk("J numbers and name",len(r)==1 and abs(r[0][2]-231.288741)<1e-6 and r[0][3]==108.09 and r[0][4]=="Preeti Soni")
+    chk("J created on 8 October (not 10 August)",len(r)==1 and r[0][6]==10 and r[0][7]==8)
+    chk("J reason in the note",len(r)==1 and "charging additional fees" in r[0][8])
+    chk("J no question shown",await pg.evaluate("!document.querySelector('[data-ix^=\"type:\"]')&&!document.querySelector('[data-ix^=\"side:\"]')"))
+    chk("J no errors",not e)
+    # J2: same screenshot again is not saved twice
+    await pg.evaluate("ixS.groups.forEach(g=>{g.saved=false;ixVerify(g)});ixS.autoOff=false");await pg.evaluate("ixAutoSafe()");await pg.wait_for_timeout(600)
+    chk("J2 same order is not saved twice",await pg.evaluate("orders.length")==1)
     # F: new UPI id for a known person
     OLD={**OPEN,"id":"o_old","status":"Completed","vpa":"ravi.old@ybl","time":now-5*864e5,"splits":[{"bank":"B1","amt":2500,"method":"UPI"}]}
     NEWP=pay.replace("RAVI KUMAR","RAVI KUMAR\nravi.new@okaxis")
