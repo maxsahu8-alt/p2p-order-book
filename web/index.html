@@ -574,7 +574,7 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .ixline span{position:absolute;left:0;top:-1px;height:4px;width:28%;border-radius:4px;background:var(--accent);animation:ixflow 1.6s ease-out 1 both}
 @keyframes ixflow{from{left:0;opacity:1}to{left:72%;opacity:.15}}
 .vres.MISMATCH .ixline span{background:var(--sell)}.vres.REVIEW .ixline span{background:var(--warn)}
-label.ixautot{display:grid;grid-template-columns:24px 1fr;align-items:center;gap:0 10px;margin:10px 2px;font-size:.9rem;font-weight:600;color:var(--fg);cursor:pointer;text-align:left}.ixautot input{width:20px;height:20px;margin:0;accent-color:var(--accent)}.ixautot span{display:block}.ixautot small{display:block;font-weight:500;color:var(--muted);font-size:.76rem}label.ixlr{display:grid;grid-template-columns:24px 1fr;gap:1px 10px;padding:10px 0;border-top:1px solid var(--line);font-size:.88rem;font-weight:500;color:var(--fg);align-items:start;text-align:left}.ixlr input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--accent)}.ixlr span{display:block}.ixlr small{grid-column:2;color:var(--muted);font-weight:500}.ixlr.dup{opacity:.5}.ixlist .primary{width:100%;margin-top:10px}.ixmine{margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--raised);border-left:4px solid var(--line-strong)}
+.ixmrow{display:flex;flex-direction:column;gap:8px;margin-top:8px}.ixmrow select{width:100%!important}.ixmrow .mini{width:100%;padding:11px}label.ixautot{display:grid;grid-template-columns:24px 1fr;align-items:center;gap:0 10px;margin:10px 2px;font-size:.9rem;font-weight:600;color:var(--fg);cursor:pointer;text-align:left}.ixautot input{width:20px;height:20px;margin:0;accent-color:var(--accent)}.ixautot span{display:block}.ixautot small{display:block;font-weight:500;color:var(--muted);font-size:.76rem}label.ixlr{display:grid;grid-template-columns:24px 1fr;gap:1px 10px;padding:10px 0;border-top:1px solid var(--line);font-size:.88rem;font-weight:500;color:var(--fg);align-items:start;text-align:left}.ixlr input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--accent)}.ixlr span{display:block}.ixlr small{grid-column:2;color:var(--muted);font-weight:500}.ixlr.dup{opacity:.5}.ixlist .primary{width:100%;margin-top:10px}.ixmine{margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--raised);border-left:4px solid var(--line-strong)}
 .ixmine.ok{border-left-color:var(--accent)}.ixmine.warn{border-left-color:var(--warn)}.ixmine.bad{border-left-color:var(--sell)}
 .ixown{display:flex;gap:8px;margin-top:6px;align-items:center}.ixown select{flex:1;min-width:0;min-height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:0 8px}.ixown .mini{white-space:nowrap}
 .ixmine b{font-size:.76rem;color:var(--muted)}.ixmine ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
@@ -2170,7 +2170,7 @@ const verNum=v=>{if(v==null||v==="")return null;const n=typeof v==="number"?v:pa
 const verStr=v=>{if(v==null)return null;const s=String(v).trim();return s&&!/^(null|none|n\/a|na|unknown|not visible|-)$/i.test(s)?s:null};
 const verConf=v=>{const n=verNum(v);if(n==null)return null;return Math.max(0,Math.min(1,n>1?n/100:n))};
 function verPrompt(){return `You read TWO screenshots for an Indian P2P crypto merchant. The images may be in any order. One is the PAYMENT screenshot (UPI / bank app), one is the P2P ORDER screenshot (exchange app); work out which is which. If only one image is given, leave the other part null. Analyse each independently.
-Rules: copy only what is clearly visible. Never guess or invent. Use null for anything you cannot read. Do not say whether the payment is genuine.
+Rules: copy only what is clearly visible. Never guess or invent. On a P2P exchange ORDER page only the OTHER person (the counterparty) is shown, often as 'Real Name(nickname)' or a nickname next to a round avatar at the top: on a SELL order that person is the BUYER, on a BUY order the SELLER. Put the real name (the part outside the brackets) in that field, never the nickname, and leave the other field (the user's own side) null unless a name is printed right under a Buyer or Seller label. In a payment screenshot where one name sits above a UPI ID and the amount, that is the person who was PAID (receiver_name): do not invent a sender. Use null for anything you cannot read. Do not say whether the payment is genuine.
 Respond with ONLY this JSON, no other text:
 {"payment":{"status":"SUCCESS|PENDING|FAILED|null","amount":number|null,"currency":"INR"|null,"sender_name":string|null,"receiver_name":string|null,"utr":string|null,"payment_method":"UPI|IMPS|NEFT|RTGS|BANK|CASH"|null,"bank_or_upi":string|null,"transaction_date":"YYYY-MM-DD"|null,"transaction_time":"HH:MM"|null,"visible_account_details":string|null,"direction":"PAID|RECEIVED"|null,"confidence":0-1},
 "order":{"order_id":string|null,"order_status":string|null,"buyer_name":string|null,"seller_name":string|null,"fiat_amount":number|null,"crypto_amount":number|null,"crypto_symbol":string|null,"price":number|null,"payment_method":string|null,"order_datetime":"YYYY-MM-DD HH:MM"|null,"order_type":"BUY|SELL"|null,"visible_account_details":string|null,"confidence":0-1},
@@ -2361,7 +2361,7 @@ function ixOrdSide(flat){const C="(?:usdt|usdc|btc|eth|bnb|trx|xrp|sol|doge|dai|
   if(b&&!s)return"BUY";if(s&&!b)return"SELL";if(!b&&!s){if(/you\s*pay\b/i.test(flat)&&!/you\s*(?:will\s*)?receive\s*(?:₹|rs|inr)/i.test(flat))return"BUY";if(/you\s*(?:will\s*)?receive\s*(?:₹|rs|inr)/i.test(flat))return"SELL"}return null}
 function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," ");const num=s=>{const n=parseFloat(String(s).replace(/,/g,""));return isFinite(n)?n:null};
   const CUR="(?:₹|Rs\\.?|INR|[~£<¥%?=])";
-  let id=null;{const wm=t.match(/(?:order\s*(?:no\.?|number|id|#)|订单号?)\s*[:：#]?\s*([0-9A-Za-z]{14,40})(?:[ \t]+[^\s]{1,2})?[ \t]*\n[ \t]*([0-9A-Za-z]{2,8})[ \t]*(?:\n|$)/i);if(wm&&/\d/.test(wm[2])&&!IX_LABELISH.test(wm[2]))id=wm[1]+wm[2]}
+  let id=null;{const wm=t.match(/(?:order\s*(?:no\.?|number|id|#)|订单号?)\s*[:：#]?\s*([0-9A-Za-z]{14,40})(?:[ \t]+[^\s]{1,2})?[ \t]*\n[ \t]*([0-9A-Za-z]{2,8})[ \t]*(?:\n|$)/i);if(wm&&(/\d/.test(wm[2])||(/^[0-9a-f]{1,8}$/i.test(wm[2])&&wm[1].length>=18&&wm[1].length+wm[2].length<=34))&&!IX_LABELISH.test(wm[2]))id=wm[1]+wm[2]}
   if(!id)id=(flat.match(/(?:order\s*(?:no\.?|number|id|#)|订单号?)\s*[:：#]?\s*([0-9A-Za-z]{8,30})/i)||[])[1]||(flat.match(/#\s*(\d{10,24})/)||[])[1]||(flat.match(/\b(\d{16,24})\b/)||[])[1]||null;
   let fiat=null;{const lab=flat.match(new RegExp("(?:total\\s*price|fiat\\s*amount|you\\s*(?:pay|will\\s*receive|receive)|amount)\\D{0,14}"+CUR+"?\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)","i"));if(lab)fiat=num(lab[1]);
     if(fiat==null){const all=[...flat.matchAll(new RegExp(CUR+"\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)","g"))].map(m=>num(m[1])).filter(v=>v>=10);if(all.length)fiat=Math.max(...all)}}
@@ -2369,13 +2369,13 @@ function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," "
   let price=null;{const pm=flat.match(new RegExp("(?:unit\\s*)?(?:price|rate)\\D{0,14}"+CUR+"?\\s*([0-9]{2,3}(?:\\.\\d{1,4})?)","i"));if(pm)price=num(pm[1]);if(price==null&&fiat&&crypto)price=+(fiat/crypto).toFixed(2)}
   const nm=(lab)=>{const m=flat.match(new RegExp(lab+"\\s*(?:name)?\\s*[:：]?\\s*([A-Za-z][A-Za-z.' ]{2,36}?)(?=\\s{2,}|\\s(?:order|price|amount|total|quantity|status|payment|seller|buyer|time|date)\\b|$|[0-9])","i"));return m?m[1].trim():null};
   const ixn=v=>v?ixNameClean(v):null;let buyer=ixn(nm("buyer")),seller=ixn(nm("seller"));
-  let cp=null;{const Ls=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<Ls.length&&!cp;i++){const m=Ls[i].match(/^(?:counter\s*-?\s*party|merchant|advertiser|trader)\b\s*[:：]?\s*(.*)$/i);if(m)cp=ixNameClean(m[1])||(Ls[i+1]&&!IX_LABELISH.test(Ls[i+1])?ixNameClean(Ls[i+1]):null)}}
+  let cp=null,nick=null;{const Ls=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<Ls.length&&!cp;i++){const m=Ls[i].match(/^(?:counter\s*-?\s*party|merchant|advertiser|trader)\b\s*[:：]?\s*(.*)$/i);if(m){cp=ixNameClean(m[1])||(Ls[i+1]&&!IX_LABELISH.test(Ls[i+1])?ixNameClean(Ls[i+1]):null);nick=((m[1].match(/\(([^)]{2,30})\)/)||[])[1]||"").trim()||null}}}
   const st=(flat.match(/\b(completed|released|paid|unpaid|to be paid|waiting for payment|cancell?ed|appeal|dispute|pending|processing)\b/i)||[])[1];
   let whenAlt=null;{const dm=t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(dm&&+dm[1]<=12&&+dm[2]<=12&&dm[1]!==dm[2]){const sw=payTime(t.replace(dm[0],dm[2]+"/"+dm[1]+"/"+dm[3]));if(sw)whenAlt=ixMs(sw)}}
   let ts=payTime(t);if(!ts){const m=flat.match(/(\d{4})-(\d{2})-(\d{2})[ T]+(\d{1,2}):(\d{2})/);if(m)ts=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).getTime()}
   {const LB=ixlGet().lab.ord||{};if(!id&&LB.id)id=ixlGrab(t,LB.id,"id");if(fiat==null&&LB.fiat)fiat=ixlGrab(t,LB.fiat,"num");if(price==null&&LB.price)price=ixlGrab(t,LB.price,"num");if(crypto==null&&LB.crypto)crypto=ixlGrab(t,LB.crypto,"num");if(!cp&&LB.cp)cp=ixlGrab(t,LB.cp,"name");if(price==null&&fiat&&crypto)price=+(fiat/crypto).toFixed(2)}
   let why=null;{const L=t.split(/\n+/).map(x=>x.trim()),i=L.findIndex(l=>/reason\s*for\s*cancel/i.test(l));if(i>=0){let r=L[i].replace(/^.*reason\s*for\s*cancel\w*\s*[:：]?\s*/i,"");if(L[i+1]&&L[i+1].length<30&&!/[:：]/.test(L[i+1])&&/^[a-z]/.test(L[i+1]))r+=" "+L[i+1];why=r.replace(/\s+/g," ").trim().slice(0,140)||null}}
-  return{why,id,status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,conf:conf}}
+  return{nick,why,id,status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,conf:conf}}
 // ---- OCR: on-phone ML Kit when the app has it, otherwise the tesseract engine; one result per picture, never throws
 const ixOcrCache=new Map();let ixNative=0;
 function ixNativeOcr(blob,ms){return new Promise((ok,no)=>{if(!(window.P2POcr&&P2POcr.recognize))return no(new Error("none"));
@@ -2398,6 +2398,13 @@ function ixItem(it,forceType){const o=it.ocr||{text:"",conf:0};const c=ixClassif
   else if(ixIsOrd(it.cls.type)){it.ord=ixOrdFrom(o.text,cf)}
   it.ext=it.pay?(it.pay.amount!=null&&it.pay.utr?"ok":it.pay.amount!=null||it.pay.utr?"partial":"fail"):it.ord?(it.ord.fiat!=null&&it.ord.id?"ok":it.ord.fiat!=null||it.ord.id||it.ord.crypto!=null?"partial":"fail"):"fail";return it}
 
+// ---- v74: who is who. The exchange order page shows only the OTHER person; a sell is paid to YOUR account, whatever name it carries
+function ixMyNames(){const s=[pref("owner"),pref("nick")];try{s.push(...JSON.parse(pref("myNames")||"[]"))}catch(e){}banks.forEach(b=>{if(b.holder)s.push(b.holder)});return s.filter(Boolean)}
+function ixMyVpas(){let v=[];try{v=JSON.parse(pref("myVpas")||"[]")}catch(e){}banks.forEach(b=>(b.vpas||[]).forEach(x=>v.push(x)));return v.map(x=>String(x).toLowerCase())}
+const ixIsMe=n=>!!n&&ixMyNames().some(m=>{const r=verName(m,n);if(r==="M")return true;if(r!=="U")return false;const x=verTok(m)[0],y=verTok(n)[0];return!!(x&&y&&(x===y||x.startsWith(y)||y.startsWith(x)))}); // same surname alone is not you
+// the bank a payment belongs to. On a sell, a payment proof that shows money SENT carries the buyer's bank, not yours
+function ixBankOf(q,sd){const dir=q.dir||"",vp=q.vpa||"",l4=String(q.last4||"").replace(/\D/g,"").slice(-4);if(sd==="SELL"&&dir==="out")return vp?payBank({vpa:vp}):null;return payBank({last4:l4,bank:q.bank||"",vpa:vp})}
+function ixMineRow(m){const c=banks.filter(b=>b.type!=="Cash");return`<div class="ixmrow"><div class="note" style="margin:0">${m.name?`Name: <b>${esc(m.name)}</b>`:""}${m.name&&m.vpa?" · ":""}${m.vpa?`UPI ID: <b>${esc(m.vpa)}</b>`:""}</div>${m.vpa&&c.length?`<select class="ssel" data-ixmbank><option value="">Which bank is it? (optional)</option>${c.map(b=>`<option value="${esc(b.id)}">${esc(b.name||b.bankName)}</option>`).join("")}</select>`:""}<button class="mini" type="button" data-ix="mine" data-nm="${esc(m.name||"")}" data-vp="${esc(m.vpa||"")}">Yes, this is my account</button></div>`}
 // ---- v71: smarter intake helpers
 // when an order was created: of the two readings of 10/08/2026 (day-first or month-first) take the real, recent one
 function ixOrdTime(X,ref){const O=X&&X.ord;if(!O)return 0;const T=v=>{const t=new Date(String(v).replace(" ","T")).getTime();return isFinite(t)?t:0},now=Date.now();
@@ -2539,17 +2546,24 @@ function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(
   ["sender","receiver"].forEach(k=>{if(X.pay[k]){const c=ixNameClean(X.pay[k]);X.pay[k]=c||null}});["buyer","seller"].forEach(k=>{if(X.ord[k]){const c=ixNameClean(X.ord[k]);X.ord[k]=c||null}});
   try{if(X.ord.whenAlt&&X.ord.when&&X.pay.date){const pt=verWhen(X.pay.date,X.pay.time),T=v=>new Date(String(v).replace(" ","T")).getTime();if(pt&&Math.abs(T(X.ord.whenAlt)-pt)<Math.abs(T(X.ord.when)-pt))X.ord.when=X.ord.whenAlt}}catch(e){}
   g.X=X;try{ixNumFix(g,X)}catch(e){}
+  try{const sd=ixSide(g),O2=X.ord;g.roleFix=null;if(sd&&O2){const mk=sd==="SELL"?"seller":"buyer",ok2=sd==="SELL"?"buyer":"seller";if(!O2[ok2]&&O2.cp)O2[ok2]=O2.cp;
+    const v=O2[mk];if(v&&ixMyNames().length&&!ixIsMe(v)&&O2[ok2]&&!ixIsMe(O2[ok2])&&verName(O2[ok2],v)!=="M"){g.roleFix=`“${v}” on the order is the other person's nickname, not you. On a ${sd} order the exchange page shows only the other person, so your side is you.`;O2[mk]=null}}}catch(e){}
   try{if(X.ord.whenAlt&&X.ord.when&&!X.pay.date){const nt=ixOrdTime(X,0);if(nt)X.ord.when=ixMs(nt)}}catch(e){}
   try{const pp0=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{},dir0=X.pay.dir||pp0.dir||"",ow=pref("owner"),sd0=ixSide(g);
     const l4=String(pp0.last4||X.pay.acct||"").replace(/\D/g,"").slice(-4),mine=X.pay.amount!=null&&(l4||X.pay.bank)&&payBank({last4:l4,bank:X.pay.bank||""});
-    if(ow&&mine){if(dir0==="out"&&!X.pay.sender){X.pay.sender=ow;g.inferred.push("sender")}else if(dir0==="in"&&!X.pay.receiver){X.pay.receiver=ow;g.inferred.push("receiver")}}
+    if(ow&&mine&&!(sd0==="SELL"&&dir0==="out")){if(dir0==="out"&&!X.pay.sender){X.pay.sender=ow;g.inferred.push("sender")}else if(dir0==="in"&&!X.pay.receiver){X.pay.receiver=ow;g.inferred.push("receiver")}}
     if(sd0==="BUY"){if(!X.ord.seller&&X.ord.cp)X.ord.seller=X.ord.cp;if(!X.ord.buyer&&ow){X.ord.buyer=ow;g.inferred.push("buyer")}}
     else if(sd0==="SELL"){if(!X.ord.buyer&&X.ord.cp)X.ord.buyer=X.ord.cp;if(!X.ord.seller&&ow){X.ord.seller=ow;g.inferred.push("seller")}}}catch(e){}
+  try{const sd=ixSide(g),pp1=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{},vp=pp1.vpa||X.pay.vpa||"",ow=pref("owner");
+    if(sd==="SELL"&&X.pay.amount!=null&&ow){const byV=vp&&ixMyVpas().includes(vp.toLowerCase()),byN=X.pay.receiver&&ixIsMe(X.pay.receiver);if((byV||byN)&&X.pay.receiver!==ow){X.pay.receiver=ow;if(!g.inferred.includes("receiver"))g.inferred.push("receiver")}}}catch(e){}
   try{if(!g.order&&!g.target&&g.pays.length)ixAutoTarget(g,X);if(!g.order&&g.target&&g.autoT)X.ord={...X.ord,...ixTargetOrd(g.target)}}catch(e){}
   const hashes=g.items.map(x=>x.hash);const cmp=verCompare(X,{hashes});
   cmp.fields.forEach(f=>{if((f.k==="buyer"&&(g.inferred.includes("buyer")||g.inferred.includes("sender")))||(f.k==="seller"&&(g.inferred.includes("seller")||g.inferred.includes("receiver"))))f.note=(f.note?f.note+" · ":"")+"Your side is worked out from your bank and your name"});
   // spec: different payment method or a partial name is never "verified"
   if(g.autoT&&!g.order&&cmp.overall==="REVIEW"){const of=cmp.fields.find(f=>f.k==="orderid");if(of&&of.res==="NOTFOUND"&&!(g.target&&exIdOf(g.target))&&cmp.fields.filter(f=>f.major&&f.k!=="orderid").every(f=>f.res==="MATCH"||f.res==="FOUND"))cmp.overall="VERIFIED"} // your own order has no exchange id to compare, everything else agrees
+  try{if(ixSide(g)==="SELL"&&X.pay.receiver&&!(g.inferred||[]).includes("receiver")&&!ixIsMe(X.pay.receiver)&&!(X.pay.dir==="out"&&ixIsMe(X.pay.sender))){const f=cmp.fields.find(x=>x.k==="seller");if(f&&f.res==="MISMATCH"){f.res="UNCLEAR";f.note="This receiver is not one of your saved accounts yet. Confirm below that it is yours"}
+    if(cmp.overall==="MISMATCH"&&!cmp.fields.some(x=>x.res==="MISMATCH"))cmp.overall="REVIEW"}}catch(e){}
+  try{if(ixSide(g)==="SELL"&&(g.inferred||[]).includes("receiver")&&!X.pay.sender&&cmp.overall==="REVIEW"){const bf=cmp.fields.find(x=>x.k==="buyer");if(bf&&bf.res==="NOTFOUND"&&cmp.fields.filter(f=>f.major&&f.k!=="buyer").every(f=>f.res==="MATCH"||f.res==="FOUND")){bf.note="The buyer's name is not shown on this payment page";cmp.overall="VERIFIED"}}}catch(e){} // a buyer's proof often shows only who was paid
   const soft=cmp.fields.some(f=>(f.k==="method"||f.k==="seller")&&f.res==="UNCLEAR");if(cmp.overall==="VERIFIED"&&soft)cmp.overall="REVIEW";
   if(cmp.overall!=="VERIFIED"&&!g.ai&&!g.reasonsAI0)g.needAI=true;
   if(g.conflicts&&g.conflicts.length&&cmp.overall==="VERIFIED"){cmp.overall="REVIEW"}
@@ -2577,8 +2591,8 @@ function ixDups(g){const out=[],X=g.X,I=riskIdx();const target=g.target||((X.ord
 // ---- P2P rule: a BUY is paid from MY account, a SELL lands in MY account
 function ixMine(g){try{const X=g.X,P=X.pay,O=X.ord;const side=ixSide(g);if(!side||!g.X)return{side:side||null,verdict:"na",lines:[],bank:null};
   const pp=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{};const dir=P.dir||pp.dir||"";const l4=String(pp.last4||P.acct||"").replace(/\D/g,"").slice(-4);
-  const bk=(P.amount!=null&&(l4||P.bank))?payBank({last4:l4,bank:P.bank||""}):null;const haveBanks=banks.some(b=>b.type!=="Cash");
-  const me=[pref("owner"),pref("nick")].filter(Boolean);const isMe=n=>!!n&&me.some(m=>verName(m,n)==="M");const notMe=n=>!!n&&me.length>0&&me.every(m=>verName(m,n)==="X");
+  const bk=P.amount!=null?ixBankOf({last4:l4,bank:P.bank||"",dir,vpa:pp.vpa||P.vpa||""},side):null;const haveBanks=banks.some(b=>b.type!=="Cash");
+  const me=ixMyNames();const isMe=n=>ixIsMe(n);const notMe=n=>!!n&&me.length>0&&!ixIsMe(n);
   const L=[];let w="ok";const add=(st,t,sh)=>{L.push({s:st,t,r:sh||t});if(st==="bad")w="bad";else if(st==="warn"&&w!=="bad")w="warn"};
   const acct=bk?`${bk.name||bk.bankName}${l4?" ••"+l4:""}`:"";
   if(side==="BUY"){
@@ -2588,10 +2602,14 @@ function ixMine(g){try{const X=g.X,P=X.pay,O=X.ord;const side=ixSide(g);if(!side
     if(P.sender){if((g.inferred||[]).includes("sender"))add("ok","Sender is you (paid from your own bank)");else if(isMe(P.sender))add("ok","Sender name is you");else if(notMe(P.sender))add("bad",`Sender “${P.sender}” is not you. On a P2P buy, pay from your own account only.`,"Paid by someone else (third-party payment)")}
     if(P.receiver&&O.seller&&verName(P.receiver,O.seller)==="M")add("ok","Receiver is the seller on the order");
   }else{
-    if(dir==="out")add("bad","This is a SELL order, but this payment shows money sent, not received.","SELL order, but payment shows money sent");
+    const vp=pp.vpa||P.vpa||"",vpMine=!!vp&&ixMyVpas().includes(vp.toLowerCase());
+    if(dir==="out"&&isMe(P.sender))add("bad","This is a SELL order, but this payment shows money sent by you, not received.","SELL order, but payment shows money sent");
+    else if(dir==="out")add("na","This is the buyer's payment proof: money sent to your account.");
     if(bk&&dir!=="out")add("ok",`Received in your ${acct}`);
     else if(!bk&&haveBanks&&(l4||P.bank)&&dir!=="out"){add("warn",`Money went to an account that is not in your bank list${l4?" (••"+l4+")":""}. Is it yours?`,"Received in an account not in your bank list");if(l4)L[L.length-1].own=l4}
-    if(P.receiver){if((g.inferred||[]).includes("receiver"))add("ok","Receiver is you (credited to your own bank)");else if(isMe(P.receiver))add("ok","Receiver name is you");else if(notMe(P.receiver))add("bad",`Receiver “${P.receiver}” is not you. The money did not go to your account.`,"Money went to someone else's account")}
+    if(P.receiver){if((g.inferred||[]).includes("receiver"))add("ok",vpMine?`Paid to your saved UPI ID ${vp}`:"Receiver is you (credited to your own bank)");else if(isMe(P.receiver))add("ok","Receiver name is you");
+      else if(notMe(P.receiver)){if(dir==="out"&&isMe(P.sender))add("bad",`Receiver “${P.receiver}” is not you. The money did not go to your account.`,"Money went to someone else's account");else{add("warn",`Receiver “${P.receiver}” is not in your saved accounts yet. Is this your account?`,"Receiver is not one of your saved accounts yet");L[L.length-1].mine={name:P.receiver,vpa:vp}}}}
+    else if(vp){if(vpMine)add("ok",`Paid to your saved UPI ID ${vp}`);else{add("warn",`Paid to UPI ID ${vp}, which is not saved as yours yet. Is it yours?`,"UPI ID is not saved as yours yet");L[L.length-1].mine={name:"",vpa:vp}}}
     if(P.sender&&O.buyer&&verName(P.sender,O.buyer)==="M")add("ok","Sender is the buyer on the order");
   }
   {const other=side==="BUY"?(O.seller||O.cp):(O.buyer||O.cp),role=side==="BUY"?"seller":"buyer";if(other){const k=ixlKnown(other,side);if(k)add("ok",`Known ${role}: ${k} earlier deal${k>1?"s":""} with ${other}`);else add("na",`New ${role}: first deal with ${other}`)}else if(g.order)add("na",`The ${role}'s name was not found on the order. Tap DEEP AI CHECK once and I will learn where it sits on this screen.`)}
@@ -2624,9 +2642,10 @@ const PAY_MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:1
 function payTime(t){const yy=v=>{v=+v;return v<100?2000+v:v};let mi=0;
   const tm=x=>{const m=String(x||"").match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?/i);if(!m)return null;let H=+m[1];const A=(m[3]||"").toLowerCase();if(A==="pm"&&H<12)H+=12;if(A==="am"&&H===12)H=0;return H>23?null:[H,+m[2]]};
   const MN="(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)";let m,d,mo,y,r=null;
-  if(m=t.match(new RegExp("(\\d{1,2})(?:st|nd|rd|th)?[\\s\\-\\/.,]+"+MN+"[a-z]*\\.?[\\s\\-\\/.,]+(\\d{2,4})(.{0,32})","i"))){d=+m[1];mo=PAY_MON[m[2].toLowerCase()];y=yy(m[3]);r=tm(m[4]);mi=m.index}
+  if(m=t.match(new RegExp("(\\d{1,2})(?:st|nd|rd|th)?[\\s\\-\\/.,]+"+MN+"[a-z]*\\.?[\\s\\-\\/.,]+(\\d{2,4})(?![\\d:])(.{0,32})","i"))){d=+m[1];mo=PAY_MON[m[2].toLowerCase()];y=yy(m[3]);r=tm(m[4]);mi=m.index}
   else if(m=t.match(new RegExp(MN+"[a-z]*\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})(.{0,32})","i"))){mo=PAY_MON[m[1].toLowerCase()];d=+m[2];y=+m[3];r=tm(m[4])}
   else if(m=t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(.{0,32})/)){d=+m[1];mo=+m[2]-1;y=yy(m[3]);r=tm(m[4])}
+  else if(m=t.match(new RegExp("(\\d{1,2})(?:st|nd|rd|th)?[\\s\\-\\/.,]+"+MN+"[a-z]*\\.?,?\\s+(\\d{1,2}:\\d{2}(?::\\d{2})?\\s*(?:am|pm)?)","i"))){d=+m[1];mo=PAY_MON[m[2].toLowerCase()];y=new Date().getFullYear();r=tm(m[3]);if(new Date(y,mo,d).getTime()>Date.now()+864e5)y--}
   else return 0;
   if(!r&&mi>0){const pre=t.slice(Math.max(0,mi-20),mi).match(/(\d{1,2}:\d{2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:on|,|-)?\s*$/i);if(pre)r=tm(pre[1])}
   if(!(mo>=0&&mo<=11&&d>=1&&d<=31&&y>=2015&&y<=2100))return 0;const dt=new Date(y,mo,d,r?r[0]:0,r?r[1]:0);return isNaN(dt)?0:dt.getTime()}
@@ -2650,6 +2669,9 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   const nameOf=v=>{v=v.replace(/\(.*?\)/g," ").replace(/\S+@\S+/g," ");PAY_BANKS.forEach(([,re])=>{v=v.replace(new RegExp(re.source,"ig")," ")});v=v.replace(/\b(?:a\/c|acct?|account|no\.?|ref|upi|vpa|bank|ltd|limited)\b/ig," ").replace(/[xX*•]{2,}\d*/g," ").replace(/[^A-Za-z .'\-]/g," ").replace(/\s+/g," ").trim();v=ixNameClean(v)||"";return v.length>=2?v.slice(0,40):""};
   const grab=re=>{for(let i=0;i<lines.length;i++){const m=lines[i].match(re);if(!m)continue;let v=(m[1]||"").trim();if(!v&&lines[i+1])v=lines[i+1];const n=nameOf(v);if(n)return n}return ""};
   P.receiver=grab(/^(?:banking name|beneficiary(?: name)?)\b\s*[:\-]?\s*(.*)$/i)||grab(/^(?:paid to|money sent to|sent to|transferred to|credited to|beneficiary(?: name)?|banking name|to)\b\s*[:\-]?\s*(.*)$/i);
+  if(!P.receiver){const i=lines.findIndex(l=>/^UPI ID\s*[:\-]/i.test(l));if(i>0){const n=nameOf(lines[i-1]);if(n)P.receiver=n}}
+  if(!P.status&&/pay again|check balance/i.test(flat)&&!/fail|declin|reject|cancel/i.test(flat))P.status="Success";
+  if(!P.dir&&/pay again|check balance/i.test(flat))P.dir="out";
   P.sender=grab(/^(?:money received from|received from|paid by|paid from|sender(?: name)?|remitter|debited from|from)\b\s*[:\-]?\s*(.*)$/i);
   // SMS style (one line): "... credited to RAVI KUMAR VPA ..." / "... received from AMIT SHARMA ..."
   const nm="([A-Za-z][A-Za-z .'\\-]{2,40}?)(?=\\s+(?:VPA|UPI|IMPS|NEFT|on|ref|via|a\\/c|\\()|[.,;(]|\\s*$)";
@@ -2659,6 +2681,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   P.ok=P.amount>0&&!!P.utr;return P}
 const fileHash=async f=>{try{const b=await f.arrayBuffer();if(window.crypto&&crypto.subtle){const h=await crypto.subtle.digest("SHA-256",b);return[...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,32)}return"f"+impHash(String.fromCharCode(...new Uint8Array(b.slice(0,60000))))}catch(e){return""}};
 function payBank(p){const mine=banks.filter(b=>b.type!=="Cash");let b=null;if(p.last4)b=mine.find(x=>x.accNo&&String(x.accNo).replace(/\D/g,"").endsWith(p.last4));
+  if(!b&&p.vpa){const v=String(p.vpa).toLowerCase();b=mine.find(x=>(x.vpas||[]).some(y=>String(y).toLowerCase()===v))||null}
   if(!b&&p.bank){const k=p.bank.toLowerCase().split(" ")[0];const c=mine.filter(x=>((x.name||"")+" "+(x.bankName||"")).toLowerCase().includes(k));if(c.length===1)b=c[0]}return b||null}
 function payMatches(p){const side=p.dir==="in"?"SELL":p.dir==="out"?"BUY":"";
   return orders.filter(o=>o.status!=="Cancelled"&&o.via!=="ex"&&modeOf(o)!=="Direct"&&(!side||o.side===side)&&Math.abs(orderTotal(o)-p.amount)<=1).sort((a,b)=>(a.status==="Pending"?0:1)-(b.status==="Pending"?0:1)||b.time-a.time).slice(0,6)}
@@ -4875,13 +4898,13 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
   if(g.dups.length&&g.dups.every(d=>d.same))return{state:"skipped",msg:"Already recorded on your matching order"};
   if(g.dups.length&&!force){const c=await confirmRisk(g.dups.map(d=>({k:d.k,msg:d.msg})),"Possible duplicate","Save anyway");if(!c)return{state:"skipped",msg:"Not saved · possible duplicate"}}
   try{
-    const pp=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{};const bk=P.amount!=null?payBank({last4:pp.last4||"",bank:P.bank||""}):null;
+    const pp=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{};const bk=P.amount!=null?ixBankOf({last4:pp.last4||"",bank:P.bank||"",dir:pp.dir||P.dir||"",vpa:pp.vpa||P.vpa||""},ixSide(g)):null;
     let proofs=[];if(assetsApi){try{proofs=await uploadProofs(g.items.map(x=>x.file))}catch(e){}}
     const shots=g.items.map(x=>x.hash);const pv=g.cmp.overall==="VERIFIED"?"verified":"ai";const method=METHODS.includes(String(verMeth(P.method)))?verMeth(P.method):"UPI";
     const split=bk&&P.amount?[{bank:bk.id,amt:+P.amount,method}]:[];const notes=[];if(P.amount&&!bk)notes.push("Bank not matched · assign it later");
     // part payments (several payments that together make this order): each one becomes its own bank split
     if(g.partSum){try{split.length=0;notes.length=0;let lost=0;const seen=new Set();
-      g.pays.filter(x=>x.part&&x.pay&&x.pay.amount>0).forEach(x=>{const q=x.pay,b2=payBank({last4:q.last4||"",bank:q.bank||""});
+      g.pays.filter(x=>x.part&&x.pay&&x.pay.amount>0).forEach(x=>{const q=x.pay,b2=ixBankOf(q,ixSide(g));
         if(!b2){lost++;return}const k=b2.id+"|"+(+q.amount);if(seen.has(k))return;seen.add(k);
         split.push({bank:b2.id,amt:+q.amount,method:METHODS.includes(String(verMeth(q.method)))?verMeth(q.method):"UPI"})});
       if(lost)notes.push(lost+" part payment"+(lost>1?"s":"")+" had no matching bank · assign later");
@@ -4901,6 +4924,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       const no={id:newId("o"),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:[estNote,O.why?"Reason: "+O.why:""].filter(Boolean).join(" · "),splits:split,proofs,shots,pv,time:ixOrdTime(X,P.date?verWhen(P.date,P.time):0)||Date.now(),src:"ai"};
       if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
       await putRec(no);await auditLog(no,"create",{by:"intake",result:g.cmp.overall,risk:g.risk.level});g.savedId=no.id}
+    try{const nk=(g.order&&g.order.ord&&g.order.ord.nick)||O.nick||"";const real=g.target?g.target.cp:(O.buyer&&ixSide(g)==="SELL"?O.buyer:O.seller)||"";if(nk&&real&&ixlN(nk)!==ixlN(real))await ixLinkNames(nk,real)}catch(e){}
     try{const ln=await ixlOnSave(g);if(ln)notes.push(ln)}catch(e){}
     g.saved=true;ixHistUpdate(g);return{state:"saved",msg:notes.join(" · ")||"Saved"}
   }catch(e){console.error(e);return{state:"failed",msg:"Couldn't save: "+(e&&e.message||"unknown error")}}}
@@ -4947,10 +4971,11 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     ${ixScoreHtml(g)}
     ${g.unknown&&g.unknown.length&&!g.order&&!g.pays.length?`<div class="ixmine warn"><b>Couldn't tell what this picture is</b><div style="margin:6px 0">Is it a payment, or an exchange order (a cancelled order is an order too)?</div><div class="row2">${g.unknown.map(u=>`<button class="mini ghost" data-ix="type:${u.hash}:PAY_RECEIPT">Payment</button><button class="mini ghost" data-ix="type:${u.hash}:EX_ORDER">Order</button>`).join("")}</div></div>`:""}
     ${ixLinkHtml(g)}
+    ${g.roleFix?`<div class="ixmine ok"><b>Who is who</b><ul><li class="ok">${esc(g.roleFix)}</li></ul></div>`:""}
     ${(g.fixes||[]).length?`<div class="ixmine warn"><b>Numbers fixed for you</b><ul>${g.fixes.map(x=>`<li class="warn">${esc(x)}</li>`).join("")}</ul></div>`:""}
     ${g.autoT&&g.target?`<div class="ixmine ok"><b>Matched to your open order</b><ul><li class="ok">${esc(shortO(g.target))} · ${inr(orderTotal(g.target))}</li></ul></div>`:g.autoTHint?`<div class="ixmine warn"><b>Which order?</b><ul><li class="warn">${g.autoTHint} open orders have this amount. Choose the right one below.</li></ul></div>`:""}
     ${g.auto&&g.saved?`<div class="ixmine ok"><b>Saved automatically</b><ul><li class="ok">Verified and low risk. Use Undo auto-save at the top if it is wrong.</li></ul></div>`:""}
-    ${M.lines.length?`<div class="ixmine ${M.verdict}"><b>Your account check</b><ul>${M.lines.map(l=>`<li class="${l.s}">${esc(l.t)}${l.own?ixOwnRow(l.own):""}</li>`).join("")}</ul></div>`:""}
+    ${M.lines.length?`<div class="ixmine ${M.verdict}"><b>Your account check</b><ul>${M.lines.map(l=>`<li class="${l.s}">${esc(l.t)}${l.own?ixOwnRow(l.own):""}${l.mine?ixMineRow(l.mine):""}</li>`).join("")}</ul></div>`:""}
     <div class="ixwhy"><b>WHY</b><ul>${ixWhy(g).map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>
     <div class="ixai">${g.ai==="ok"?"✨ Checked by AI vision on top of the phone reading":g.ai==="unavailable"?"⚠ Cloud AI unavailable"+(g.aiErr==="bad_key"?" (key rejected)":g.aiErr==="rate_limited"?" (no free requests left)":g.aiErr==="busy"?" (busy or slow)":"")+": results below are from on-device analysis":g.ai==="na"?"AI not connected: results are from on-device analysis":"📷 Read on your phone"}${g.items[0]&&g.items[0].ocr?` · ${esc(g.items.map(x=>x.ocr&&x.ocr.engine).filter((v,i,a)=>v&&a.indexOf(v)===i).join(" + "))}`:""}</div>
     ${aiNote&&g.ai!=="unavailable"&&g.ai!=="na"&&partial?`<div class="note" style="margin:6px 0 0"><b>PARTIAL READING</b><br>Some information could not be confidently read.</div>`:""}
@@ -4980,6 +5005,11 @@ async function ixAct(g,a,btn){
   if(a==="raw"){const r=btn.closest(".ixb").querySelector(".ixraw");r.hidden=!r.hidden;return}
   if(a==="addbank"){sheets.bank();return}
   if(a.startsWith("own:")){const l4=a.slice(4),sel=btn.closest(".ixown").querySelector("[data-ixown]"),bk=banks.find(x=>x.id===(sel&&sel.value));if(bk){await patchRec(bk.id,{accNo:"XXXXXX"+l4});toast(`Saved ••${l4} on ${bk.name||bk.bankName}`);ixS.groups.forEach(x=>{try{ixVerify(x)}catch(e){}});ixDraw()}return}
+  if(a==="mine"){const nm=btn.dataset.nm||"",vp=(btn.dataset.vp||"").toLowerCase(),sel=btn.closest(".ixmrow").querySelector("[data-ixmbank]"),bid=sel&&sel.value;
+    try{const bk=bid?banks.find(x=>x.id===bid):null;if(bk&&vp)await patchRec(bk.id,{vpas:[...new Set([...(bk.vpas||[]),vp])]}); // save the bank first: it reloads settings, so the preferences go in after
+      if(nm){let L=[];try{L=JSON.parse(pref("myNames")||"[]")}catch(e){}if(!L.includes(nm)){L.push(nm);setPref("myNames",JSON.stringify(L))}}
+      if(vp){let V=[];try{V=JSON.parse(pref("myVpas")||"[]")}catch(e){}if(!V.includes(vp)){V.push(vp);setPref("myVpas",JSON.stringify(V))}}
+      toast("Saved as your account");ixS.groups.forEach(x=>{try{ixVerify(x)}catch(e){}});ixDraw()}catch(e){console.error(e)}return}
   if(a==="flip"){g.side=ixSide(g)==="BUY"?"SELL":"BUY";try{ixVerify(g)}catch(e){}ixDraw();return}
   if(a.startsWith("side:")){g.side=a.slice(5);try{ixVerify(g)}catch(e){}ixDraw();return}
   if(a.startsWith("type:")){const [,h,t]=a.split(":");const it=g.unknown.find(u=>u.hash===h);if(it){ixItem(it,t);ixS.groups=ixGroup(ixS.items);await ixFinish(ixS.groups,false);ixDraw()}return}
@@ -5405,7 +5435,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=73;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=74;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5472,6 +5502,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00074","8 Oct 2026",["Sell orders: the exchange page shows only the buyer, so your side is always you and a nickname such as Sparkrudz is never taken for the seller; the real name is kept and the nickname is linked to it","A buyer's payment proof can now show a name that is not yours (like a family member's account): tap Yes once and that name and UPI ID are saved as your accounts, optionally with the bank","Payment pages with the name above the UPI ID (Paytm style) now give receiver, date without a year and success status; a buyer's bank is no longer mistaken for your bank on a sell"]],
   ["0.0.0.00073","8 Oct 2026",["Cancelled order screenshots (also the American spelling \"Canceled\") are saved by themselves with no questions: side, amount, rate, quantity, counterparty and order number are read, the cancel reason goes in the note, and the order keeps the time it was really created (10/08/2026 is read as 8 Oct, not 10 Aug)","Every order saved from Smart intake now keeps its real creation time from the screenshot instead of the time you saved it"]],
   ["0.0.0.00072","8 Oct 2026",["Smart intake now recognises a cancelled order screenshot even when little text is readable, can save it as a Cancelled order, and asks you at the top (payment or order?) when it cannot tell what a picture is"]],
   ["0.0.0.00071","8 Oct 2026",["Smart intake level 1: fixes a misread quantity, rate or total when the other two numbers and your payment agree; warns about odd UTRs (wrong length, repeating digits); remembers the UPI ID you paid each person and warns when it changes or belongs to someone else","Smart intake level 2: verified and low-risk items are saved automatically (switch on the Intake page, one tap to undo); a payment screenshot alone is matched to your open order with the same remaining amount; one screenshot of an order list adds many orders at once"]],

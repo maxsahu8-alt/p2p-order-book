@@ -113,6 +113,25 @@ async def main():
     # J2: same screenshot again is not saved twice
     await pg.evaluate("ixS.groups.forEach(g=>{g.saved=false;ixVerify(g)});ixS.autoOff=false");await pg.evaluate("ixAutoSafe()");await pg.wait_for_timeout(600)
     chk("J2 same order is not saved twice",await pg.evaluate("orders.length")==1)
+    # K: a sell paid to one of YOUR accounts that carries another name (Deepak Sahu), buyer shown with a nickname
+    PAYD=open(FX+"pay_paytm_deepak.txt").read();ORDH=open(FX+"order_htx_sell.txt").read()
+    B7={"id":"B7","kind":"bank","name":"Axis","bankName":"Axis Bank","accNo":"91000000007410","type":"Bank","opening":100000,"time":now-30*864e5}
+    pg,e=await scen(b,[SET,B7,B1],{"p.png":PAYD,"o.png":ORDH},["p.png","o.png"])
+    g=(await pg.evaluate("ixS.groups.map(g=>({ov:g.cmp.overall,risk:g.risk.level,saved:!!g.saved,side:ixSide(g),buyer:g.X.ord.buyer,seller:g.X.ord.seller,ask:ixMine(g).lines.filter(l=>l.s==='warn').length}))"))[0];print("K1",g)
+    chk("K1 sell, buyer is the real name, not the nickname",g["side"]=="SELL" and g["buyer"]=="Roopak Dass")
+    chk("K1 unknown receiver is a question, not a mismatch",g["risk"]!="HIGH" and g["ov"]!="MISMATCH" and g["ask"]==1 and not g["saved"])
+    await pg.evaluate("(()=>{document.querySelector('[data-ixmbank]').value='B7';document.querySelector('[data-ix=mine]').click()})()");await pg.wait_for_timeout(700)
+    g=(await pg.evaluate("ixS.groups.map(g=>({ov:g.cmp.overall,risk:g.risk.level,why:g.risk.reasons}))"))[0];print("K2",g)
+    chk("K2 after one tap the account is yours: verified, low risk",g["ov"]=="VERIFIED" and g["risk"]=="LOW")
+    await pg.evaluate("document.querySelector('[data-ix=save]').click()");await pg.wait_for_timeout(900)
+    r=await pg.evaluate("orders.map(o=>[o.side,o.cp,o.qty,o.rate,o.exId,(o.splits||[]).map(s=>[s.bank,s.amt]),new Date(o.time).getMonth()+1,new Date(o.time).getDate()])");print("K3",r)
+    chk("K3 saved as SELL to Roopak Dass",len(r)==1 and r[0][0]=="SELL" and r[0][1]=="Roopak Dass")
+    chk("K3 whole order id and 14000 on your Axis account",len(r)==1 and r[0][4]=="6ac7269d9fe42e0001a3bade" and r[0][5]==[["B7",14000]])
+    chk("K3 created on 8 October",len(r)==1 and r[0][6]==10 and r[0][7]==8)
+    chk("K3 nickname linked to the real name",await pg.evaluate("ixlAlias('Sparkrudz','Roopak Dass')"))
+    chk("K4 same surname alone is not you",await pg.evaluate("!ixIsMe('Rajesh Sahu')&&ixIsMe('Shiv Sahu')&&ixIsMe('Shiv')"))
+    chk("K5 buyer's bank is not taken as yours on a sell",await pg.evaluate("ixBankOf({last4:'1234',bank:'HDFC Bank',dir:'out'},'SELL')===null&&ixBankOf({last4:'1234',bank:'HDFC Bank',dir:'out'},'BUY')!==null"))
+    chk("K no errors",not e)
     # F: new UPI id for a known person
     OLD={**OPEN,"id":"o_old","status":"Completed","vpa":"ravi.old@ybl","time":now-5*864e5,"splits":[{"bank":"B1","amt":2500,"method":"UPI"}]}
     NEWP=pay.replace("RAVI KUMAR","RAVI KUMAR\nravi.new@okaxis")
