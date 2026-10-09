@@ -2196,6 +2196,7 @@ const verStr=v=>{if(v==null)return null;const s=String(v).trim();return s&&!/^(n
 const verConf=v=>{const n=verNum(v);if(n==null)return null;return Math.max(0,Math.min(1,n>1?n/100:n))};
 function verPrompt(){return `You read TWO screenshots for an Indian P2P crypto merchant. The images may be in any order. One is the PAYMENT screenshot (UPI / bank app), one is the P2P ORDER screenshot (exchange app); work out which is which. If only one image is given, leave the other part null. Analyse each independently.
 Rules: copy only what is clearly visible. Never guess or invent. On a P2P exchange ORDER page only the OTHER person (the counterparty) is shown, often as 'Real Name(nickname)' or a nickname next to a round avatar at the top: on a SELL order that person is the BUYER, on a BUY order the SELLER. Put the real name (the part outside the brackets) in that field, never the nickname, and leave the other field (the user's own side) null unless a name is printed right under a Buyer or Seller label. In a payment screenshot where one name sits above a UPI ID and the amount, that is the person who was PAID (receiver_name): do not invent a sender. Use null for anything you cannot read. Do not say whether the payment is genuine.
+Dates: today is ${new Date().toLocaleDateString("en-CA")} (India). Payment screenshots often print no year: then use today's year, never an older one. Write transaction_time and order_datetime in 24-hour time (6:58 PM = 18:58). If you cannot tell AM from PM, set transaction_time to null instead of guessing. If a date such as 10/09/2026 could be day/month or month/day, copy it exactly as printed; the app decides.
 Respond with ONLY this JSON, no other text:
 {"payment":{"status":"SUCCESS|PENDING|FAILED|null","amount":number|null,"currency":"INR"|null,"sender_name":string|null,"receiver_name":string|null,"utr":string|null,"payment_method":"UPI|IMPS|NEFT|RTGS|BANK|CASH"|null,"bank_or_upi":string|null,"transaction_date":"YYYY-MM-DD"|null,"transaction_time":"HH:MM"|null,"visible_account_details":string|null,"direction":"PAID|RECEIVED"|null,"confidence":0-1},
 "order":{"order_id":string|null,"order_status":string|null,"buyer_name":string|null,"seller_name":string|null,"fiat_amount":number|null,"crypto_amount":number|null,"crypto_symbol":string|null,"price":number|null,"payment_method":string|null,"order_datetime":"YYYY-MM-DD HH:MM"|null,"order_type":"BUY|SELL"|null,"visible_account_details":string|null,"confidence":0-1},
@@ -2449,22 +2450,40 @@ const ixDfmtGet=()=>{let L={};try{L=JSON.parse(pref("ixDfmt")||"{}")||{}}catch(e
 // saved a moment later: saving the intake history reloads the settings and would wipe a preference written at the same time
 function ixDfmtSave(){clearTimeout(ixDfmtT);ixDfmtT=setTimeout(()=>{try{const v=JSON.stringify(ixDfmtGet());if(v!==(pref("ixDfmt")||""))setPref("ixDfmt",v)}catch(e){}},2500)}
 // decide which reading of every ambiguous date is right: they must agree with each other, not be in the future, and match what this exchange / app used before
-function ixResolveDates(g,X){try{g.dateNote="";const now=Date.now(),O=X.ord||{},P=X.pay||{};const T=v=>{const t=new Date(String(v).replace(" ","T")).getTime();return isFinite(t)?t:0};
-  const oL=[...new Set([O.when,...(O.whenAlts||[O.whenAlt])].filter(Boolean))],oc=oL.map(T).filter(t=>t>0);
-  const pD=P.date?P.date+" "+(P.time||"00:00"):"",pL=[...new Set([pD,...(P.alts||[])].filter(Boolean))],pc=pL.map(T).filter(t=>t>0);
-  const amb=oc.length>1||pc.length>1;if(!amb)return;
-  const F=ixDfmtGet(),ko=String(O.platform||"ord").toLowerCase(),kp="pay";const fm=(arr,i)=>arr.length>1?(i===0?"DMY":"MDY"):"";
-  const sc=[];(oc.length?oc:[0]).forEach((o,i)=>{(pc.length?pc:[0]).forEach((p,j)=>{let s=0;if(o>now+6e5)s+=1e6;if(p>now+6e5)s+=1e6;if(o&&now-o>400*864e5)s+=50;if(p&&now-p>400*864e5)s+=50;
-      if(o&&p){const d=Math.abs(o-p)/864e5;if(d>1.5)s+=d;if(p<o-30*6e4)s+=0.3}
-      if(oc.length>1&&F[ko]&&fm(oc,i)!==F[ko])s+=2.5;if(pc.length>1&&F[kp]&&fm(pc,j)!==F[kp])s+=2.5;
-      s+=(o?Math.abs(now-o)/864e5*0.01:0)+(p?Math.abs(now-p)/864e5*0.01:0);sc.push({o,p,i,j,s})})});
-  sc.sort((a,b)=>a.s-b.s);const best=sc[0],next=sc.find(x=>x.i!==best.i||x.j!==best.j);
-  if(best.o){X.ord.when=ixMs(best.o);X.ord.whenAlt=null;X.ord.whenAlts=null}
-  if(best.p){const q=ixMs(best.p);X.pay.date=q.slice(0,10);X.pay.time=q.slice(11);X.pay.alts=null}
-  const sure=best.s<1&&next&&next.s-best.s>=3;
-  const bits=[];if(oc.length>1)bits.push("exchange date as "+(best.i===0?"day/month":"month/day"));if(pc.length>1)bits.push("payment date as "+(best.j===0?"day/month":"month/day"));
-  g.dateNote="Dates worked out: "+bits.join(", ")+(best.o&&best.p?" (both agree)":F[ko]||F[kp]?" (as before)":" (closest to today)");
-  if(sure){let ch=false;const L={...F};if(oc.length>1&&L[ko]!==fm(oc,best.i)){L[ko]=fm(oc,best.i);ch=true}if(pc.length>1&&L[kp]!==fm(pc,best.j)){L[kp]=fm(pc,best.j);ch=true}if(ch){Object.assign(ixDfmtMem,L);ixDfmtSave()}}
+function ixResolveDates(g,X){try{g.dateNote="";const now=Date.now(),NY=new Date().getFullYear(),O=X.ord||{},P=X.pay||{};
+  const T=v=>{const t=new Date(String(v).replace(" ","T")).getTime();return isFinite(t)?t:0};
+  const LO=(g.order&&g.order.ord)||{},LPi=(g.pays||[]).find(x=>!x.support)||(g.pays||[])[0]||{},LP=LPi.pay||{};
+  const yrO=/\b20\d\d\b/.test((g.order&&g.order.ocr&&g.order.ocr.text)||""),yrP=/\b20\d\d\b/.test((g.pays||[]).map(x=>(x.ocr&&x.ocr.text)||"").join(" "));
+  // every way this date could be read: both numeric orders (day/month, month/day), what the phone text said, what the AI said,
+  // and the two usual AI slips: a year it had to guess (screenshots rarely print one) and a 12-hour time read without its PM
+  const build=(prim,list,loc,locList,explicitYear)=>{const L=[...(list||[]),...(locList||[])].map(T).filter(Boolean),fm=t=>{const l=(list&&list.length>1?list:locList&&locList.length>1?locList:[]).map(T);const i=l.findIndex(x=>Math.abs(x-t)<6e4);return i<0?"":(i===0?"DMY":"MDY")};
+    const base=[];const add=(v,pri)=>{const t=T(v);if(t>0&&!base.some(x=>Math.abs(x.t-t)<6e4))base.push({t,fmt:fm(t),tw:pri?0:0.01,tag:""})};
+    add(prim,1);(list||[]).forEach(v=>add(v,0));add(loc,0);(locList||[]).forEach(v=>add(v,0));
+    const out=[];base.forEach(bs=>{const d=new Date(bs.t),y=d.getFullYear(),h=d.getHours(),Ys=explicitYear?[y]:[...new Set([y,NY,NY-1])],Hs=h<12?[0,12]:[0];
+      Ys.forEach(yy=>Hs.forEach(hh=>{const nd=new Date(bs.t);if(yy!==y){nd.setFullYear(yy)}if(hh)nd.setHours(h+hh);const t=nd.getTime();if(!isFinite(t))return;const tw=bs.tw+(yy!==y?0.15:0)+(hh?0.15:0),tag=[yy!==y?"year "+y+" → "+yy:"",hh?"time "+String(h).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+" → "+String(h+hh).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+" (PM)":""].filter(Boolean).join(", ");
+        const ex=out.find(x=>Math.abs(x.t-t)<6e4);if(!ex)out.push({t,fmt:bs.fmt,tw,tag});else if(tw<ex.tw){ex.tw=tw;ex.tag=tag;ex.fmt=bs.fmt||ex.fmt}}))});return out};
+  const pD=P.date?P.date+" "+(P.time||"00:00"):"",lD=LP.date?LP.date+" "+(LP.time||"00:00"):"";
+  const oC=build(O.when,[...(O.whenAlts||[O.whenAlt])].filter(Boolean),LO.when,(LO.whenAlts||[]),yrO),pC=build(pD,P.alts||[],lD,(LP.alts||[]),yrP);
+  if(!oC.length&&!pC.length)return;
+  const F=ixDfmtGet(),ko=String(O.platform||"ord").toLowerCase(),kp="pay";
+  const sc=[];(oC.length?oC:[null]).forEach(o=>{(pC.length?pC:[null]).forEach(p=>{let s=0;const ot=o?o.t:0,pt=p?p.t:0;
+      if(o){s+=o.tw;if(ot>now+6e5)s+=1e6;if(now-ot>400*864e5)s+=50;s+=Math.abs(now-ot)/864e5*0.01;if(F[ko]&&o.fmt&&o.fmt!==F[ko])s+=2.5}
+      if(p){s+=p.tw;if(pt>now+6e5)s+=1e6;if(now-pt>400*864e5)s+=50;s+=Math.abs(now-pt)/864e5*0.01;if(F[kp]&&p.fmt&&p.fmt!==F[kp])s+=2.5}
+      if(o&&p){const d=Math.abs(ot-pt)/864e5;if(d>1.5)s+=d;if(pt<ot-30*6e4)s+=1;else if(pt<ot-5*6e4)s+=0.1}
+      sc.push({o,p,s})})});
+  sc.sort((a,b)=>a.s-b.s);const best=sc[0];
+  if(best.o){X.ord.when=ixMs(best.o.t);X.ord.whenAlt=null;X.ord.whenAlts=null}
+  if(best.p){const q=ixMs(best.p.t);X.pay.date=q.slice(0,10);X.pay.time=q.slice(11);X.pay.alts=null}
+  const bits=[];if(best.o&&best.o.tag)bits.push("exchange date fixed: "+best.o.tag);if(best.p&&best.p.tag)bits.push("payment date fixed: "+best.p.tag+(yrP?"":" (the AI had to guess it)"));
+  const ambO=oC.some(x=>x.fmt==="DMY")&&oC.some(x=>x.fmt==="MDY"),ambP=pC.some(x=>x.fmt==="DMY")&&pC.some(x=>x.fmt==="MDY");
+  if(ambO&&best.o&&best.o.fmt&&!best.o.tag)bits.push("exchange date as "+(best.o.fmt==="DMY"?"day/month":"month/day"));
+  if(ambP&&best.p&&best.p.fmt&&!best.p.tag)bits.push("payment date as "+(best.p.fmt==="DMY"?"day/month":"month/day"));
+  if(bits.length)g.dateNote="Dates worked out: "+bits.join("; ")+(best.o&&best.p?" (both agree)":F[ko]||F[kp]?" (as before)":"");
+  // learn the exchange's date order only when the other screenshot makes it certain
+  const alt=(arr,pick)=>sc.find(x=>x[arr]&&pick.fmt&&x[arr].fmt&&x[arr].fmt!==pick.fmt);const L={...F};let ch=false;
+  if(ambO&&best.o&&best.o.fmt&&!best.o.tag){const n=alt("o",best.o);if(best.s<1&&n&&n.s-best.s>=3&&L[ko]!==best.o.fmt){L[ko]=best.o.fmt;ch=true}}
+  if(ambP&&best.p&&best.p.fmt&&!best.p.tag){const n=alt("p",best.p);if(best.s<1&&n&&n.s-best.s>=3&&L[kp]!==best.p.fmt){L[kp]=best.p.fmt;ch=true}}
+  if(ch){Object.assign(ixDfmtMem,L);ixDfmtSave()}
  }catch(e){console.error(e)}}
 // when an order was created: of the two readings of 10/08/2026 (day-first or month-first) take the real, recent one
 function ixOrdTime(X,ref){const O=X&&X.ord;if(!O)return 0;const T=v=>{const t=new Date(String(v).replace(" ","T")).getTime();return isFinite(t)?t:0},now=Date.now();
@@ -5583,7 +5602,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=81;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=82;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5650,6 +5669,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00082","9 Oct 2026",["Smart intake: when the AI guesses a payment year (screenshots rarely print one) or drops the PM, the app now fixes it by itself using the order time (2025 → 2026, 06:58 → 18:58) and tells you what it fixed","The AI is told today\u2019s date and to use 24-hour time, so it stops guessing an old year"]],
   ["0.0.0.00081","9 Oct 2026",["Screenshot preview is now a rounded card that rises from the bottom (not full screen) with a blurred background","Swipe sideways to slide between screenshots with a soft 3D turn; swipe down and the card follows your finger and closes, like a professional app","Dots show where you are; tap the picture to zoom and drag to move around"]],
   ["0.0.0.00080","9 Oct 2026",["Smart intake: the Add more button is now a + tile right next to your screenshots, in the empty space","On a sell order the card no longer shows the buyer's account number as yours; it shows your UPI ID, or your bank once saved","Receiver not saved yet: the bank is picked for you from the UPI ID (axisbank = your Axis bank), so saving your account is one tap"]],
   ["0.0.0.00079","9 Oct 2026",["Smart intake: once screenshots are added, the big Add box shrinks to a slim Add more screenshots bar and the pictures sit right under it, numbered and labelled (Exchange order, Payment, Wallet history) after the check","Tap any picture to see it full screen: swipe or use Previous / Next, tap the picture to zoom, Remove it there if it is the wrong one"]],
