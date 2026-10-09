@@ -1939,7 +1939,7 @@ $("#form").onsubmit=async e=>{
   o.splits=isDirect()?[]:sp.splits;
   if(isDirect()){o.party=$("#dir-party").value||"";o.dueLink=!!o.party&&$("#dir-due").checked;o.payAcc=o.side==="SELL"&&!$("#dirAccL").hidden?$("#dir-acc").value:""}else{delete o.party;delete o.dueLink}
   {const ex=$("#f-exid").value.trim(),ut=$("#f-utr").value.trim(),fe=+$("#f-fee").value||0,pv=$("#f-pv").value,td=side==="SELL"?(+$("#f-tds").value||0):0;
-   if(ex)o.exId=ex;else delete o.exId;if(ut)o.utr=ut;else delete o.utr;if(fe>0)o.fee=fe;else delete o.fee;if(td>0)o.tds=td;else delete o.tds;if(pv)o.pv=pv;else delete o.pv}
+   if(ex)o.exId=ex;else delete o.exId;if(ut)o.utr=ut;else delete o.utr;if(fe>0)o.fee=fe;else delete o.fee;if(td>0)o.tds=td;else{delete o.tds;delete o.tdsQ}if(!(td>0)||(old&&+old.tds!==td)){delete o.tdsSrc;delete o.tdsQ}if(pv)o.pv=pv;else delete o.pv}
   const rule=old?statusRule(old.status,o.status):{ok:true};if(formProof&&!old){o.shots=[...(o.shots||[]),...formProof.hashes]}if(!rule.ok){toast(rule.why);return}
   const WR=[...(rule.confirm?[{k:"rev",msg:rule.confirm}]:[]),...orderWarn(o)];let ovrWhy="";
   if(WR.length){const c=await confirmRisk(WR,"Check this order","Save anyway");if(!c)return;ovrWhy=c.why;if(WR.some(w=>w.k!=="rev"))o.ovr=true}else delete o.ovr;
@@ -2142,7 +2142,7 @@ function sheetOrderDetail(id){const o=orders.find(x=>x.id===id);if(!o)return;con
   openSheet(`<div class="insw"><div class="insh"><h3>${o.side} ${fmtQ(o.qty)} ${esc(o.coin)} @ ₹${fmtR(o.rate)}</h3></div>
     <div class="rml">${R("Status",esc(o.status))}${R("Exchange",esc(o.platform||modeOf(o)))}${R("Exchange order ID",esc(exIdOf(o)))}${R("UTR",esc(o.utr||""))}${R("Client / party",esc(o.cp||""))}${R("Total",inr(Math.round(orderTotal(o))))}${R("Recorded in banks",allocated(o)?inr(Math.round(allocated(o))):"")}
     ${R("Payment check",({verified:"Verified by you",ai:"AI extracted · not checked by you",received:"Received"})[pvOf(o)]||"Not checked")}${o.payAt?R("Payment time",fdt(o.payAt)):""}${R("Created",fdt(o.time))}${o.status==="Completed"&&o.doneAt?R("Completed",fdt(o.doneAt)):""}
-    ${gross!=null?R("Gross profit",sgn(gross)):""}${fee?R("Fee","−"+inr(fee)):""}${+o.tds>0?R("TDS deducted",inr(Math.round(+o.tds*100)/100)):""}${gross!=null&&fee?R("Net profit",sgn(gross-fee)):""}${R("Note",esc(o.note||""))}</div>
+    ${gross!=null?R("Gross profit",sgn(gross)):""}${fee?R("Fee","−"+inr(fee)):""}${+o.tds>0?R("TDS deducted",inr(Math.round(+o.tds*100)/100)+(o.tdsQ>0?" · "+fmtQ(o.tdsQ)+" USDT":"")+(o.tdsSrc==="ledger"?" · confirmed in wallet history":o.tdsSrc==="order"?" · from order page, not confirmed yet":"")):""}${gross!=null&&fee?R("Net profit",sgn(gross-fee)):""}${R("Note",esc(o.note||""))}</div>
     <div class="pcsec">Risk</div><div class="rml">${W.length?W.map(w=>`<div class="dqr"><span>⚠️ ${esc(w.msg)}</span></div>`).join(""):'<div class="dqr"><span>No problems found</span><b class="pos">Clear</b></div>'}${o.ovr?'<div class="dqr"><span>You saved this despite a warning</span></div>':""}</div>
     <div class="pcsec">Activity</div><div class="rml">${H.length?H.map(a=>`<div class="dqr"><span>${esc(auTxt(a))}${a.warn&&a.warn.length?`<br><small class="note" style="margin:0">${esc(a.warn.join(" "))}</small>`:""}</span><b style="font-weight:500;color:var(--muted);white-space:nowrap">${fdt(a.time)}</b></div>`).join(""):'<div class="dqr"><span class="note" style="margin:0">No history yet. Changes from now on are recorded here.</span></div>'}</div></div>`)}
 const RISK_L={utr:"Duplicate UTR",ex:"Duplicate exchange order ID",shot:"Duplicate screenshot",amt:"Amount mismatch",big:"Unusual size",nopay:"Completed, no payment"};
@@ -2292,6 +2292,7 @@ const IX_TYPES={PAY_RECEIPT:"Payment receipt",BANK_TX:"Bank transaction",UPI:"UP
 const ixIsPay=t=>["PAY_RECEIPT","BANK_TX","UPI","IMPS"].includes(t),ixIsOrd=t=>["EX_ORDER","CRYPTO_ORDER"].includes(t);
 const IX_EXCH=/binance|kucoin|bybit|okx|mexc|bitget|gate\.?io|htx|huobi|coinswitch|wazirx|zebpay|bitfinex/i;
 function ixClassify(text){const t=String(text||"");if(t.trim().length<12)return{type:"UNKNOWN",conf:0,pay:0,ord:0};
+  {const lg=ixLedgerRows(t);if(lg.pairs.length)return{type:"EX_LEDGER",conf:0.85,pay:0,ord:0,ledger:lg}}
   {const lr=ixListRows(t);if(lr.length>=2)return{type:"EX_LIST",conf:0.8,pay:0,ord:0,rows:lr}}
   const cnt=(re)=>(t.match(re)||[]).length;
   const P=payParse(t);
@@ -2405,7 +2406,7 @@ async function ixOcr(it,skip){if(ixOcrCache.has(it.hash))return ixOcrCache.get(i
   if(r.status!=="fail")ixOcrCache.set(it.hash,r);return r}
 // ---- item = one picture: classify + extract
 function ixItem(it,forceType){const o=it.ocr||{text:"",conf:0};const c=ixClassify(o.text);it.cls=forceType?{type:forceType,conf:1,forced:true}:c;
-  it.pay=null;it.ord=null;it.list=null;const cf=o.conf==null?null:o.conf/100;if(it.cls.type==="EX_LIST"){it.list=c.rows||ixListRows(o.text);it.ext=it.list.length?"ok":"fail";return it}
+  it.pay=null;it.ord=null;it.list=null;it.ledger=null;const cf=o.conf==null?null:o.conf/100;if(it.cls.type==="EX_LEDGER"){it.ledger=c.ledger||ixLedgerRows(o.text);it.ext=it.ledger.pairs.length?"ok":"fail";return it}if(it.cls.type==="EX_LIST"){it.list=c.rows||ixListRows(o.text);it.ext=it.list.length?"ok":"fail";return it}
   if(ixIsPay(it.cls.type)||(it.cls.type==="UNKNOWN"&&payParse(o.text).ok&&!forceType)){it.pay=ixPayFrom(o.text,cf);if(it.cls.type==="UNKNOWN"){it.cls={type:"PAY_RECEIPT",conf:0.5}}}
   else if(ixIsOrd(it.cls.type)){it.ord=ixOrdFrom(o.text,cf)}
   it.ext=it.pay?(it.pay.amount!=null&&it.pay.utr?"ok":it.pay.amount!=null||it.pay.utr?"partial":"fail"):it.ord?(it.ord.fiat!=null&&it.ord.id?"ok":it.ord.fiat!=null||it.ord.id||it.ord.crypto!=null?"partial":"fail"):"fail";return it}
@@ -2461,6 +2462,24 @@ function ixListRows(t){try{const L=String(t||"").split(/\n+/).map(x=>x.trim()).f
     if(!o.side||!(fiat>0)||!(qty>0))return;const ts=o.when?new Date(String(o.when).replace(" ","T")).getTime():0;
     rows.push({side:o.side,coin:o.coin||"USDT",fiat,qty,rate:o.price||+(fiat/qty).toFixed(2),status:o.status,cp:o.cp||o.buyer||o.seller||null,id:o.id,ts:isFinite(ts)&&ts>0?ts:0,platform:o.platform})});
   if(rows.length<2||new Set(rows.map(r=>r.fiat)).size<2)return[];return rows}catch(e){return[]}}
+// ---- exchange wallet history ("Sell Crypto -302.78 / Tax -3.0278", same minute): TDS is taken AFTER the order completes, as its own line
+function ixLedgerRows(t){try{const L=String(t||"").split(/\n+/).map(x=>x.trim()).filter(Boolean),E=[];let cur={};
+  const DT=/^(\d{1,2})\/(\d{1,2})(?:\/\d{2,4})?\s+(\d{1,2}):(\d{2})(?::\d{2})?$/;
+  for(const l of L){const d=l.match(DT);
+    if(d){if(cur.label&&cur.amt!=null)E.push({label:cur.label,amt:cur.amt,a:+d[1],b:+d[2],h:+d[3],m:+d[4],key:(+d[1])+"/"+(+d[2])+" "+(+d[3])+":"+d[4]});cur={};continue}
+    const lab=l.match(/^(sell crypto|buy crypto|tax|transfer|fee|withdraw\w*|deposit\w*)\b\s*([+\-−–]?\s*\d[\d,]*(?:\.\d+)?)?\s*$/i);
+    if(lab){cur.label=lab[1].toLowerCase();cur.amt=lab[2]?Math.abs(parseFloat(lab[2].replace(/[−–\s,+\-]/g,""))):null;continue}
+    const am=l.match(/^[+\-−–]?\s*(\d[\d,]*(?:\.\d+)?)$/);if(am&&cur.label)cur.amt=parseFloat(am[1].replace(/,/g,""))}
+  const pairs=[];E.filter(e=>e.label==="tax").forEach(tx=>{const sl=E.find(e=>e.label==="sell crypto"&&e.key===tx.key&&e.amt>0&&tx.amt/e.amt>0.0005&&tx.amt/e.amt<=0.02);
+    if(sl&&!pairs.some(q=>q.key===tx.key&&q.qty===sl.amt))pairs.push({qty:sl.amt,tax:tx.amt,pct:+(tx.amt/sl.amt*100).toFixed(2),key:tx.key,a:tx.a,b:tx.b,h:tx.h,m:tx.m})});
+  return{pairs}}catch(e){return{pairs:[]}}}
+function ixLedgerOrder(p){try{const Y=new Date().getFullYear(),at=(mo,d)=>new Date(Y,mo-1,d,p.h,p.m).getTime();const refs=[at(p.a,p.b)];if(p.a<=12&&p.b<=12&&p.a!==p.b)refs.push(at(p.b,p.a));
+  const C=orders.filter(o=>o.side==="SELL"&&o.status!=="Cancelled"&&Math.abs((+o.qty)-p.qty)<0.011).map(o=>{const r=o.doneAt||o.payAt||o.time;return{o,d:Math.min(...refs.map(x=>Math.abs(x-r)))}}).filter(x=>x.d<36*36e5).sort((a,b)=>a.d-b.d);
+  return C.length?C[0].o:null}catch(e){return null}}
+const ixLedgerRupee=(p,o)=>Math.abs(p.pct-1)<0.05?+(orderTotal(o)*0.01).toFixed(2):+(p.tax*o.rate).toFixed(2);
+async function ixLedgerSave(it){let n=0;for(const p of it.ledger.pairs){const o=ixLedgerOrder(p);if(!o)continue;const ru=ixLedgerRupee(p,o);if(+o.tds===ru&&o.tdsSrc==="ledger")continue;
+    try{await patchRec(o.id,{tds:ru,tdsQ:p.tax,tdsSrc:"ledger"});try{await auditLog(o,"edit",{chg:`TDS ${o.tds??"–"} → ${ru} (wallet history)`})}catch(e){}n++}catch(e){console.error(e)}}
+  it.ledgerDone=n;return n}
 function ixListDup(r){try{if(r.id){const m=riskIdx().e.get(normRef(r.id));if(m&&m.length)return true}
   return orders.some(o=>o.side===r.side&&Math.abs(o.qty-r.qty)<0.011&&Math.abs(o.rate-r.rate)<0.011&&(!o.cp||!r.cp||verName(o.cp,r.cp)!=="X")&&(!r.ts||Math.abs(o.time-r.ts)<3*60e3))}catch(e){return false}}
 async function ixListSave(it){const rows=(it.list||[]).filter((r,i)=>it.listSel&&it.listSel.has(i)&&!ixListDup(r));let n=0;
@@ -2478,6 +2497,13 @@ async function ixAutoUndo(){const A=(ixS.auto||[]).filter(g=>g.saved&&g.auto);
 function ixDrawExtras(out){
   const A=(ixS.auto||[]).filter(g=>g.saved&&g.auto);
   if(A.length){const c=document.createElement("div");c.className="acard ixautob";c.innerHTML=`<div class="ah">✓ AUTO-SAVED ${A.length} SAFE ${A.length>1?"ONES":"ONE"}</div><div class="note">Verified and low risk, so ${A.length>1?"they were":"it was"} saved for you. Anything else is waiting below for your check.</div><div class="row2"><button class="mini ghost" type="button" data-ixundo>Undo auto-save</button><button class="mini ghost" type="button" data-go="orders">View orders</button></div>`;twoTap(c.querySelector("[data-ixundo]"),ixAutoUndo);out.appendChild(c)}
+  (ixS.items||[]).filter(x=>x.ledger&&x.ledger.pairs.length).forEach(it=>{const rows=it.ledger.pairs.map(p=>{const o=ixLedgerOrder(p);const ru=o?ixLedgerRupee(p,o):0;return{p,o,ru,done:!!(o&&+o.tds===ru&&o.tdsSrc==="ledger")}});const n=rows.filter(r=>r.o&&!r.done).length;
+    const c=document.createElement("div");c.className="acard ixlist ixledger";
+    c.innerHTML=`<div class="ah">WALLET HISTORY · ${rows.length} TDS ${rows.length===1?"ENTRY":"ENTRIES"} FOUND</div>`+(it.ledgerDone!=null?`<div class="note"><b>TDS added to ${it.ledgerDone} order${it.ledgerDone===1?"":"s"}.</b></div>`:`<div class="note">The exchange cuts TDS after the order completes, as a separate Tax line. Each one is matched to your sell order by quantity and time.</div>`)+
+      rows.map(r=>`<div class="ixlr${r.o&&!r.done?"":" dup"}"><span><b class="sd SELL">SELL</b> ${fmtQ(r.p.qty)} USDT · Tax <b>${fmtQ(r.p.tax)} USDT</b> (${r.p.pct}%)</span><small>${r.o?(r.done?"already added":"→ "+inr(r.ru)+" on "+esc(r.o.cp||"your order")+" · "+fdt(r.o.time)):"no matching sell order in the app yet. Save that order first"}</small></div>`).join("")+
+      (it.ledgerDone!=null?"":`<button class="primary" type="button" data-ledsave ${n?"":"disabled"}>ADD TDS TO ${n} ORDER${n===1?"":"S"}</button>`);
+    const bt=c.querySelector("[data-ledsave]");if(bt)bt.onclick=async()=>{bt.disabled=true;bt.textContent="Adding…";const k=await ixLedgerSave(it);toast(`TDS added to ${k} order${k===1?"":"s"}`);ixDraw()};
+    out.appendChild(c)});
   (ixS.items||[]).filter(x=>x.list&&x.list.length).forEach(it=>{if(!it.listSel)it.listSel=new Set(it.list.map((r,i)=>i).filter(i=>!ixListDup(it.list[i])));
     const c=document.createElement("div");c.className="acard ixlist";const rows=it.list;const n=[...it.listSel].filter(i=>!ixListDup(rows[i])).length;
     c.innerHTML=`<div class="ah">ORDER LIST · ${rows.length} ORDERS FOUND</div>`+(it.listDone!=null?`<div class="note"><b>Added ${it.listDone} order${it.listDone===1?"":"s"}.</b> Assign banks later from the order.</div>`:`<div class="note">Tick the ones to add. Orders already in the app are greyed out.</div>`)+
@@ -2501,7 +2527,7 @@ function ixHard(p,o){ // clear contradiction between a payment and an order
     return true}
   if(verName(p.sender,o.buyer)==="X"&&verName(p.receiver,o.seller)==="X")return true;
   return false}
-function ixGroup(items){items=items.filter(x=>!x.list);const pays=items.filter(x=>x.pay),ords=items.filter(x=>x.ord),rest=items.filter(x=>!x.pay&&!x.ord);
+function ixGroup(items){items=items.filter(x=>!x.list&&!x.ledger);const pays=items.filter(x=>x.pay),ords=items.filter(x=>x.ord),rest=items.filter(x=>!x.pay&&!x.ord);
   const groups=ords.map(o=>({order:o,pays:[],unknown:[]}));
   const score=(p,j)=>ixPairScore(p.pay,ords[j].ord,p.ocr.text);
   const pairs=[];pays.forEach(p=>ords.forEach((o,j)=>pairs.push({p,j,s:score(p,j),hard:ixHard(p.pay,o.ord)})));pairs.sort((a,b)=>b.s-a.s);
@@ -2535,7 +2561,7 @@ function ixGroup(items){items=items.filter(x=>!x.list);const pays=items.filter(x
   if(rest.length){if(groups.length>=1)groups[0].unknown=rest;else groups.push({order:null,pays:[],unknown:rest})}
   groups.forEach((g,i)=>{g.id="g"+i;g.items=[g.order,...g.pays,...g.unknown].filter(Boolean)});return groups.filter(g=>g.items.length)}
 // After classifying ALL pictures: fix obvious type slips before anything is grouped
-function ixReconcile(items){const ALL=items;items=items.filter(x=>!x.list);const fam=x=>ixIsPay(x.cls.type)?"p":ixIsOrd(x.cls.type)?"o":"u";
+function ixReconcile(items){const ALL=items;items=items.filter(x=>!x.list&&!x.ledger);const fam=x=>ixIsPay(x.cls.type)?"p":ixIsOrd(x.cls.type)?"o":"u";
   const sc=x=>{const c=ixClassify(x.ocr&&x.ocr.text||"");return c.pay-c.ord};
   if(items.length===2){const [a,b]=items,fa=fam(a),fb=fam(b);
     if(fa==="u"&&fb!=="u"||fb==="u"&&fa!=="u"){const u=fa==="u"?a:b,k=fa==="u"?b:a;ixItem(u,fam(k)==="p"?"EX_ORDER":"PAY_RECEIPT")} // the other one must be the complement
@@ -4941,7 +4967,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       if(!(qty2>0&&rate2>0))return{state:"failed",msg:"Order quantity or price couldn't be read. Run Deep AI check or add the order by hand."}
       const cp=side==="SELL"?(O.buyer||P.sender||""):(O.seller||P.receiver||"");
       const no={id:newId("o"),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:[estNote,O.why?"Reason: "+O.why:""].filter(Boolean).join(" · "),splits:split,proofs,shots,pv,time:ixOrdTime(X,P.date?verWhen(P.date,P.time):0)||Date.now(),src:"ai"};
-      {const td=g.tdsSet!=null?g.tdsSet:O.tds;if(side==="SELL"&&td>0){no.tds=td;if(O.tdsQ>0&&g.tdsSet==null)no.tdsQ=O.tdsQ}}if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
+      {const td=g.tdsSet!=null?g.tdsSet:O.tds;if(side==="SELL"&&td>0){no.tds=td;if(O.tdsQ>0&&g.tdsSet==null)no.tdsQ=O.tdsQ;no.tdsSrc="order"}}if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
       await putRec(no);await auditLog(no,"create",{by:"intake",result:g.cmp.overall,risk:g.risk.level});g.savedId=no.id}
     try{const nk=(g.order&&g.order.ord&&g.order.ord.nick)||O.nick||"";const real=g.target?g.target.cp:(O.buyer&&ixSide(g)==="SELL"?O.buyer:O.seller)||"";if(nk&&real&&ixlN(nk)!==ixlN(real))await ixLinkNames(nk,real)}catch(e){}
     try{const ln=await ixlOnSave(g);if(ln)notes.push(ln)}catch(e){}
@@ -5005,7 +5031,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     ${g.pays.length||g.order?`<div class="pcsec">Payment</div><div class="ixks">${ck("Amount",P.amount)}${ck("UTR",P.utr)}${ck("Sender",P.sender)}${ck("Receiver",P.receiver)}${ck("Status",P.status)}</div>`:""}
     ${g.order?`<div class="pcsec">Order</div><div class="ixks">${ck("Order ID",O.id)}${ck("Amount",O.fiat)}${ck("Buyer",O.buyer)}${ck("Seller",O.seller)}</div>`:""}
     ${(()=>{if(!(g.order||g.target)||ixSide(g)!=="SELL")return"";const v=g.tdsSet!=null?g.tdsSet:O.tds,fi=O.fiat!=null?O.fiat:(g.target?orderTotal(g.target):P.amount);
-      return`<div class="ixtds"><span>TDS (tax cut on sell)</span><b>${v>0?inr(v)+(O.tdsQ>0&&g.tdsSet==null?" · "+fmtQ(O.tdsQ)+" USDT":""):"not read"}</b>${fi>0?`<button class="mini ghost" data-ix="tds1">${v>0?"Reset to 1%":"Add 1%"}</button>`:""}${v>0?`<button class="mini ghost" data-ix="tds0">Remove</button>`:""}</div>`})()}
+      return`<div class="ixtds"><span>TDS (cut after the order completes)</span><b>${v>0?inr(v)+(O.tdsQ>0&&g.tdsSet==null?" · "+fmtQ(O.tdsQ)+" USDT":""):"not read"}</b>${fi>0?`<button class="mini ghost" data-ix="tds1">${v>0?"Reset to 1%":"Add 1%"}</button>`:""}${v>0?`<button class="mini ghost" data-ix="tds0">Remove</button>`:""}</div>`})()}
     <div class="pcsec">Match analysis</div><div class="vtab">${g.cmp.fields.filter(f=>g.order||!["buyer","seller","method","acct"].includes(f.k)).map(f=>`<div class="vrow ${f.res}"><div class="vk">${esc(f.label)} ${ixSrc(g,f.k)}</div><div class="vv"><span>${esc(f.pay)}</span><span>${esc(f.ord)}</span></div><div class="vr">${ixRes(f)}</div>${f.note?`<div class="vn">${esc(f.note)}</div>`:""}</div>`).join("")}</div>
     <div class="pcsec">Risk analysis</div><div class="ixrisk ${g.risk.level}"><b>${g.risk.level} RISK</b>${g.risk.reasons.length?`<ul>${g.risk.reasons.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>`:"<div>No warning signs found in what is visible.</div>"}</div>
     <p class="note">Screenshot analysis cannot independently prove that a payment actually settled. Check your bank app or SMS before releasing coins.</p>
@@ -5458,7 +5484,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=76;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=77;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5525,6 +5551,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00077","9 Oct 2026",["TDS is cut by the exchange after the order completes, as a separate Tax line in the wallet history. Upload that wallet history screenshot in Smart intake and each Tax line is matched to your sell order (by quantity and time) and added as TDS","TDS read from the order page is now marked as not confirmed yet until the wallet history confirms it"]],
   ["0.0.0.00076","9 Oct 2026",["TDS: KuCoin shows it as \"Tax 3.0278 USDT (1%)\". Smart intake now reads it, saves it in rupees (and the USDT amount) on the sell order, and shows a TDS row on the intake card with Add 1% / Remove","Payment proofs with \"From: slice savings xx9798\" and \"To: Deepak Sahu svdeep@axisbank\" now keep the payer account and the receiver apart, shown as Paid from → paid to, with (client) and (you) on sell orders","A bank label such as \"slice savings\" is no longer taken as the sender name","Dates like 09 Oct \u201926, 08:49 am are read; a long order number wrapped over two lines with a blank line between is joined; \"has paid. The\" from the help text is no longer taken as the buyer"]],
   ["0.0.0.00075","8 Oct 2026",["New TDS field on sell orders (order form, Order ID, UTR & fee section): type the amount or tap Fill 1% of total","Smart intake reads TDS from the exchange order page and saves it on sell orders","Order details show TDS, and Profit analytics has a Tax section with total TDS deducted. It is a tax credit, so it is not taken off profit"]],
   ["0.0.0.00074","8 Oct 2026",["Sell orders: the exchange page shows only the buyer, so your side is always you and a nickname such as Sparkrudz is never taken for the seller; the real name is kept and the nickname is linked to it","A buyer's payment proof can now show a name that is not yours (like a family member's account): tap Yes once and that name and UPI ID are saved as your accounts, optionally with the bank","Payment pages with the name above the UPI ID (Paytm style) now give receiver, date without a year and success status; a buyer's bank is no longer mistaken for your bank on a sell"]],
