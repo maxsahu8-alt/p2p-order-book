@@ -1,9 +1,9 @@
 {
- "web": "0.0080",
- "build": 80,
- "display": "0.0.0.00080",
+ "web": "0.0081",
+ "build": 81,
+ "display": "0.0.0.00081",
  "files": {
-  "index.html": "b5d3a8890b4cdf1ab668330eb3749107910be369",
+  "index.html": "15fa1173074cc1ca11ed30aa044ab3a3c7c1677e",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 21,
   "name": "0.0.0.00070",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Smart intake: + Add more tile beside screenshots, sell header no longer shows buyer's account, bank preselected from UPI id"
+  "notes": "Screenshot preview: rounded card sheet, slide with 3D turn, swipe down to close, tap to zoom"
  }
 }
