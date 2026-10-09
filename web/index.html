@@ -2228,7 +2228,7 @@ function verCompare(X,ctx){ctx=ctx||{};const P=X.pay,O=X.ord,F=[];const now=ctx.
   // time
   {const pt=verWhen(P.date,P.time),ot=verWhen((O.when||"").slice(0,10),(O.when||"").slice(11,16));let res="NOTFOUND",note="";
     if(pt&&pt>now+10*60e3){res="MISMATCH";note="Payment time is in the future"}
-    else if(pt&&ot){if(pt<ot-5*60e3){res="MISMATCH";note="Payment is dated before the order was created"}else if(pt-ot>48*36e5){res="UNCLEAR";note="Payment is more than 2 days after the order"}else res="MATCH"}
+    else if(pt&&ot){if(pt<ot-30*60e3){res="MISMATCH";note="Payment is dated before the order was created"}else if(pt<ot-5*60e3){res="UNCLEAR";note="Payment is a few minutes before the order's Created time. Some exchanges show the time the page was opened, so check once"}else if(pt-ot>48*36e5){res="UNCLEAR";note="Payment is more than 2 days after the order"}else res="MATCH"}
     else if(pt||ot){res="UNCLEAR";note=pt?"Order time not visible":"Payment time not visible"}
     add("time","Date & time",P.date?P.date+(P.time?" "+P.time:""):null,O.when,res,note,res==="MISMATCH")}
   // bank / UPI details
@@ -2308,7 +2308,7 @@ const IX_LABELISH=/\b(transaction|txn|utr|debited|credited|banking|reference|ref
 function ixNameClean(v){v=String(v||"").replace(/\(.*$/,"").replace(/\S+@\S+/g," ").replace(/[^A-Za-z .'\-]/g," ").replace(/\s+/g," ").trim();
   let w=v.split(" ").filter(Boolean);while(w.length>2&&/^[a-z]{1,2}$/.test(w[0]))w.shift();while(w.length>1&&/^[^A-Za-z]$|^[A-Za-z]$/.test(w[w.length-1])&&w.length>2)w.pop();
   {const seen=new Set();w=w.filter(x=>{const k=x.toLowerCase().replace(/[^a-z]/g,"");if(k.length<3)return true;if(seen.has(k))return false;seen.add(k);return true})}
-  v=w.join(" ").replace(/^[.'\-\s]+|[.'\-\s]+$/g,"");if(v.length<2||IX_LABELISH.test(v)||!w.some(x=>x.replace(/[^A-Za-z]/g,"").length>=3))return null;return v.slice(0,40)}
+  v=w.join(" ").replace(/^[.'\-\s]+|[.'\-\s]+$/g,"");if(v.length<2||IX_LABELISH.test(v)||/\b(?:has|have|will|please|paid|payment|release|confirm|balance|recipient|buyer|seller|crypto|proof|review)\b/i.test(v)||!w.some(x=>x.replace(/[^A-Za-z]/g,"").length>=3))return null;return v.slice(0,40)}
 // ================= INTAKE MEMORY: what Smart Intake learns. Kept on this phone only; every item can be forgotten.
 var IXL;
 const ixlH=x=>{let h=5381;x=String(x);for(let i=0;i<x.length;i++)h=((h<<5)+h+x.charCodeAt(i))|0;return(h>>>0).toString(36)};
@@ -2364,7 +2364,7 @@ function ixlKnown(name,side){if(!name)return 0;return orders.filter(o=>o.status!
 const ixMs=ms=>{if(!ms)return null;const d=new Date(ms),p=n=>String(n).padStart(2,"0");return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
 // payment text → same shape verParse() gives
 function ixPayFrom(text,conf){const p=payParse(text),d=ixMs(p.time);
-  return{status:p.status==="Failed"?"FAILED":p.status==="Pending"?"PENDING":p.status==="Success"?"SUCCESS":null,amount:p.amount||null,currency:p.amount?"INR":null,sender:p.sender||null,receiver:p.receiver||null,utr:p.utr||null,method:p.method||null,bank:p.bank||null,date:d?d.slice(0,10):null,time:d?d.slice(11):null,acct:p.last4?"••"+p.last4:null,conf:conf,dir:p.dir||"",last4:p.last4||"",ok:p.ok,vpa:ixVpa(text),fromLabel:p.fromLabel||null,fromLast4:p.fromLast4||null}}
+  return{status:p.status==="Failed"?"FAILED":p.status==="Pending"?"PENDING":p.status==="Success"?"SUCCESS":null,amount:p.amount||null,currency:p.amount?"INR":null,sender:p.sender||null,receiver:p.receiver||null,utr:p.utr||null,method:p.method||null,bank:p.bank||null,date:d?d.slice(0,10):null,time:d?d.slice(11):null,acct:p.last4?"••"+p.last4:null,conf:conf,dir:p.dir||"",last4:p.last4||"",ok:p.ok,vpa:ixVpa(text),fromLabel:p.fromLabel||null,fromLast4:p.fromLast4||null,alts:(p.timeAlts||[]).length>1?p.timeAlts.map(ixMs):null}}
 function ixOrdSide(flat){const C="(?:usdt|usdc|btc|eth|bnb|trx|xrp|sol|doge|dai|ltc|matic|shib)";const b=new RegExp("\\b(?:buy|buying|bought)\\s+"+C+"\\b","i").test(flat)||/\bBuy\s+[A-Z]{3,5}\b/.test(flat),s=new RegExp("\\b(?:sell|selling|sold)\\s+"+C+"\\b","i").test(flat)||/\bSell\s+[A-Z]{3,5}\b/.test(flat);
   if(b&&!s)return"BUY";if(s&&!b)return"SELL";if(!b&&!s){if(/you\s*pay\b/i.test(flat)&&!/you\s*(?:will\s*)?receive\s*(?:₹|rs|inr)/i.test(flat))return"BUY";if(/you\s*(?:will\s*)?receive\s*(?:₹|rs|inr)/i.test(flat))return"SELL"}return null}
 function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," ");const num=s=>{const n=parseFloat(String(s).replace(/,/g,""));return isFinite(n)?n:null};
@@ -2379,8 +2379,8 @@ function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," "
   const ixn=v=>v?ixNameClean(v):null;let buyer=ixn(nm("buyer")),seller=ixn(nm("seller"));
   let cp=null,nick=null;{const Ls=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<Ls.length&&!cp;i++){const m=Ls[i].match(/^(?:counter\s*-?\s*party|merchant|advertiser|trader)\b\s*[:：]?\s*(.*)$/i);if(m){cp=ixNameClean(m[1])||(Ls[i+1]&&!IX_LABELISH.test(Ls[i+1])?ixNameClean(Ls[i+1]):null);nick=((m[1].match(/\(([^)]{2,30})\)/)||[])[1]||"").trim()||null}}}
   const st=(flat.match(/\b(completed|released|paid|unpaid|to be paid|waiting for payment|cancell?ed|appeal|dispute|pending|processing)\b/i)||[])[1];
-  let whenAlt=null;{const dm=t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(dm&&+dm[1]<=12&&+dm[2]<=12&&dm[1]!==dm[2]){const sw=payTime(t.replace(dm[0],dm[2]+"/"+dm[1]+"/"+dm[3]));if(sw)whenAlt=ixMs(sw)}}
   let ts=payTime(t);if(!ts){const m=flat.match(/(\d{4})-(\d{2})-(\d{2})[ T]+(\d{1,2}):(\d{2})/);if(m)ts=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).getTime()}
+  let whenAlt=null,whenAlts=null;{const ta=ixTimeAlts(t);if(!ts&&ta.alts.length)ts=ta.alts[0];if(ta.amb&&ts){whenAlts=ta.alts.map(ixMs);const o=ta.alts.find(x=>x!==ts);if(o)whenAlt=ixMs(o)}}
   {const LB=ixlGet().lab.ord||{};if(!id&&LB.id)id=ixlGrab(t,LB.id,"id");if(fiat==null&&LB.fiat)fiat=ixlGrab(t,LB.fiat,"num");if(price==null&&LB.price)price=ixlGrab(t,LB.price,"num");if(crypto==null&&LB.crypto)crypto=ixlGrab(t,LB.crypto,"num");if(!cp&&LB.cp)cp=ixlGrab(t,LB.cp,"name");if(price==null&&fiat&&crypto)price=+(fiat/crypto).toFixed(2)}
   let why=null;{const L=t.split(/\n+/).map(x=>x.trim()),i=L.findIndex(l=>/reason\s*for\s*cancel/i.test(l));if(i>=0){let r=L[i].replace(/^.*reason\s*for\s*cancel\w*\s*[:：]?\s*/i,"");if(L[i+1]&&L[i+1].length<30&&!/[:：]/.test(L[i+1])&&/^[a-z]/.test(L[i+1]))r+=" "+L[i+1];why=r.replace(/\s+/g," ").trim().slice(0,140)||null}}
   let tds=null,tdsQ=null;{const lab="\\b(?:TDS|tax(?:\\s*deducted(?:\\s*at\\s*source)?)?|1\\s*%\\s*tax)\\b";
@@ -2388,7 +2388,7 @@ function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," "
     const mr=flat.match(new RegExp(lab+"\\D{0,16}"+CUR+"\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)","i"));
     if(mc){const q=num(mc[1]),pc=mc[3]?num(mc[3]):null;if(q>0&&(!crypto||q<crypto*0.05)){tdsQ=q;if(fiat&&pc)tds=+(fiat*pc/100).toFixed(2);else if(price)tds=+(q*price).toFixed(2)}}
     else if(mr){const v=num(mr[1]);if(v>0&&(!fiat||v<fiat*0.05))tds=v}}
-  return{nick,why,tds,tdsQ,id,status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,conf:conf}}
+  return{nick,why,tds,tdsQ,id,status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,whenAlts:whenAlts,conf:conf}}
 // ---- OCR: on-phone ML Kit when the app has it, otherwise the tesseract engine; one result per picture, never throws
 const ixOcrCache=new Map();let ixNative=0;
 function ixNativeOcr(blob,ms){return new Promise((ok,no)=>{if(!(window.P2POcr&&P2POcr.recognize))return no(new Error("none"));
@@ -2419,6 +2419,28 @@ const ixIsMe=n=>!!n&&ixMyNames().some(m=>{const r=verName(m,n);if(r==="M")return
 function ixBankOf(q,sd){const dir=q.dir||"",vp=q.vpa||"",l4=String(q.last4||"").replace(/\D/g,"").slice(-4);if(sd==="SELL"&&dir==="out")return vp?payBank({vpa:vp}):null;return payBank({last4:l4,bank:q.bank||"",vpa:vp})}
 function ixMineRow(m){const c=banks.filter(b=>b.type!=="Cash");return`<div class="ixmrow"><div class="note" style="margin:0">${m.name?`Name: <b>${esc(m.name)}</b>`:""}${m.name&&m.vpa?" · ":""}${m.vpa?`UPI ID: <b>${esc(m.vpa)}</b>`:""}</div>${m.vpa&&c.length?`<select class="ssel" data-ixmbank><option value="">Which bank is it? (optional)</option>${c.map(b=>`<option value="${esc(b.id)}">${esc(b.name||b.bankName)}</option>`).join("")}</select>`:""}<button class="mini" type="button" data-ix="mine" data-nm="${esc(m.name||"")}" data-vp="${esc(m.vpa||"")}">Yes, this is my account</button></div>`}
 // ---- v71: smarter intake helpers
+const ixDfmtMem={};let ixDfmtT=0;
+const ixDfmtGet=()=>{let L={};try{L=JSON.parse(pref("ixDfmt")||"{}")||{}}catch(e){}return{...L,...ixDfmtMem}};
+// saved a moment later: saving the intake history reloads the settings and would wipe a preference written at the same time
+function ixDfmtSave(){clearTimeout(ixDfmtT);ixDfmtT=setTimeout(()=>{try{const v=JSON.stringify(ixDfmtGet());if(v!==(pref("ixDfmt")||""))setPref("ixDfmt",v)}catch(e){}},2500)}
+// decide which reading of every ambiguous date is right: they must agree with each other, not be in the future, and match what this exchange / app used before
+function ixResolveDates(g,X){try{g.dateNote="";const now=Date.now(),O=X.ord||{},P=X.pay||{};const T=v=>{const t=new Date(String(v).replace(" ","T")).getTime();return isFinite(t)?t:0};
+  const oL=[...new Set([O.when,...(O.whenAlts||[O.whenAlt])].filter(Boolean))],oc=oL.map(T).filter(t=>t>0);
+  const pD=P.date?P.date+" "+(P.time||"00:00"):"",pL=[...new Set([pD,...(P.alts||[])].filter(Boolean))],pc=pL.map(T).filter(t=>t>0);
+  const amb=oc.length>1||pc.length>1;if(!amb)return;
+  const F=ixDfmtGet(),ko=String(O.platform||"ord").toLowerCase(),kp="pay";const fm=(arr,i)=>arr.length>1?(i===0?"DMY":"MDY"):"";
+  const sc=[];(oc.length?oc:[0]).forEach((o,i)=>{(pc.length?pc:[0]).forEach((p,j)=>{let s=0;if(o>now+6e5)s+=1e6;if(p>now+6e5)s+=1e6;if(o&&now-o>400*864e5)s+=50;if(p&&now-p>400*864e5)s+=50;
+      if(o&&p){const d=Math.abs(o-p)/864e5;if(d>1.5)s+=d;if(p<o-30*6e4)s+=0.3}
+      if(oc.length>1&&F[ko]&&fm(oc,i)!==F[ko])s+=2.5;if(pc.length>1&&F[kp]&&fm(pc,j)!==F[kp])s+=2.5;
+      s+=(o?Math.abs(now-o)/864e5*0.01:0)+(p?Math.abs(now-p)/864e5*0.01:0);sc.push({o,p,i,j,s})})});
+  sc.sort((a,b)=>a.s-b.s);const best=sc[0],next=sc.find(x=>x.i!==best.i||x.j!==best.j);
+  if(best.o){X.ord.when=ixMs(best.o);X.ord.whenAlt=null;X.ord.whenAlts=null}
+  if(best.p){const q=ixMs(best.p);X.pay.date=q.slice(0,10);X.pay.time=q.slice(11);X.pay.alts=null}
+  const sure=best.s<1&&next&&next.s-best.s>=3;
+  const bits=[];if(oc.length>1)bits.push("exchange date as "+(best.i===0?"day/month":"month/day"));if(pc.length>1)bits.push("payment date as "+(best.j===0?"day/month":"month/day"));
+  g.dateNote="Dates worked out: "+bits.join(", ")+(best.o&&best.p?" (both agree)":F[ko]||F[kp]?" (as before)":" (closest to today)");
+  if(sure){let ch=false;const L={...F};if(oc.length>1&&L[ko]!==fm(oc,best.i)){L[ko]=fm(oc,best.i);ch=true}if(pc.length>1&&L[kp]!==fm(pc,best.j)){L[kp]=fm(pc,best.j);ch=true}if(ch){Object.assign(ixDfmtMem,L);ixDfmtSave()}}
+ }catch(e){console.error(e)}}
 // when an order was created: of the two readings of 10/08/2026 (day-first or month-first) take the real, recent one
 function ixOrdTime(X,ref){const O=X&&X.ord;if(!O)return 0;const T=v=>{const t=new Date(String(v).replace(" ","T")).getTime();return isFinite(t)?t:0},now=Date.now();
   const c=[O.when,O.whenAlt].filter(Boolean).map(T).filter(t=>t>0&&t<=now+36e5&&now-t<400*864e5);if(!c.length)return 0;const r=ref||now;c.sort((a,b)=>Math.abs(a-r)-Math.abs(b-r));return c[0]}
@@ -2582,11 +2604,10 @@ function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(
   // clean junk names, then fill in YOUR side: the receipt rarely prints your own name, and the exchange order never prints it
   g.inferred=[];X.pay={...X.pay};X.ord={...X.ord};if(g.partSum&&X.pay)X.pay.amount=g.partSum;
   ["sender","receiver"].forEach(k=>{if(X.pay[k]){const c=ixNameClean(X.pay[k]);X.pay[k]=c||null}});["buyer","seller"].forEach(k=>{if(X.ord[k]){const c=ixNameClean(X.ord[k]);X.ord[k]=c||null}});
-  try{if(X.ord.whenAlt&&X.ord.when&&X.pay.date){const pt=verWhen(X.pay.date,X.pay.time),T=v=>new Date(String(v).replace(" ","T")).getTime();if(pt&&Math.abs(T(X.ord.whenAlt)-pt)<Math.abs(T(X.ord.when)-pt))X.ord.when=X.ord.whenAlt}}catch(e){}
+  ixResolveDates(g,X);
   g.X=X;try{ixNumFix(g,X)}catch(e){}
   try{const sd=ixSide(g),O2=X.ord;g.roleFix=null;if(sd&&O2){const mk=sd==="SELL"?"seller":"buyer",ok2=sd==="SELL"?"buyer":"seller";if(!O2[ok2]&&O2.cp)O2[ok2]=O2.cp;
     const v=O2[mk];if(v&&ixMyNames().length&&!ixIsMe(v)&&O2[ok2]&&!ixIsMe(O2[ok2])&&verName(O2[ok2],v)!=="M"){g.roleFix=`“${v}” on the order is the other person's nickname, not you. On a ${sd} order the exchange page shows only the other person, so your side is you.`;O2[mk]=null}}}catch(e){}
-  try{if(X.ord.whenAlt&&X.ord.when&&!X.pay.date){const nt=ixOrdTime(X,0);if(nt)X.ord.when=ixMs(nt)}}catch(e){}
   try{const pp0=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{},dir0=X.pay.dir||pp0.dir||"",ow=pref("owner"),sd0=ixSide(g);
     const l4=String(pp0.last4||X.pay.acct||"").replace(/\D/g,"").slice(-4),mine=X.pay.amount!=null&&(l4||X.pay.bank)&&payBank({last4:l4,bank:X.pay.bank||""});
     if(ow&&mine&&!(sd0==="SELL"&&dir0==="out")){if(dir0==="out"&&!X.pay.sender){X.pay.sender=ow;g.inferred.push("sender")}else if(dir0==="in"&&!X.pay.receiver){X.pay.receiver=ow;g.inferred.push("receiver")}}
@@ -2596,6 +2617,7 @@ function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(
     if(sd==="SELL"&&X.pay.amount!=null&&ow){const byV=vp&&ixMyVpas().includes(vp.toLowerCase()),byN=X.pay.receiver&&ixIsMe(X.pay.receiver);if((byV||byN)&&X.pay.receiver!==ow){X.pay.receiver=ow;if(!g.inferred.includes("receiver"))g.inferred.push("receiver")}}}catch(e){}
   try{if(!g.order&&!g.target&&g.pays.length)ixAutoTarget(g,X);if(!g.order&&g.target&&g.autoT)X.ord={...X.ord,...ixTargetOrd(g.target)}}catch(e){}
   const hashes=g.items.map(x=>x.hash);const cmp=verCompare(X,{hashes,side:ixSide(g)});
+  if(g.dateNote){const tf=cmp.fields.find(f=>f.k==="time");if(tf)tf.note=(tf.note?tf.note+" · ":"")+g.dateNote}
   cmp.fields.forEach(f=>{if((f.k==="buyer"&&(g.inferred.includes("buyer")||g.inferred.includes("sender")))||(f.k==="seller"&&(g.inferred.includes("seller")||g.inferred.includes("receiver"))))f.note=(f.note?f.note+" · ":"")+"Your side is worked out from your bank and your name"});
   // spec: different payment method or a partial name is never "verified"
   if(g.autoT&&!g.order&&cmp.overall==="REVIEW"){const of=cmp.fields.find(f=>f.k==="orderid");if(of&&of.res==="NOTFOUND"&&!(g.target&&exIdOf(g.target))&&cmp.fields.filter(f=>f.major&&f.k!=="orderid").every(f=>f.res==="MATCH"||f.res==="FOUND"))cmp.overall="VERIFIED"} // your own order has no exchange id to compare, everything else agrees
@@ -2687,6 +2709,19 @@ function payTime(t){const yy=v=>{v=+v;return v<100?2000+v:v};let mi=0;
   else return 0;
   if(!r&&mi>0){const pre=t.slice(Math.max(0,mi-20),mi).match(/(\d{1,2}:\d{2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:on|,|-)?\s*$/i);if(pre)r=tm(pre[1])}
   if(!(mo>=0&&mo<=11&&d>=1&&d<=31&&y>=2015&&y<=2100))return 0;const dt=new Date(y,mo,d,r?r[0]:0,r?r[1]:0);return isNaN(dt)?0:dt.getTime()}
+// ---- v78: dates. A numeric date can be read two ways (day/month or month/day), so every reading is kept and the screenshots decide.
+// order of readings: [day/month, month/day]. Dates with a month name, or year first, have one reading.
+function ixTimeAlts(t){try{t=String(t||"").replace(/['’‘`´]\s?(\d{2})\b/g," 20$1");const now=Date.now();
+  const MON="(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)";
+  if(new RegExp("\\d{1,2}(?:st|nd|rd|th)?[\\s\\-\\/.,]+"+MON+"[a-z]*\\.?[\\s\\-\\/.,]+\\d{2,4}|"+MON+"[a-z]*\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?,?\\s+\\d{4}|\\d{1,2}(?:st|nd|rd|th)?[\\s\\-\\/.,]+"+MON+"[a-z]*\\.?,?\\s+\\d{1,2}:\\d{2}","i").test(t)){const ts=payTime(t);return{alts:ts?[ts]:[],amb:false}}
+  const clock=(i,len)=>{const a=t.slice(i+len,i+len+36).match(/^[\s,T@\-]*(?:at\s+)?(\d{1,2}:\d{2}(?::\d{2})?\s*(?:am|pm)?)/i)||null;if(a)return a[1];const b=t.slice(Math.max(0,i-22),i).match(/(\d{1,2}:\d{2}(?::\d{2})?\s*(?:am|pm)?)[\s,\-on]*$/i);return b?b[1]:""};
+  const mk=(d,mo,y,c)=>{if(!(d>=1&&d<=31&&mo>=1&&mo<=12))return 0;return payTime(d+"/"+mo+"/"+y+" "+(c||""))||0};
+  let m;
+  if(m=t.match(/(?<![\d])(\d{4})[\-\/.](\d{1,2})[\-\/.](\d{1,2})(?![\d])/)){const y=+m[1],p=+m[2],q=+m[3],c=clock(m.index,m[0].length);const ts=p<=12?mk(q,p,y,c):mk(p,q,y,c);return{alts:ts?[ts]:[],amb:false}}
+  if(m=t.match(/(?<![\d\/])(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4}|\d{2})(?![\d])/)){const a=+m[1],b=+m[2],y=m[3],c=clock(m.index,m[0].length);const L=[mk(a,b,y,c),a!==b?mk(b,a,y,c):0].filter(Boolean);return{alts:[...new Set(L)],amb:L.length>1}}
+  if(m=t.match(/(?<![\d\/])(\d{1,2})\/(\d{1,2})(?![\d\/])[\s,]+(\d{1,2}:\d{2})/)){const a=+m[1],b=+m[2],c=m[3];let y=new Date().getFullYear();
+    const one=(d,mo)=>{let v=mk(d,mo,y,c);if(v>now+864e5)v=mk(d,mo,y-1,c);return v};const L=[one(a,b),a!==b?one(b,a):0].filter(Boolean);return{alts:[...new Set(L)],amb:L.length>1}}
+  return{alts:[],amb:false}}catch(e){return{alts:[],amb:false}}}
 function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);const flat=lines.join(" ");
   const P={amount:0,utr:"",sender:"",receiver:"",bank:"",last4:"",time:0,status:"",dir:"",method:"UPI",ok:false};if(!flat)return P;
   // amount: first ₹ / Rs / INR figure (OCR often turns ₹ into ~ £ < ?), skipping balance / fee lines
@@ -2704,6 +2739,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   const flatB=flat.replace(/\S+@\S+/g," ");const B=PAY_BANKS.find(([,re])=>re.test(flatB));P.bank=B?B[0]:"";
   const l4=flat.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*(\d{4})\b/i)||flat.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);P.last4=l4?l4[1]:"";
   P.time=payTime(flat)||payTime(flat.replace(/['’‘`´]\s?(\d{2})\b/g," 20$1"));
+  {const ta=ixTimeAlts(flat);P.timeAlts=ta.amb&&ta.alts.includes(P.time)?ta.alts:(P.time?[P.time]:ta.alts);if(!P.time&&ta.alts.length)P.time=ta.alts[0]}
   const nameOf=v=>{v=v.replace(/\(.*?\)/g," ").replace(/\S+@\S+/g," ");PAY_BANKS.forEach(([,re])=>{v=v.replace(new RegExp(re.source,"ig")," ")});v=v.replace(/\b(?:a\/c|acct?|account|no\.?|ref|upi|vpa|bank|ltd|limited)\b/ig," ").replace(/[xX*•]{2,}\d*/g," ").replace(/[^A-Za-z .'\-]/g," ").replace(/\s+/g," ").trim();v=ixNameClean(v)||"";return v.length>=2?v.slice(0,40):""};
   const grab=re=>{for(let i=0;i<lines.length;i++){const m=lines[i].match(re);if(!m)continue;let v=(m[1]||"").trim();if(!v&&lines[i+1])v=lines[i+1];const n=nameOf(v);if(n)return n}return ""};
   P.receiver=grab(/^(?:banking name|beneficiary(?: name)?)\b\s*[:\-]?\s*(.*)$/i)||grab(/^(?:paid to|money sent to|sent to|transferred to|credited to|beneficiary(?: name)?|banking name|to)\b\s*[:\-]?\s*(.*)$/i);
@@ -5484,7 +5520,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=77;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=78;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5551,6 +5587,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00078","9 Oct 2026",["Smart intake works out the date format itself: every numeric date (day/month, month/day, year first, with or without a year) keeps all its readings, and the exchange and payment screenshots decide together. The card says how it was read","The format your exchange uses is remembered once the screenshots make it certain","A payment a few minutes before the order's Created time is now a gentle check instead of a mismatch","Sentence words such as paid, release or review are never taken as a name"]],
   ["0.0.0.00077","9 Oct 2026",["TDS is cut by the exchange after the order completes, as a separate Tax line in the wallet history. Upload that wallet history screenshot in Smart intake and each Tax line is matched to your sell order (by quantity and time) and added as TDS","TDS read from the order page is now marked as not confirmed yet until the wallet history confirms it"]],
   ["0.0.0.00076","9 Oct 2026",["TDS: KuCoin shows it as \"Tax 3.0278 USDT (1%)\". Smart intake now reads it, saves it in rupees (and the USDT amount) on the sell order, and shows a TDS row on the intake card with Add 1% / Remove","Payment proofs with \"From: slice savings xx9798\" and \"To: Deepak Sahu svdeep@axisbank\" now keep the payer account and the receiver apart, shown as Paid from → paid to, with (client) and (you) on sell orders","A bank label such as \"slice savings\" is no longer taken as the sender name","Dates like 09 Oct \u201926, 08:49 am are read; a long order number wrapped over two lines with a blank line between is joined; \"has paid. The\" from the help text is no longer taken as the buyer"]],
   ["0.0.0.00075","8 Oct 2026",["New TDS field on sell orders (order form, Order ID, UTR & fee section): type the amount or tap Fill 1% of total","Smart intake reads TDS from the exchange order page and saves it on sell orders","Order details show TDS, and Profit analytics has a Tax section with total TDS deducted. It is a tax credit, so it is not taken off profit"]],
