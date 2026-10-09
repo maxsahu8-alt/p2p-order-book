@@ -2020,10 +2020,21 @@ function bankStats(b,mv,bal){
     if(status==="Active"&&(idle==null||idle>=7)){status=idle==null?"New":"Idle "+idle+"d";tone="muted"}}
   return{balance,inn,out,volume:inn+out,todayN:td.length,total:t.length,pendN:pend.length,pendIn:pend.filter(x=>x.amt>0).reduce((a,x)=>a+x.amt,0),pendOut:-pend.filter(x=>x.amt<0).reduce((a,x)=>a+x.amt,0),last,status,tone,checks};
 }
+// TDS the exchange cuts from the wallet after a SELL completes, in coins (exact from wallet history / order page, else rupees ÷ rate)
+function tdsCoin(o){if(!o||o.side!=="SELL"||o.status!=="Completed")return 0;const q=+o.tdsQ;if(q>0)return q;const t=+o.tds,r=+o.rate;return t>0&&r>0?+(t/r).toFixed(6):0}
 function stockLeft(){
   const coins=new Set(["USDT",...Object.keys(settings.stock||{}),...orders.map(o=>o.coin)]);const out={};
-  coins.forEach(c=>{let q=+(settings.stock||{})[c]||0;orders.forEach(o=>{if(o.coin===c&&o.status==="Completed")q+=o.side==="BUY"?+o.qty:-o.qty});out[c]=q});
+  coins.forEach(c=>{let q=+(settings.stock||{})[c]||0;orders.forEach(o=>{if(o.coin===c&&o.status==="Completed")q+=o.side==="BUY"?+o.qty:-o.qty-tdsCoin(o)});out[c]=q});
   return out;
+}
+// KuCoin-style coin wallet history: opening, Buy Crypto, Sell Crypto and the Tax line of the same minute, with a running balance
+function coinLedger(c){
+  const rows=[];const q0=+((settings.stock||{})[c])||0;
+  orders.filter(o=>o.coin===c&&o.status==="Completed"&&+o.qty>0).forEach(o=>{const t=doneT(o);
+    if(o.side==="BUY")rows.push({t,label:"Buy Crypto",q:+o.qty,o});
+    else{rows.push({t,label:"Sell Crypto",q:-o.qty,o});const x=tdsCoin(o);if(x>0)rows.push({t:t+1,label:"Tax",q:-x,o,est:o.tdsSrc!=="ledger"})}});
+  rows.sort((a,b)=>a.t-b.t);let run=q0;rows.forEach(r=>{run+=r.q;r.bal=run});
+  return{open:q0,rows,bal:run};
 }
 // ================= ACCOUNTING — one place for every money number (net worth, balances, stock, dues, profit)
 // Rules:
@@ -2050,7 +2061,7 @@ function ACC(){if(accCache)return accCache;
     if(o.side==="BUY"){const nq=p.q+q;p.cost=p.q>0&&nq>0?(p.q*p.cost+q*o.rate)/nq:o.rate;p.q=nq}
     else{const fromStock=Math.max(0,Math.min(q,p.q));const extra=q-fromStock;const cExtra=fallback(c)||p.cost;
       const cost=fromStock*p.cost+extra*cExtra;if(!(p.cost||cExtra))noCost++;
-      sellCost[o.id]=q?cost/q:0;sellP[o.id]=(p.cost||cExtra)?q*o.rate-cost:0;p.q-=q;if(p.q<=1e-9)p.q=Math.max(0,p.q)}});
+      sellCost[o.id]=q?cost/q:0;sellP[o.id]=(p.cost||cExtra)?q*o.rate-cost:0;p.q-=q+tdsCoin(o);if(p.q<=1e-9)p.q=Math.max(0,p.q)}});
   const lastRate=c=>{const o=orders.filter(x=>x.coin===c&&x.status==="Completed"&&+x.rate>0).sort((a,b)=>doneT(b)-doneT(a))[0];return o?+o.rate:0};
   const avgCost={},stockVal={};let stockValue=0;
   Object.keys(stock).forEach(c=>{const q=stock[c];avgCost[c]=(pos[c]&&pos[c].cost)||fallback(c)||lastRate(c);stockVal[c]=Math.max(0,q)*avgCost[c];stockValue+=stockVal[c]});
@@ -2929,6 +2940,13 @@ $("#sheetBg").addEventListener("click",e=>{if(e.target.id==="sheetBg"||e.target.
 const bankOpts=(sel,withNone)=>(withNone?'<option value="">Not from a bank</option>':"")+banks.map(b=>`<option value="${b.id}" ${b.id===sel?"selected":""}>${esc(b.name)}</option>`).join("");
 const twoTap=(btn,fn)=>{btn.onclick=()=>{if(btn.dataset.c!=="1"){btn.dataset.c="1";const t=btn.textContent;btn.textContent="Tap again to confirm";setTimeout(()=>{btn.dataset.c="";btn.textContent=t},3000);return}fn()}};
 const sheets={
+  coinledger(c){c=c||"USDT";const L=coinLedger(c);const f=t=>new Date(t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
+    const tax=L.rows.filter(r=>r.label==="Tax").reduce((a,r)=>a+r.q,0);
+    const row=r=>`<div class="lrow" style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)"><div><b>${r.label}</b>${r.est?' <span class="mtag">from order</span>':""}<div class="note" style="margin:2px 0 0">${f(r.t)}${r.o&&r.label!=="Tax"?" · ₹"+(+r.o.rate||0).toFixed(2):""}</div></div><div style="text-align:right"><b class="${r.q<0?"neg":"pos"}">${r.q>0?"+":"−"}${fmtQ(+Math.abs(r.q).toFixed(6))}</b><div class="note" style="margin:2px 0 0">Balance ${fmtQ(+r.bal.toFixed(4))}</div></div></div>`;
+    openSheet(`<h3>${esc(c)} wallet history</h3><div class="pvk" style="grid-template-columns:1fr 1fr;margin:8px 0"><div><span>${esc(c)} left</span><b>${fmtQ(+L.bal.toFixed(4))}</b></div><div><span>Tax (TDS) cut</span><b class="neg">${tax?"−"+fmtQ(+Math.abs(tax).toFixed(4)):"0"}</b></div></div>
+      ${L.rows.length?L.rows.slice().reverse().map(row).join(""):'<p class="note">No completed orders yet.</p>'}
+      ${L.open?`<div class="lrow" style="display:flex;justify-content:space-between;padding:10px 0"><div><b>Opening stock</b></div><b class="pos">+${fmtQ(+L.open.toFixed(4))}</b></div>`:""}
+      <p class="note">Like the exchange wallet: each completed SELL takes out the coins sold and, on its own line, the TDS the exchange cut after the order. Tax taken from the order page is an estimate until wallet history confirms it.</p>`)},
   bank(id){const b=banks.find(x=>x.id===id)||{};openSheet(`<h3>${id?"Edit bank":"Add bank"}</h3><form id="sf" style="grid-template-columns:1fr">
     <label>Name<input id="s-name" required placeholder="e.g. SBI 4521" value="${esc(b.name||"")}"></label>
     <label>Type<select id="s-type"><option ${b.type!=="Cash"?"selected":""}>Bank</option><option ${b.type==="Cash"?"selected":""}>Cash</option></select></label>
@@ -3506,7 +3524,7 @@ function renderWallet(){
     return `<button class="bank" type="button" data-sheet="ledger:${b.id}"><span class="bico">${esc((b.name||"?").replace(/[^A-Za-z0-9]/g,"").slice(0,2).toUpperCase()||"₹")}</span><span class="bname">${esc(b.name)}${b.type==="Cash"?' <span class="mtag">Cash</span>':""}${bankTag(b,mv)}</span><span class="bbal ${bal[b.id]<0?"neg":""}">${inr(bal[b.id])}</span>${limBar(b,use)}<span class="bsub">${b.accNo?"A/c ••"+esc(b.accNo.slice(-4))+" · ":""}${b.upi?esc(b.upi)+" · ":""}Today <span class="in">+${inr(i)}</span> · <span class="out">−${inr(o)}</span>${(()=>{const q=t.length;const pe=mv.filter(x=>x.bank===b.id&&x.pend).length;return (q?" · "+q+" txn":"")+(pe?" · "+pe+" pending":"")})()}</span></button>`}).join("")
     :'<div class="empty"><strong>No banks yet</strong>Tap “Add bank” to add each account with its current balance. Add one with type Cash for cash in hand.</div>';
   const st=stockLeft();
-  $("#stockCards").innerHTML=Object.entries(st).filter(([c,q])=>c==="USDT"||Math.abs(q)>1e-9).map(([c,q])=>`<div class="mcard"><div class="lbl">${esc(c)} left</div><div class="val" style="${q<0?"color:var(--sell)":""}">${fmtQ(+q.toFixed(6))}</div><div class="sm">${q<0?"Sold more than bought":"Completed orders"}</div></div>`).join("");
+  $("#stockCards").innerHTML=Object.entries(st).filter(([c,q])=>c==="USDT"||Math.abs(q)>1e-9).map(([c,q])=>`<div class="mcard" data-sheet="coinledger:${esc(c)}" style="cursor:pointer"><div class="lbl">${esc(c)} left</div><div class="val" style="${q<0?"color:var(--sell)":""}">${fmtQ(+q.toFixed(6))}</div><div class="sm">${q<0?"Sold more than bought":"Wallet history ›"}</div></div>`).join("");
   const un=orders.filter(o=>o.status!=="Cancelled"&&!noBank(o)&&Math.abs(orderTotal(o)-allocated(o))>0.5).sort((a,b)=>b.time-a.time);
   $("#unCount").textContent=un.length?inr(un.reduce((t,o)=>t+orderTotal(o)-allocated(o),0))+" · "+un.length:"";
   const unN=window.__unAll?40:5;
@@ -5602,7 +5620,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=82;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=83;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5669,6 +5687,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00083","9 Oct 2026",["TDS on a SELL now comes out of your USDT stock too (exact USDT from wallet history or the order page, else rupees ÷ rate), so USDT left matches the exchange wallet","Wallet: tap the USDT left card for a wallet history like KuCoin: Buy Crypto, Sell Crypto and the Tax line of the same sell, with a running balance"]],
   ["0.0.0.00082","9 Oct 2026",["Smart intake: when the AI guesses a payment year (screenshots rarely print one) or drops the PM, the app now fixes it by itself using the order time (2025 → 2026, 06:58 → 18:58) and tells you what it fixed","The AI is told today\u2019s date and to use 24-hour time, so it stops guessing an old year"]],
   ["0.0.0.00081","9 Oct 2026",["Screenshot preview is now a rounded card that rises from the bottom (not full screen) with a blurred background","Swipe sideways to slide between screenshots with a soft 3D turn; swipe down and the card follows your finger and closes, like a professional app","Dots show where you are; tap the picture to zoom and drag to move around"]],
   ["0.0.0.00080","9 Oct 2026",["Smart intake: the Add more button is now a + tile right next to your screenshots, in the empty space","On a sell order the card no longer shows the buyer's account number as yours; it shows your UPI ID, or your bank once saved","Receiver not saved yet: the bank is picked for you from the UPI ID (axisbank = your Axis bank), so saving your account is one tap"]],
