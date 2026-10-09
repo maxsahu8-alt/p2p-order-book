@@ -2330,7 +2330,8 @@ function ixClassify(text){const t=String(text||"");if(t.trim().length<12)return{
   {const lr=ixListRows(t);if(lr.length>=2)return{type:"EX_LIST",conf:0.8,pay:0,ord:0,rows:lr}}
   const cnt=(re)=>(t.match(re)||[]).length;
   const P=payParse(t);
-  const pay=cnt(/upi ref|utr|transaction id|txn id|paid to|payment (?:successful|completed)|money sent|payment (?:to|from)|debited|credited|reference (?:no|number)|bank ref|google ?pay|phonepe|paytm|bhim|\bimps\b|\bneft\b|a\/c|ifsc|banking name/ig)+(P.ok?3:0)+(P.utr?1:0);
+  const pay=cnt(/upi ref|utr|transaction id|txn id|paid to|payment (?:successful|completed)|money sent|payment (?:to|from)|debited|credited|reference (?:no|number)|bank ref|google ?pay|phonepe|paytm|bhim|\bimps\b|\bneft\b|a\/c|ifsc|banking name/ig)+(P.ok?3:0)+(P.utr?1:0)
+    +(/payment successful/i.test(t)?1:0)+(/[\w.\-•*]{3,}@[a-z]{2,}\b/i.test(t)?1:0)+(/split expense|share receipt|view details/i.test(t)?1:0); // wallet apps (GPay, PhonePe…) print no UTR on the first screen
   const ord=cnt(/order (?:no|id|number|#)|\bbuyer\b|\bseller\b|total price|unit price|\bquantity\b|usdt|crypto|\bp2p\b|escrow|release|appeal|you (?:buy|sell)|counterparty|fiat amount|transfer notice|cancell?ed|cancellation|expired|time ?out|timed out|order closed|\b(?:buy|sell)\s+(?:usdt|usdc|btc|eth|bnb|trx)\b|payment (?:window|time limit|deadline)|unit price/ig)+(IX_EXCH.test(t)?2:0)+(/\b\d{16,24}\b/.test(t)?1:0);
   let type="UNKNOWN",conf=0.4;
   if(pay>=2&&pay>=ord+2){type=/imps/i.test(t)?"IMPS":/upi|gpay|google ?pay|phonepe|paytm|bhim/i.test(t)?"UPI":/a\/c|account|ifsc|neft|debited|credited|bank/i.test(t)?"BANK_TX":"PAY_RECEIPT";conf=Math.min(0.99,0.55+0.07*(pay-ord))}
@@ -2651,7 +2652,8 @@ function ixReconcile(items){const ALL=items;items=items.filter(x=>!x.list&&!x.le
     else if(fa===fb&&fa!=="u"){const [pay,ord]=sc(a)>=sc(b)?[a,b]:[b,a];ixItem(pay,pay.cls.type&&ixIsPay(pay.cls.type)?pay.cls.type:"PAY_RECEIPT");ixItem(ord,ixIsOrd(ord.cls.type)?ord.cls.type:"EX_ORDER")}
     else if(fa==="u"&&fb==="u"){const [pay,ord]=sc(a)>=sc(b)?[a,b]:[b,a];ixItem(pay,"PAY_RECEIPT");ixItem(ord,"EX_ORDER")}}
   else{const hasP=items.some(x=>fam(x)==="p"),hasO=items.some(x=>fam(x)==="o");
-    items.filter(x=>fam(x)==="u").forEach(u=>{if(hasO&&!hasP)ixItem(u,"PAY_RECEIPT");else if(hasP&&!hasO)ixItem(u,"EX_ORDER")})}
+    items.filter(x=>fam(x)==="u").forEach(u=>{if(hasO&&!hasP)ixItem(u,"PAY_RECEIPT");else if(hasP&&!hasO)ixItem(u,"EX_ORDER");
+      else if(hasP&&hasO){const c=ixClassify(u.ocr&&u.ocr.text||"");if(c.pay>c.ord)ixItem(u,"PAY_RECEIPT");else if(c.ord>c.pay)ixItem(u,"EX_ORDER")}})}
   return ALL}
 // ---- merge AI-read values into what the phone read. Phone values win when the phone was sure; differences are reported
 function ixMerge(local,ai,conf){const out={...local},diffs=[],filled=[];Object.keys(ai||{}).forEach(k=>{if(k==="conf")return;const a=ai[k],l=local[k];
@@ -4856,18 +4858,28 @@ async function fetchWithProgress(url,onp){
   for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;onp&&onp(Math.min(99,Math.round(got/total*100)))}
   const out=new Uint8Array(got);let o=0;for(const p of parts){out.set(p,o);o+=p.length}return out;
 }
+// the engine files come from a CDN: try several mirrors (one blocked or slow mirror must not stop the reader), a few rounds
+const OCR_BASES=[["https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/","https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1"],["https://fastly.jsdelivr.net/npm/tesseract.js@5.1.1/dist/","https://fastly.jsdelivr.net/npm/tesseract.js-core@5.1.1"],["https://gcore.jsdelivr.net/npm/tesseract.js@5.1.1/dist/","https://gcore.jsdelivr.net/npm/tesseract.js-core@5.1.1"],["https://unpkg.com/tesseract.js@5.1.1/dist/","https://unpkg.com/tesseract.js-core@5.1.1"]];
+async function ocrPick(){let last=null;
+  for(let round=0;round<3;round++){for(const [d,c] of OCR_BASES){
+    try{ocrStatus("Screenshot reader: downloading (1 of 3)…");const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),12000);
+      const r=await fetch(d+"worker.min.js",{signal:ctl.signal});clearTimeout(tm);if(!r.ok)throw new Error("http "+r.status);await r.arrayBuffer();
+      return{script:d+"tesseract.min.js",worker:d+"worker.min.js",core:c}}catch(e){last=e}}
+    await new Promise(r=>setTimeout(r,1500*(round+1)))}
+  throw last||new Error("no mirror")}
 function ocrInit(){
   if(ocrWorker)return Promise.resolve(ocrWorker);
   if(ocrPromise)return ocrPromise;
   const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),ms))]);
   ocrPromise=withTimeout((async()=>{
     ocrStatus("Screenshot reader: downloading (1 of 3)…");
-    await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js");
+    const B=await ocrPick();
+    await loadScript(B.script);
     const data=await fetchWithProgress("ocr/eng-traineddata.wasm",p=>ocrStatus(`Screenshot reader: downloading language ${p}% (2 of 3)…`));
     ocrStatus("Screenshot reader: starting engine (3 of 3)…");
     ocrWorker=await Tesseract.createWorker([{code:"eng",data}],1,{
-      workerPath:"https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
-      corePath:"https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
+      workerPath:B.worker,
+      corePath:B.core,
       gzip:false,cacheMethod:"none",
       logger:m=>{if(m&&m.status&&m.status!=="recognizing text"){ocrStatus("Screenshot reader: "+m.status+(m.progress?` ${Math.round(m.progress*100)}%`:"")+"…")}else if(m&&m.status==="recognizing text"){ocrListeners.forEach(f=>{try{f("reading "+Math.round((m.progress||0)*100)+"%")}catch(e){}})}}});
     ocrStatus("Screenshot reader ready ✓");
@@ -4884,7 +4896,7 @@ async function ocrPrep(file){
     // dark-theme screenshots (light text on dark): tesseract reads dark-on-light, so measure and invert
     const d=g.getImageData(0,0,c.width,c.height),px=d.data;let sum=0,n=0;for(let y=0;y<c.height;y+=7)for(let x=0;x<c.width;x+=7){const o=(y*c.width+x)*4;sum+=px[o]*.299+px[o+1]*.587+px[o+2]*.114;n++}
     const dark=n&&sum/n<120;
-    for(let o=0;o<px.length;o+=4){let v=px[o]*.299+px[o+1]*.587+px[o+2]*.114;if(dark)v=255-v;v=Math.max(0,Math.min(255,(v-128)*1.35+128));px[o]=px[o+1]=px[o+2]=v}
+    for(let o=0;o<px.length;o+=4){let v=px[o]*.299+px[o+1]*.587+px[o+2]*.114;if(dark)v=255-v;v=Math.max(0,Math.min(255,(v-128)*1.0+128));px[o]=px[o+1]=px[o+2]=v}
     g.putImageData(d,0,0);
     return await new Promise(ok=>c.toBlob(b=>ok(b||file),"image/png"))}catch(e){return file}}
 async function ocrImage(blob,onp){const w=await ocrInit();if(onp)ocrListeners=[onp];try{const {data}=await Promise.race([w.recognize(await ocrPrep(blob)),new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),60000))]);return (data&&data.text||"").replace(/[ \t]+\n/g,"\n").trim()}finally{ocrListeners=[]}}
@@ -5243,7 +5255,9 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
     if(run!==ixS.run)return;ixS.items=items;ixS.T.prep=Date.now()-t0;
     ixS.stage="ocr";ocrListeners=[t=>{if(/Screenshot reader/.test(t))msg=t.replace("Screenshot reader: ","Reader: ")}];
     await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone…`});ocrListeners=[];
-    if(run!==ixS.run)return;ixS.T.ocr=Date.now()-t0;const failed=items.filter(x=>x.ocr.status==="fail");
+    if(run!==ixS.run)return;
+    if(items.every(x=>x.ocr.status==="fail")){ocrPromise=null;ocrWorker=null;items.forEach(x=>ixOcrCache.delete(x.hash));msg="Reader didn't start, trying again…";await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone (2nd try)…`});ocrListeners=[];if(run!==ixS.run)return}
+    ixS.T.ocr=Date.now()-t0;const failed=items.filter(x=>x.ocr.status==="fail");
     if(failed.length===items.length){ // phone reader unavailable → let the AI read everything, if one is connected
       if(!ixAiReady()){clearInterval(tick);card.innerHTML=`<div class="ah">OCR UNAVAILABLE</div><div class="note">The phone reader couldn't start (${esc(items[0].ocr.err==="timeout"?"it took too long to download":"not available here")}). Your screenshots are kept. You can paste the payment SMS text instead, connect an AI in Settings, or try again on a better connection.</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ocrPromise=null;ixOcrCache.clear();ixS.busy=false;ixRun()};return}
       ixS.stage="ai";msg="Phone reader unavailable. Your AI is reading the pictures…";
@@ -5635,7 +5649,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=84;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=85;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5702,6 +5716,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00085","10 Oct 2026",["Smart intake: GPay / PhonePe style receipts (\"Payment Successful\", no UTR on the first screen) are now recognised as payments by themselves, so you are not asked what the picture is","Screenshot reader: gentler contrast so grey labels on exchange order pages (Total Amount, Counterparty, Created At) are not lost; engine now tries 4 download mirrors with retries and retries once by itself before giving up"]],
   ["0.0.0.00084","10 Oct 2026",["Smart intake: part payments from wallet apps now group with their order (e.g. ₹30,000 + ₹1,905 for one ₹31,905.25 buy). A rupee sign misread as a digit (\"71,905\" for ₹1,905) is resolved using the order total"]],
   ["0.0.0.00083","9 Oct 2026",["TDS on a SELL now comes out of your USDT stock too (exact USDT from wallet history or the order page, else rupees ÷ rate), so USDT left matches the exchange wallet","Wallet: tap the USDT left card for a wallet history like KuCoin: Buy Crypto, Sell Crypto and the Tax line of the same sell, with a running balance"]],
   ["0.0.0.00082","9 Oct 2026",["Smart intake: when the AI guesses a payment year (screenshots rarely print one) or drops the PM, the app now fixes it by itself using the order time (2025 → 2026, 06:58 → 18:58) and tells you what it fixed","The AI is told today\u2019s date and to use 24-hour time, so it stops guessing an old year"]],
