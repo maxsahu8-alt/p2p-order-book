@@ -52,6 +52,16 @@ async def main():
     await pg.evaluate("sheetOrderDetail('o_s1')");await pg.wait_for_timeout(300)
     chk("detail says confirmed in wallet history","confirmed in wallet history" in await pg.inner_text("#sheetBody"))
     chk("ledger no errors",not e);print(e)
+    # your own account under another name: bank picked from the UPI id, header never shows the buyer's account
+    B8={"id":"B8","kind":"bank","name":"Axis","bankName":"Axis Bank","accNo":"91000000007410","type":"Bank","opening":100000,"time":now-30*864e5}
+    pg,e=await scen(b,[SET,B8],{"p.png":PAY,"o.png":ORD},["p.png","o.png"])
+    chk("bank preselected from the UPI id",await pg.evaluate("(document.querySelector('[data-ixmbank]')||{}).value")=="B8")
+    chk("button names the bank",await pg.evaluate("/\\(Axis\\)/.test((document.querySelector('[data-ix=mine]')||{}).textContent||'')"))
+    hd=await pg.evaluate("document.querySelector('.ixcard, #i2-ix')?document.querySelector('#i2-ix').innerText:''")
+    chk("sell header does not show the buyer's ••9798 as your account","Account ••9798" not in hd)
+    await pg.evaluate("document.querySelector('[data-ix=mine]').click()");await pg.wait_for_timeout(800)
+    chk("one tap saves the UPI id on the Axis bank",await pg.evaluate("(banks.find(x=>x.id==='B8').vpas||[]).includes('svdeep@axisbank')"))
+    chk("then the account is recognised (no question left)",await pg.evaluate("!document.querySelector('[data-ix=mine]')"))
     await b.close()
   print("ALL OK" if ok else "SOME FAILED")
 asyncio.run(main())

@@ -535,7 +535,8 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .ixprev .pv{width:84px}.ixprev .pv img{cursor:zoom-in}
 .ixprev .pv .no{position:absolute;left:6px;top:6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--fg);color:var(--bg);font-weight:700;font-size:.7rem;line-height:20px;font-style:normal;text-align:center;pointer-events:none}
 .ixprev .pv em{display:block;margin-top:4px;font-style:normal;font-size:.7rem;color:var(--muted);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ixdz.has{flex-direction:row;justify-content:center;gap:12px;padding:12px 16px;border-radius:16px}.ixdz.has .ixdz-ic{width:38px;height:38px;border-radius:12px;margin:0}.ixdz.has .ixdz-ic svg{width:20px;height:20px}.ixdz.has b{font-size:.95rem;white-space:nowrap}.ixdz.has small{max-width:none;margin:0 0 0 auto;font-size:.76rem;text-align:right}
+.ixdz.has{display:none}
+.ixprev .addtile{width:84px;height:112px;border-radius:12px;border:1.5px dashed var(--line-strong);background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 7%,var(--surface)),var(--surface));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--fg);cursor:pointer;font:inherit;padding:0}.ixprev .addtile span{font-size:2rem;line-height:1;font-weight:300}.ixprev .addtile small{font-size:.72rem;color:var(--muted)}
 .i2lb{position:fixed;inset:0;z-index:200;background:#000;display:flex;flex-direction:column;color:#fff}
 .i2lb .top{display:flex;align-items:center;gap:10px;padding:max(12px,env(safe-area-inset-top)) 14px 10px}.i2lb .top b{flex:1;font-size:.95rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .i2lb button{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.1);color:#fff;border-radius:12px;padding:9px 14px;font:inherit;font-size:.9rem;cursor:pointer}
@@ -2427,7 +2428,10 @@ function ixMyVpas(){let v=[];try{v=JSON.parse(pref("myVpas")||"[]")}catch(e){}ba
 const ixIsMe=n=>!!n&&ixMyNames().some(m=>{const r=verName(m,n);if(r==="M")return true;if(r!=="U")return false;const x=verTok(m)[0],y=verTok(n)[0];return!!(x&&y&&(x===y||x.startsWith(y)||y.startsWith(x)))}); // same surname alone is not you
 // the bank a payment belongs to. On a sell, a payment proof that shows money SENT carries the buyer's bank, not yours
 function ixBankOf(q,sd){const dir=q.dir||"",vp=q.vpa||"",l4=String(q.last4||"").replace(/\D/g,"").slice(-4);if(sd==="SELL"&&dir==="out")return vp?payBank({vpa:vp}):null;return payBank({last4:l4,bank:q.bank||"",vpa:vp})}
-function ixMineRow(m){const c=banks.filter(b=>b.type!=="Cash");return`<div class="ixmrow"><div class="note" style="margin:0">${m.name?`Name: <b>${esc(m.name)}</b>`:""}${m.name&&m.vpa?" · ":""}${m.vpa?`UPI ID: <b>${esc(m.vpa)}</b>`:""}</div>${m.vpa&&c.length?`<select class="ssel" data-ixmbank><option value="">Which bank is it? (optional)</option>${c.map(b=>`<option value="${esc(b.id)}">${esc(b.name||b.bankName)}</option>`).join("")}</select>`:""}<button class="mini" type="button" data-ix="mine" data-nm="${esc(m.name||"")}" data-vp="${esc(m.vpa||"")}">Yes, this is my account</button></div>`}
+// the bank behind a UPI id: its handle after the @ (axisbank, okhdfcbank, oksbi, okicici ...). Only when exactly one of your banks fits
+function ixVpaBank(vpa){try{const h=String(vpa||"").split("@")[1]||"";if(!h)return null;const M=[[/axis|^axl$|^apl$/i,/axis/i],[/hdfc/i,/hdfc/i],[/icici|^ibl$/i,/icici/i],[/sbi/i,/sbi|state bank/i],[/kotak/i,/kotak/i],[/yesbank|^ybl$/i,/yes/i],[/paytm/i,/paytm/i],[/pnb/i,/pnb|punjab/i],[/idfc/i,/idfc/i],[/indus/i,/indus/i],[/federal|^fbl$/i,/federal/i],[/boi/i,/bank of india/i],[/baroda|barb/i,/baroda/i],[/canara|cnrb/i,/canara/i],[/union/i,/union/i],[/slice/i,/slice/i]];
+  const m=M.find(x=>x[0].test(h));if(!m)return null;const c=banks.filter(b=>b.type!=="Cash"&&m[1].test((b.name||"")+" "+(b.bankName||"")));return c.length===1?c[0]:null}catch(e){return null}}
+function ixMineRow(m){const c=banks.filter(b=>b.type!=="Cash");const pre=ixVpaBank(m.vpa);return`<div class="ixmrow"><div class="note" style="margin:0">${m.name?`Name: <b>${esc(m.name)}</b>`:""}${m.name&&m.vpa?" · ":""}${m.vpa?`UPI ID: <b>${esc(m.vpa)}</b>`:""}</div>${m.vpa&&c.length?`<select class="ssel" data-ixmbank><option value="">Which bank is it? (optional)</option>${c.map(b=>`<option value="${esc(b.id)}"${pre&&pre.id===b.id?" selected":""}>${esc(b.name||b.bankName)}</option>`).join("")}</select>`:""}<button class="mini" type="button" data-ix="mine" data-nm="${esc(m.name||"")}" data-vp="${esc(m.vpa||"")}">Yes, this is my account${pre?" ("+esc(pre.name||pre.bankName)+")":""}</button></div>`}
 // ---- v71: smarter intake helpers
 const ixDfmtMem={};let ixDfmtT=0;
 const ixDfmtGet=()=>{let L={};try{L=JSON.parse(pref("ixDfmt")||"{}")||{}}catch(e){}return{...L,...ixDfmtMem}};
@@ -4880,8 +4884,8 @@ function ixRail(){try{const R=document.getElementById("ix-rail");if(!R)return;co
 const i2Url=new WeakMap();const i2U=f=>{let u=i2Url.get(f);if(!u){u=URL.createObjectURL(f);i2Url.set(f,u)}return u};
 // what the app made of each picture (known after the check): so you can see which one is which
 function i2Label(f){try{const it=(ixS.items||[]).find(x=>x.file===f);if(!it||!it.cls)return"";if(it.ledger)return"Wallet history";if(it.list)return"Order list";if(it.pay)return"Payment";if(it.ord)return"Exchange order";return it.cls.type==="UNKNOWN"?"Not sure":""}catch(e){return""}}
-function i2Thumbs(){const n=i2Files.length,dzE=$("#idrop");try{dzE.classList.toggle("has",n>0);dzE.querySelector("b").textContent=n?"Add more":"Add screenshots";dzE.querySelector("small").textContent=n?n+" of 10 · tap a picture to open it":"Exchange order and bank payment together become one transaction. Up to 10."}catch(e){}
-  $("#i2-prev").innerHTML=i2Files.map((f,i)=>{const lb=i2Label(f);return`<span class="pv"><img data-pi="${i}" src="${i2U(f)}" alt="Screenshot ${i+1}"><i class="no">${i+1}</i><button type="button" data-ri="${i}" aria-label="Remove screenshot ${i+1}">×</button>${lb?`<em>${esc(lb)}</em>`:""}</span>`}).join("")}
+function i2Thumbs(){const n=i2Files.length,dzE=$("#idrop");try{dzE.classList.toggle("has",n>0)}catch(e){}
+  $("#i2-prev").innerHTML=i2Files.map((f,i)=>{const lb=i2Label(f);return`<span class="pv"><img data-pi="${i}" src="${i2U(f)}" alt="Screenshot ${i+1}"><i class="no">${i+1}</i><button type="button" data-ri="${i}" aria-label="Remove screenshot ${i+1}">×</button>${lb?`<em>${esc(lb)}</em>`:""}</span>`}).join("")+(n&&n<10?`<button type="button" class="addtile" data-addpic aria-label="Add more screenshots"><span>＋</span><small>Add more</small></button>`:"")}
 function i2Lb(i){try{document.querySelectorAll(".i2lb").forEach(x=>x.remove());if(!i2Files.length)return;i=Math.max(0,Math.min(i,i2Files.length-1));
   const el=document.createElement("div");el.className="i2lb";el.setAttribute("role","dialog");el.setAttribute("aria-label","Screenshot preview");
   const draw=()=>{const f=i2Files[i];if(!f){el.remove();document.body.style.overflow="";return}const lb=i2Label(f);
@@ -4907,7 +4911,7 @@ let i2Auto=null;
 $("#i2-pastebtn").onclick=async()=>{try{const items=await navigator.clipboard.read();const fl=[];for(const it of items){const ty=it.types.find(t=>/^image\//.test(t));if(ty){const bl=await it.getType(ty);fl.push(new File([bl],"pasted.png",{type:ty}))}}if(fl.length)i2Add(fl);else toast("No image on the clipboard")}catch(e){toast("Couldn't read the clipboard. Long-press in the box below and choose Paste.")}};
 $("#i2-legacy").onclick=()=>{if(i2Files.length||$("#i2-text").value.trim())legacyIntake();else toast("Add screenshots first")};
 try{document.getElementById("ix-txt").addEventListener("toggle",()=>{try{$("#i2-text").focus()}catch(e){}})}catch(e){}
-$("#i2-prev").onclick=e=>{const im=e.target.closest("[data-pi]");if(im){i2Lb(+im.dataset.pi);return}const b=e.target.closest("[data-ri]");if(b){i2Files.splice(+b.dataset.ri,1);i2Draw()}};
+$("#i2-prev").onclick=e=>{if(e.target.closest("[data-addpic]")){try{$("#i2-file").click()}catch(x){}return}const im=e.target.closest("[data-pi]");if(im){i2Lb(+im.dataset.pi);return}const b=e.target.closest("[data-ri]");if(b){i2Files.splice(+b.dataset.ri,1);i2Draw()}};
 const dz=$("#idrop");try{ixRail()}catch(e){}["dragenter","dragover"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add("drag")}));["dragleave","drop"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove("drag")}));
 dz.addEventListener("drop",e=>i2Add(e.dataTransfer.files));
 document.addEventListener("paste",e=>{if($("#p-intake").hidden)return;const f=[...(e.clipboardData||{}).files||[]];if(f.length){e.preventDefault();i2Add(f)}});
@@ -5069,7 +5073,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
   const M=ixMine(g),you=pref("owner")||"You",sd=M.side;const ini=n=>String(n||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase()||"?";
   const other=sd==="BUY"?(O.seller||P.receiver):sd==="SELL"?(O.buyer||P.sender):null;
   const L=sd==="BUY"?{n:you,sub:M.acct||(P.acct&&ixAcctOk(P.acct)?"Account "+P.acct:P.bank)||"Your account",me:1}:sd==="SELL"?{n:other||"Buyer",sub:"Buyer"+(O.platform?" · "+O.platform:"")}:{n:P.sender||O.buyer||"Sender",sub:"Sender"};
-  const R=sd==="BUY"?{n:other||"Seller",sub:"Seller"+(O.platform?" · "+O.platform:"")}:sd==="SELL"?{n:you,sub:M.acct||(P.acct&&ixAcctOk(P.acct)?"Account "+P.acct:P.bank)||"Your account",me:1}:{n:P.receiver||O.seller||"Receiver",sub:"Receiver"};
+  const R=sd==="BUY"?{n:other||"Seller",sub:"Seller"+(O.platform?" · "+O.platform:"")}:sd==="SELL"?{n:you,sub:M.acct||(P.dir==="out"?(P.vpa||""):(P.acct&&ixAcctOk(P.acct)?"Account "+P.acct:P.bank))||"Your account",me:1}:{n:P.receiver||O.seller||"Receiver",sub:"Receiver"};
   const party=x=>`<div class="ixp${x.me?" me":""}"><span class="av">${esc(ini(x.n))}</span><b>${esc(x.n)}</b><small>${esc(x.sub)}</small></div>`;
   const C=2*Math.PI*19,off=C*(1-Math.max(0,Math.min(100,g.conf))/100),col=g.cmp.overall==="VERIFIED"?"var(--accent)":g.cmp.overall==="REVIEW"?"var(--warn)":"var(--sell)";
   const deal0=O.crypto&&O.price?`${sd==="SELL"?"Selling":sd==="BUY"?"Buying":"Trade"} ${O.crypto} ${O.coin||"USDT"} @ ₹${O.price}`:"";const partL=g.partSum?g.pays.filter(x=>x.part).map(x=>"₹"+(+(+x.pay.amount).toFixed(2)).toLocaleString("en-IN")).join(" + "):"";const deal=deal0+(partL?(deal0?" · ":"")+"Paid in "+g.pays.filter(x=>x.part).length+" parts: "+partL:"");
@@ -5547,7 +5551,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=79;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=80;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5614,6 +5618,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00080","9 Oct 2026",["Smart intake: the Add more button is now a + tile right next to your screenshots, in the empty space","On a sell order the card no longer shows the buyer's account number as yours; it shows your UPI ID, or your bank once saved","Receiver not saved yet: the bank is picked for you from the UPI ID (axisbank = your Axis bank), so saving your account is one tap"]],
   ["0.0.0.00079","9 Oct 2026",["Smart intake: once screenshots are added, the big Add box shrinks to a slim Add more screenshots bar and the pictures sit right under it, numbered and labelled (Exchange order, Payment, Wallet history) after the check","Tap any picture to see it full screen: swipe or use Previous / Next, tap the picture to zoom, Remove it there if it is the wrong one"]],
   ["0.0.0.00078","9 Oct 2026",["Smart intake works out the date format itself: every numeric date (day/month, month/day, year first, with or without a year) keeps all its readings, and the exchange and payment screenshots decide together. The card says how it was read","The format your exchange uses is remembered once the screenshots make it certain","A payment a few minutes before the order's Created time is now a gentle check instead of a mismatch","Sentence words such as paid, release or review are never taken as a name"]],
   ["0.0.0.00077","9 Oct 2026",["TDS is cut by the exchange after the order completes, as a separate Tax line in the wallet history. Upload that wallet history screenshot in Smart intake and each Tax line is matched to your sell order (by quantity and time) and added as TDS","TDS read from the order page is now marked as not confirmed yet until the wallet history confirms it"]],
