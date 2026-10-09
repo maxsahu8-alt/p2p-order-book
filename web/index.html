@@ -2398,7 +2398,7 @@ function ixlKnown(name,side){if(!name)return 0;return orders.filter(o=>o.status!
 const ixMs=ms=>{if(!ms)return null;const d=new Date(ms),p=n=>String(n).padStart(2,"0");return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
 // payment text → same shape verParse() gives
 function ixPayFrom(text,conf){const p=payParse(text),d=ixMs(p.time);
-  return{status:p.status==="Failed"?"FAILED":p.status==="Pending"?"PENDING":p.status==="Success"?"SUCCESS":null,amount:p.amount||null,currency:p.amount?"INR":null,sender:p.sender||null,receiver:p.receiver||null,utr:p.utr||null,method:p.method||null,bank:p.bank||null,date:d?d.slice(0,10):null,time:d?d.slice(11):null,acct:p.last4?"••"+p.last4:null,conf:conf,dir:p.dir||"",last4:p.last4||"",ok:p.ok,vpa:ixVpa(text),fromLabel:p.fromLabel||null,fromLast4:p.fromLast4||null,alts:(p.timeAlts||[]).length>1?p.timeAlts.map(ixMs):null}}
+  return{status:p.status==="Failed"?"FAILED":p.status==="Pending"?"PENDING":p.status==="Success"?"SUCCESS":null,amount:p.amount||null,currency:p.amount?"INR":null,sender:p.sender||null,receiver:p.receiver||null,utr:p.utr||null,method:p.method||null,bank:p.bank||null,date:d?d.slice(0,10):null,time:d?d.slice(11):null,acct:p.last4?"••"+p.last4:null,conf:conf,dir:p.dir||"",last4:p.last4||"",ok:p.ok,vpa:ixVpa(text),amountAlts:p.amountAlts||null,fromLabel:p.fromLabel||null,fromLast4:p.fromLast4||null,alts:(p.timeAlts||[]).length>1?p.timeAlts.map(ixMs):null}}
 function ixOrdSide(flat){const C="(?:usdt|usdc|btc|eth|bnb|trx|xrp|sol|doge|dai|ltc|matic|shib)";const b=new RegExp("\\b(?:buy|buying|bought)\\s+"+C+"\\b","i").test(flat)||/\bBuy\s+[A-Z]{3,5}\b/.test(flat),s=new RegExp("\\b(?:sell|selling|sold)\\s+"+C+"\\b","i").test(flat)||/\bSell\s+[A-Z]{3,5}\b/.test(flat);
   if(b&&!s)return"BUY";if(s&&!b)return"SELL";if(!b&&!s){if(/you\s*pay\b/i.test(flat)&&!/you\s*(?:will\s*)?receive\s*(?:₹|rs|inr)/i.test(flat))return"BUY";if(/you\s*(?:will\s*)?receive\s*(?:₹|rs|inr)/i.test(flat))return"SELL"}return null}
 function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," ");const num=s=>{const n=parseFloat(String(s).replace(/,/g,""));return isFinite(n)?n:null};
@@ -2411,7 +2411,9 @@ function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," "
   let price=null;{const pm=flat.match(new RegExp("(?:unit\\s*)?(?:price|rate)\\D{0,14}"+CUR+"?\\s*([0-9]{2,3}(?:\\.\\d{1,4})?)","i"));if(pm)price=num(pm[1]);if(price==null&&fiat&&crypto)price=+(fiat/crypto).toFixed(2)}
   const nm=(lab)=>{const m=flat.match(new RegExp(lab+"\\s*(?:name)?\\s*[:：]?\\s*([A-Za-z][A-Za-z.' ]{2,36}?)(?=\\s{2,}|\\s(?:order|price|amount|total|quantity|status|payment|seller|buyer|time|date)\\b|$|[0-9])","i"));if(!m)return null;const v=m[1].trim();return /^[a-z]/.test(v)||/\b(?:paid|payment|released?|the|has|have)\b/i.test(v)?null:v};
   const ixn=v=>v?ixNameClean(v):null;let buyer=ixn(nm("buyer")),seller=ixn(nm("seller"));
-  let cp=null,nick=null;{const Ls=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<Ls.length&&!cp;i++){const m=Ls[i].match(/^(?:counter\s*-?\s*party|merchant|advertiser|trader)\b\s*[:：]?\s*(.*)$/i);if(m){cp=ixNameClean(m[1])||(Ls[i+1]&&!IX_LABELISH.test(Ls[i+1])?ixNameClean(Ls[i+1]):null);nick=((m[1].match(/\(([^)]{2,30})\)/)||[])[1]||"").trim()||null}}}
+  let cp=null,nick=null;{const Ls=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<Ls.length&&!cp;i++){const m=Ls[i].match(/^(?:counter\s*-?\s*party|merchant|advertiser|trader)\b\s*[:：]?\s*(.*)$/i);if(m){cp=ixNameClean(m[1])||(Ls[i+1]&&!IX_LABELISH.test(Ls[i+1])?ixNameClean(Ls[i+1]):null);nick=((m[1].match(/\(([^)]{2,30})\)/)||[])[1]||"").trim()||null;
+    // the name wraps: "MOHAMMED ILIYAZ HUSSAIN" / "BELLARY (Ily67)"
+    const nx=m[1].trim()&&Ls[i+1]?Ls[i+1].match(/^([A-Za-z][A-Za-z.' ]{1,24}?)\s*(?:\(([^)]{2,30})\))?$/):null;if(cp&&nx&&!IX_LABELISH.test(nx[1])&&!/\b(?:order|price|amount|total|created|status|quantity|payment|time|date|number|buyer|seller|having|place|check)\b/i.test(nx[1])){cp=ixNameClean(cp+" "+nx[1])||cp;if(nx[2]&&!nick)nick=nx[2].trim()}}}}
   const st=(flat.match(/\b(completed|released|paid|unpaid|to be paid|waiting for payment|cancell?ed|appeal|dispute|pending|processing)\b/i)||[])[1];
   let ts=payTime(t);if(!ts){const m=flat.match(/(\d{4})-(\d{2})-(\d{2})[ T]+(\d{1,2}):(\d{2})/);if(m)ts=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).getTime()}
   let whenAlt=null,whenAlts=null;{const ta=ixTimeAlts(t);if(!ts&&ta.alts.length)ts=ta.alts[0];if(ta.amb&&ts){whenAlts=ta.alts.map(ixMs);const o=ta.alts.find(x=>x!==ts);if(o)whenAlt=ixMs(o)}}
@@ -2610,18 +2612,22 @@ function ixGroup(items){items=items.filter(x=>!x.list&&!x.ledger);const pays=ite
   const pairs=[];pays.forEach(p=>ords.forEach((o,j)=>pairs.push({p,j,s:score(p,j),hard:ixHard(p.pay,o.ord)})));pairs.sort((a,b)=>b.s-a.s);
   const used=new Set(),taken=new Set();
   // pass 0: part payments. Several payments (other banks / other amounts) that add up to exactly one order's total are ONE transaction
+  const oTot=o=>{const O=o.ord;return O.fiat!=null?O.fiat:(O.crypto&&O.price?O.crypto*O.price:null)};
+  // a figure whose rupee sign was read as a digit ("71,905"): if one reading is exactly an order's total, take it
+  pays.forEach(p=>{const A=p.pay.amountAlts;if(!(A&&A.length)||p.pay.amount>0)return;const hit=A.find(a=>ords.some(o=>{const t=oTot(o);return t>0&&Math.abs(a-t)<=Math.max(1,t*0.002)}));if(hit){p.pay.amount=hit;p.pay.amountAlts=null;p.pay.amountFixed=true}});
   ords.forEach((o,j)=>{try{const O=o.ord,amt=O.fiat!=null?O.fiat:(O.crypto&&O.price?O.crypto*O.price:null);if(!(amt>0))return;const tol=Math.max(1,amt*0.002);
     if(pays.some(p=>!used.has(p)&&p.pay.amount!=null&&Math.abs(p.pay.amount-amt)<=tol))return; // one payment already fits the whole order
     const ot=verWhen((O.when||"").slice(0,10),(O.when||"").slice(11,16));
-    const cand=pays.filter(p=>{const q=p.pay;if(used.has(p)||!(q.amount>0)||q.amount>=amt-tol)return false;
+    const opts=p=>p.pay.amount>0?[p.pay.amount]:(p.pay.amountAlts||[]);
+    const cand=pays.filter(p=>{const q=p.pay;if(used.has(p)||!opts(p).some(a=>a>0&&a<amt-tol))return false;
       if(verName(q.sender,O.buyer)==="X"&&verName(q.receiver,O.seller)==="X")return false;
       const pt=verWhen(q.date,q.time);if(pt&&ot){const d=pt-ot;if(d<-5*60e3||d>48*36e5)return false}return true})
       .sort((a,b)=>(verWhen(a.pay.date,a.pay.time)||0)-(verWhen(b.pay.date,b.pay.time)||0)).slice(0,8);
     let best=null;for(let m=1;m<(1<<cand.length);m++){const sub=cand.filter((_,i)=>m&(1<<i));if(sub.length<2||sub.length>4)continue;
-      const sum=sub.reduce((t,x)=>t+x.pay.amount,0);if(Math.abs(sum-amt)>tol)continue;
+      let pick=null;const walk=(i,acc,ch)=>{if(pick)return;if(i===sub.length){if(Math.abs(acc-amt)<=tol)pick=ch;return}opts(sub[i]).forEach(a=>walk(i+1,acc+a,ch.concat(a)))};walk(0,0,[]);if(!pick)continue;
       const u=sub.map(x=>x.pay.utr?normRef(x.pay.utr):"").filter(Boolean);if(new Set(u).size<u.length)continue; // the same payment twice is not two part payments
-      if(!best||sub.length<best.length)best=sub}
-    if(best){best.forEach(p=>{used.add(p);p.part=true;p.pairScore=3});taken.add(j);groups[j].pays.push(...best);groups[j].partSum=best.reduce((t,x)=>t+x.pay.amount,0)}}catch(e){}});
+      if(!best||sub.length<best.length){best=sub;best.pick=pick}}
+    if(best){best.forEach((p,i)=>{if(!(p.pay.amount>0)){p.pay.amount=best.pick[i];p.pay.amountAlts=null;p.pay.amountFixed=true}used.add(p);p.part=true;p.pairScore=3});taken.add(j);groups[j].pays.push(...best);groups[j].partSum=best.reduce((t,x)=>t+x.pay.amount,0)}}catch(e){}});
   // pass 1: strong evidence, one payment per order first
   pairs.forEach(x=>{if(used.has(x.p)||taken.has(x.j)||x.s<2||x.hard)return;used.add(x.p);taken.add(x.j);groups[x.j].pays.push(x.p);x.p.pairScore=x.s});
   // pass 2: whatever is left. A lone order and a lone payment are the same transaction unless they clearly contradict each other
@@ -2783,6 +2789,11 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   const CUR="(?:₹|Rs\\.?|INR|[~£<¥%?=])";const skip=/(?:bal(?:ance)?|avl|available|fee|charge|limit|cashback|reward)\W{0,12}$/i;
   for(const m of flat.matchAll(new RegExp("(?:^|[^A-Za-z0-9])"+CUR+"\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)","ig"))){if(skip.test(flat.slice(Math.max(0,m.index-18),m.index+1)))continue;const v=+m[1].replace(/,/g,"");if(v>=1&&v<1e9&&String(Math.trunc(v)).length<=9){P.amount=v;break}}
   if(!P.amount){const c=lines.filter(l=>/^\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?$|^\d{1,7}\.\d{1,2}$/.test(l));if(c.length===1)P.amount=+c[0].replace(/,/g,"")}
+  // wallet apps print the figure next to a button ("71,905 Split Expense"); the ₹ is often read as a 7 / 2 stuck to the number, so "71,905" may be ₹1,905
+  if(!P.amount){const c=lines.map(l=>l.match(/^([^\d\s])?\s?(\d[\d,]*(?:\.\d{1,2})?)\s+(?:split\s*expense|pay\s*again|share|view\s*details|details|done)\b/i)).filter(Boolean);
+    if(c.length===1&&!c[0][1]){const raw=c[0][2],v=+raw.replace(/,/g,""),cut=raw.slice(1);const v2=/^[72]/.test(raw)&&/^\d{1,3}(?:,\d{2,3})*$|^\d{1,6}$/.test(cut)&&raw.length>=5?+cut.replace(/,/g,""):null;
+      if(v2>=1){P.amountAlts=[v2,v]}else if(v>=1)P.amount=v}
+    else if(c.length===1&&+c[0][2].replace(/,/g,"")>=1)P.amount=+c[0][2].replace(/,/g,"")}
   // UTR / reference (labelled first, then a bare 12-digit UPI reference)
   const fixO=v=>/^[0-9OIlSB]{12}$/.test(v)&&(v.match(/\d/g)||[]).length>=10?v.replace(/[Oo]/g,"0").replace(/[Il]/g,"1").replace(/S/g,"5").replace(/B/g,"8"):v;
   const find=re=>{for(const m of flat.matchAll(new RegExp(re.source,"ig"))){const v=fixO(m[1]);if((v.match(/\d/g)||[]).length>=6)return v}return ""};
@@ -2798,6 +2809,10 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   const nameOf=v=>{v=v.replace(/\(.*?\)/g," ").replace(/\S+@\S+/g," ");PAY_BANKS.forEach(([,re])=>{v=v.replace(new RegExp(re.source,"ig")," ")});v=v.replace(/\b(?:a\/c|acct?|account|no\.?|ref|upi|vpa|bank|ltd|limited)\b/ig," ").replace(/[xX*•]{2,}\d*/g," ").replace(/[^A-Za-z .'\-]/g," ").replace(/\s+/g," ").trim();v=ixNameClean(v)||"";return v.length>=2?v.slice(0,40):""};
   const grab=re=>{for(let i=0;i<lines.length;i++){const m=lines[i].match(re);if(!m)continue;let v=(m[1]||"").trim();if(!v&&lines[i+1])v=lines[i+1];const n=nameOf(v);if(n)return n}return ""};
   P.receiver=grab(/^(?:banking name|beneficiary(?: name)?)\b\s*[:\-]?\s*(.*)$/i)||grab(/^(?:paid to|money sent to|sent to|transferred to|credited to|beneficiary(?: name)?|banking name|to)\b\s*[:\-]?\s*(.*)$/i);
+  // Google Pay / PhonePe style: the name (often wrapped over 2 lines) sits right above the masked UPI id ("••••8047-1@ybl")
+  if(!P.receiver){const i=lines.findIndex(l=>/^\S{0,10}\d{3,}[\w.\-]*@[a-z]{2,}\b/i.test(l)&&!/[a-z]{4,}/i.test(l.split("@")[0].replace(/^\S{0,10}(?=\d)/,"")));
+    if(i>0){const nl=[];for(let j=i-1;j>=0&&nl.length<3;j--){const l=lines[j].replace(/^[^A-Za-z]+/,"");if(/^[A-Za-z][A-Za-z.' ]{1,28}$/.test(l)&&!/\b(?:successful|payment|paid|done|share|receipt|details|split|expense|completed|failed|pending)\b/i.test(l)&&!/\b(?:\d{1,2}\s+\w+\s+\d{4})\b/.test(l))nl.unshift(l.replace(/^[lI](?=[a-z]{3})/,"I"));else break}
+      const n=nameOf(nl.join(" "));if(n)P.receiver=n}}
   if(!P.receiver){const i=lines.findIndex(l=>/^UPI ID\s*[:\-]/i.test(l));if(i>0){const n=nameOf(lines[i-1]);if(n)P.receiver=n}}
   if(!P.status&&/pay again|check balance/i.test(flat)&&!/fail|declin|reject|cancel/i.test(flat))P.status="Success";
   if(!P.dir&&/pay again|check balance/i.test(flat))P.dir="out";
@@ -5620,7 +5635,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=83;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=84;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5687,6 +5702,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00084","10 Oct 2026",["Smart intake: part payments from wallet apps now group with their order (e.g. ₹30,000 + ₹1,905 for one ₹31,905.25 buy). A rupee sign misread as a digit (\"71,905\" for ₹1,905) is resolved using the order total"]],
   ["0.0.0.00083","9 Oct 2026",["TDS on a SELL now comes out of your USDT stock too (exact USDT from wallet history or the order page, else rupees ÷ rate), so USDT left matches the exchange wallet","Wallet: tap the USDT left card for a wallet history like KuCoin: Buy Crypto, Sell Crypto and the Tax line of the same sell, with a running balance"]],
   ["0.0.0.00082","9 Oct 2026",["Smart intake: when the AI guesses a payment year (screenshots rarely print one) or drops the PM, the app now fixes it by itself using the order time (2025 → 2026, 06:58 → 18:58) and tells you what it fixed","The AI is told today\u2019s date and to use 24-hour time, so it stops guessing an old year"]],
   ["0.0.0.00081","9 Oct 2026",["Screenshot preview is now a rounded card that rises from the bottom (not full screen) with a blurred background","Swipe sideways to slide between screenshots with a soft 3D turn; swipe down and the card follows your finger and closes, like a professional app","Dots show where you are; tap the picture to zoom and drag to move around"]],
