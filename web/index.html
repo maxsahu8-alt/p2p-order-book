@@ -532,6 +532,16 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .ixprev{display:flex;gap:10px;flex-wrap:wrap}.ixprev:empty{display:none}
 .ixprev .pv img{font-size:.6rem;width:84px;height:112px;border-radius:12px;object-fit:cover;box-shadow:0 1px 0 var(--line)}
 .ixprev .pv button{top:-7px;right:-7px;width:24px;height:24px}
+.ixprev .pv{width:84px}.ixprev .pv img{cursor:zoom-in}
+.ixprev .pv .no{position:absolute;left:6px;top:6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--fg);color:var(--bg);font-weight:700;font-size:.7rem;line-height:20px;font-style:normal;text-align:center;pointer-events:none}
+.ixprev .pv em{display:block;margin-top:4px;font-style:normal;font-size:.7rem;color:var(--muted);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ixdz.has{flex-direction:row;justify-content:center;gap:12px;padding:12px 16px;border-radius:16px}.ixdz.has .ixdz-ic{width:38px;height:38px;border-radius:12px;margin:0}.ixdz.has .ixdz-ic svg{width:20px;height:20px}.ixdz.has b{font-size:.95rem;white-space:nowrap}.ixdz.has small{max-width:none;margin:0 0 0 auto;font-size:.76rem;text-align:right}
+.i2lb{position:fixed;inset:0;z-index:200;background:#000;display:flex;flex-direction:column;color:#fff}
+.i2lb .top{display:flex;align-items:center;gap:10px;padding:max(12px,env(safe-area-inset-top)) 14px 10px}.i2lb .top b{flex:1;font-size:.95rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.i2lb button{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.1);color:#fff;border-radius:12px;padding:9px 14px;font:inherit;font-size:.9rem;cursor:pointer}
+.i2lb .stage{flex:1;overflow:auto;display:flex;touch-action:pan-x pan-y pinch-zoom;-webkit-overflow-scrolling:touch}
+.i2lb .stage img{margin:auto;max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in}.i2lb .stage.z img{max-width:none;max-height:none;width:220%;cursor:zoom-out}
+.i2lb .nav{display:flex;gap:10px;padding:10px 14px max(14px,env(safe-area-inset-bottom))}.i2lb .nav button{flex:1}.i2lb .nav .rm{color:#ff8a8a;border-color:rgba(255,138,138,.4)}.i2lb button:disabled{opacity:.35}
 .ixready{margin:0;font-size:.74rem;color:var(--muted);display:flex;align-items:center;gap:7px}.ixready:empty{display:none}
 .ixready::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
 .ixtxt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 12px}
@@ -4867,7 +4877,24 @@ function ixRail(){try{const R=document.getElementById("ix-rail");if(!R)return;co
   set("check",busy?"on busy":chk?"done":(add?"on":""),busy?"Reading…":chk?(G.length+(G.length===1?" transaction":" transactions")):"Match and verify");
   set("save",saved?"done":(chk?"on":""),saved?"Saved":(chk?"Your turn":"You confirm"));
  }catch(e){}}
-function i2Draw(){try{const n=i2Files.length;$("#i2-go").textContent=n?(n>1?"Analyze "+n+" screenshots":"Analyze"):"Add from text"}catch(e){}if(i2Files.length&&!ocrWorker&&!ocrPromise&&!(window.P2POcr&&P2POcr.recognize)){try{ocrInit().catch(()=>{})}catch(e){}}$("#i2-prev").innerHTML=i2Files.map((f,i)=>`<span class="pv"><img src="${URL.createObjectURL(f)}" alt="Screenshot ${i+1}"><button type="button" data-ri="${i}" aria-label="Remove screenshot ${i+1}">×</button></span>`).join("");ixRail();}
+const i2Url=new WeakMap();const i2U=f=>{let u=i2Url.get(f);if(!u){u=URL.createObjectURL(f);i2Url.set(f,u)}return u};
+// what the app made of each picture (known after the check): so you can see which one is which
+function i2Label(f){try{const it=(ixS.items||[]).find(x=>x.file===f);if(!it||!it.cls)return"";if(it.ledger)return"Wallet history";if(it.list)return"Order list";if(it.pay)return"Payment";if(it.ord)return"Exchange order";return it.cls.type==="UNKNOWN"?"Not sure":""}catch(e){return""}}
+function i2Thumbs(){const n=i2Files.length,dzE=$("#idrop");try{dzE.classList.toggle("has",n>0);dzE.querySelector("b").textContent=n?"Add more":"Add screenshots";dzE.querySelector("small").textContent=n?n+" of 10 · tap a picture to open it":"Exchange order and bank payment together become one transaction. Up to 10."}catch(e){}
+  $("#i2-prev").innerHTML=i2Files.map((f,i)=>{const lb=i2Label(f);return`<span class="pv"><img data-pi="${i}" src="${i2U(f)}" alt="Screenshot ${i+1}"><i class="no">${i+1}</i><button type="button" data-ri="${i}" aria-label="Remove screenshot ${i+1}">×</button>${lb?`<em>${esc(lb)}</em>`:""}</span>`}).join("")}
+function i2Lb(i){try{document.querySelectorAll(".i2lb").forEach(x=>x.remove());if(!i2Files.length)return;i=Math.max(0,Math.min(i,i2Files.length-1));
+  const el=document.createElement("div");el.className="i2lb";el.setAttribute("role","dialog");el.setAttribute("aria-label","Screenshot preview");
+  const draw=()=>{const f=i2Files[i];if(!f){el.remove();document.body.style.overflow="";return}const lb=i2Label(f);
+    el.innerHTML=`<div class="top"><b>Screenshot ${i+1} of ${i2Files.length}${lb?" · "+esc(lb):""}</b><button type="button" data-x aria-label="Close">Close</button></div><div class="stage"><img src="${i2U(f)}" alt="Screenshot ${i+1}"></div><div class="nav"><button type="button" data-p ${i?"":"disabled"}>‹ Previous</button><button type="button" class="rm" data-d>Remove</button><button type="button" data-n ${i<i2Files.length-1?"":"disabled"}>Next ›</button></div>`};
+  draw();document.body.appendChild(el);document.body.style.overflow="hidden";
+  const close=()=>{el.remove();document.body.style.overflow="";document.removeEventListener("keydown",key)};
+  const key=e=>{if(e.key==="Escape")close();else if(e.key==="ArrowLeft"&&i>0){i--;draw()}else if(e.key==="ArrowRight"&&i<i2Files.length-1){i++;draw()}};document.addEventListener("keydown",key);
+  el.addEventListener("click",e=>{if(e.target.closest("[data-x]")){close();return}if(e.target.closest("[data-p]")){if(i>0){i--;draw()}return}if(e.target.closest("[data-n]")){if(i<i2Files.length-1){i++;draw()}return}
+    if(e.target.closest("[data-d]")){i2Files.splice(i,1);i2Draw();if(!i2Files.length){close();return}if(i>=i2Files.length)i=i2Files.length-1;draw();return}
+    const st=e.target.closest(".stage");if(st)st.classList.toggle("z")});
+  let x0=null;el.addEventListener("touchstart",e=>{x0=e.touches.length===1&&!el.querySelector(".stage.z")?e.touches[0].clientX:null},{passive:true});
+  el.addEventListener("touchend",e=>{if(x0==null)return;const dx=(e.changedTouches[0]||{}).clientX-x0;x0=null;if(Math.abs(dx)>70){if(dx<0&&i<i2Files.length-1){i++;draw()}else if(dx>0&&i>0){i--;draw()}}},{passive:true})}catch(e){console.error(e)}}
+function i2Draw(){try{const n=i2Files.length;$("#i2-go").textContent=n?(n>1?"Analyze "+n+" screenshots":"Analyze"):"Add from text"}catch(e){}if(i2Files.length&&!ocrWorker&&!ocrPromise&&!(window.P2POcr&&P2POcr.recognize)){try{ocrInit().catch(()=>{})}catch(e){}}i2Thumbs();ixRail();}
 function i2Add(list){const all=[...(list||[])];const imgs=all.filter(f=>/^image\//.test(f.type)||(!f.type&&/\.(png|jpe?g|webp|heic|heif|gif|bmp)$/i.test(f.name||""))||(!f.type&&f.size>0));
   if(!all.length)return;if(!imgs.length){toast("That file isn't a picture. Choose a screenshot.");return}const max=10;
 
@@ -4880,7 +4907,7 @@ let i2Auto=null;
 $("#i2-pastebtn").onclick=async()=>{try{const items=await navigator.clipboard.read();const fl=[];for(const it of items){const ty=it.types.find(t=>/^image\//.test(t));if(ty){const bl=await it.getType(ty);fl.push(new File([bl],"pasted.png",{type:ty}))}}if(fl.length)i2Add(fl);else toast("No image on the clipboard")}catch(e){toast("Couldn't read the clipboard. Long-press in the box below and choose Paste.")}};
 $("#i2-legacy").onclick=()=>{if(i2Files.length||$("#i2-text").value.trim())legacyIntake();else toast("Add screenshots first")};
 try{document.getElementById("ix-txt").addEventListener("toggle",()=>{try{$("#i2-text").focus()}catch(e){}})}catch(e){}
-$("#i2-prev").onclick=e=>{const b=e.target.closest("[data-ri]");if(b){i2Files.splice(+b.dataset.ri,1);i2Draw()}};
+$("#i2-prev").onclick=e=>{const im=e.target.closest("[data-pi]");if(im){i2Lb(+im.dataset.pi);return}const b=e.target.closest("[data-ri]");if(b){i2Files.splice(+b.dataset.ri,1);i2Draw()}};
 const dz=$("#idrop");try{ixRail()}catch(e){}["dragenter","dragover"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add("drag")}));["dragleave","drop"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove("drag")}));
 dz.addEventListener("drop",e=>i2Add(e.dataTransfer.files));
 document.addEventListener("paste",e=>{if($("#p-intake").hidden)return;const f=[...(e.clipboardData||{}).files||[]];if(f.length){e.preventDefault();i2Add(f)}});
@@ -5076,7 +5103,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     <div class="row2" style="margin-top:10px">${g.order||g.target?`<button class="primary" type="button" data-ix="save" ${g.saved?"disabled":""}>${saveLbl}</button>`:""}<button class="mini ghost" type="button" data-ix="recheck">RECHECK</button></div>${!g.order&&!g.target?`<div class="note" style="margin-top:6px">Payment only: choose the order it belongs to below, then confirm.</div><div data-paycard></div>`:""}
     <div class="row2" style="margin-top:6px"><button class="mini ${g.cmp.overall!=="VERIFIED"&&g.ai!=="ok"?"":"ghost"}" type="button" data-ix="deep">${g.ai==="ok"?"DEEP AI CHECK AGAIN":"DEEP AI CHECK"}</button><button class="mini ghost" type="button" data-ix="raw">VIEW RAW DATA</button>${pref("dev")?'<button class="mini ghost" type="button" data-ix="debug">DEBUG</button>':""}</div>
     <div class="ixraw" hidden><pre>${esc(JSON.stringify({ocr:g.items.map(x=>({type:x.cls.type,engine:x.ocr&&x.ocr.engine,conf:x.ocr&&x.ocr.conf,text:x.ocr&&x.ocr.text})),payment:P,order:O,flags:g.cmp.flags,risk:g.risk,duplicates:g.dups.map(d=>d.msg),aiReasons:g.reasonsAI,aiConflicts:g.conflicts||[]},null,1))}</pre></div>`}
-function ixDraw(){try{ixRail()}catch(e){}const out=$("#i2-ix");if(!out)return;out.innerHTML="";const G=ixS.groups;try{const ca=$("#ix-auto");if(ca)ca.checked=pref("ixAuto")!=="0";ixDrawExtras(out)}catch(e){console.error(e)}
+function ixDraw(){try{ixRail()}catch(e){}try{i2Thumbs()}catch(e){}const out=$("#i2-ix");if(!out)return;out.innerHTML="";const G=ixS.groups;try{const ca=$("#ix-auto");if(ca)ca.checked=pref("ixAuto")!=="0";ixDrawExtras(out)}catch(e){console.error(e)}
   if(G.length>1){const h=document.createElement("div");h.className="acard ixhead";h.innerHTML=`<div class="ah">${G.length} TRANSACTIONS DETECTED</div><div class="row2"><button class="primary" type="button" data-ixall="save">SAVE ALL</button><button class="mini ghost" type="button" data-ixall="review">REVIEW INDIVIDUALLY</button></div><div class="note" data-ixallmsg></div>`;
     h.querySelector('[data-ixall="save"]').onclick=ixSaveAll;h.querySelector('[data-ixall="review"]').onclick=()=>{out.querySelectorAll(".ixg").forEach((e,i)=>{e.open=i===0});h.querySelector("[data-ixallmsg]").textContent="Open each transaction below and check it before saving."};out.appendChild(h)}
   G.forEach((g,i)=>{const d=document.createElement(G.length>1?"details":"div");d.className="acard ixg";d.dataset.gid=g.id;if(G.length>1){d.open=ixS.open===g.id||G.length<=2;d.innerHTML=`<summary><b>TRANSACTION ${i+1}</b> · ${g.items.length} screenshot${g.items.length>1?"s":""} · ${g.X.pay.amount!=null?inr(g.X.pay.amount):g.X.ord.fiat!=null?inr(g.X.ord.fiat):"?"} · ${VER_TXT[g.cmp.overall][1]}${g.saved?" · saved":""}</summary><div class="ixb">${ixCardHtml(g,true)}</div>`}else d.innerHTML=`<div class="ixb"><div class="pcsec" style="margin-top:0">TRANSACTION 1 · ${g.items.length} screenshot${g.items.length>1?"s":""}</div>${ixCardHtml(g,false)}</div>`;
@@ -5520,7 +5547,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=78;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=79;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5587,6 +5614,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00079","9 Oct 2026",["Smart intake: once screenshots are added, the big Add box shrinks to a slim Add more screenshots bar and the pictures sit right under it, numbered and labelled (Exchange order, Payment, Wallet history) after the check","Tap any picture to see it full screen: swipe or use Previous / Next, tap the picture to zoom, Remove it there if it is the wrong one"]],
   ["0.0.0.00078","9 Oct 2026",["Smart intake works out the date format itself: every numeric date (day/month, month/day, year first, with or without a year) keeps all its readings, and the exchange and payment screenshots decide together. The card says how it was read","The format your exchange uses is remembered once the screenshots make it certain","A payment a few minutes before the order's Created time is now a gentle check instead of a mismatch","Sentence words such as paid, release or review are never taken as a name"]],
   ["0.0.0.00077","9 Oct 2026",["TDS is cut by the exchange after the order completes, as a separate Tax line in the wallet history. Upload that wallet history screenshot in Smart intake and each Tax line is matched to your sell order (by quantity and time) and added as TDS","TDS read from the order page is now marked as not confirmed yet until the wallet history confirms it"]],
   ["0.0.0.00076","9 Oct 2026",["TDS: KuCoin shows it as \"Tax 3.0278 USDT (1%)\". Smart intake now reads it, saves it in rupees (and the USDT amount) on the sell order, and shows a TDS row on the intake card with Add 1% / Remove","Payment proofs with \"From: slice savings xx9798\" and \"To: Deepak Sahu svdeep@axisbank\" now keep the payer account and the receiver apart, shown as Paid from → paid to, with (client) and (you) on sell orders","A bank label such as \"slice savings\" is no longer taken as the sender name","Dates like 09 Oct \u201926, 08:49 am are read; a long order number wrapped over two lines with a blank line between is joined; \"has paid. The\" from the help text is no longer taken as the buyer"]],
