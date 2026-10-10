@@ -2435,13 +2435,14 @@ function ixNativeOcr(blob,ms){return new Promise((ok,no)=>{if(!(window.P2POcr&&P
 window.P2POcrResult=(id,text,conf,err)=>{const f=(window.__ocrCb||{})[id];if(f)f(text,conf,err)};
 async function ixOcr(it,skip){if(ixOcrCache.has(it.hash))return ixOcrCache.get(it.hash);let r=null;
   if(window.P2POcr&&P2POcr.recognize){try{const n=await ixNativeOcr(it.file,45000);r={text:n.text,conf:n.conf==null?90:n.conf,engine:"ML Kit",status:n.text.trim().length>8?"ok":"partial"}}catch(e){}}
-  if(!r){try{
-      const run=(async()=>{const w=await ocrInit();const {data}=await Promise.race([w.recognize(await ocrPrep(it.file)),new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),60000))]);return data});
-      const data=await (skip?Promise.race([run,skip]):run);
-      let text=(data&&data.text||"").replace(/[ \t]+\n/g,"\n").trim(),dc=data&&data.confidence||0;
-      if(text.length<=8){ // nothing came out: try the untouched picture once before giving up
-        try{const w=await ocrInit();const d2=(await Promise.race([w.recognize(it.file),new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),60000))])).data;const t2=(d2&&d2.text||"").replace(/[ \t]+\n/g,"\n").trim();if(t2.length>text.length){text=t2;dc=d2.confidence||0}}catch(e){}}
-      r=text.length>8?{text,conf:Math.round(dc),engine:"Tesseract",status:"ok"}:{text,conf:0,engine:"Tesseract",status:"fail",err:"empty"}}
+  if(!r){
+    // everything the phone reader does for this picture is one job; "skip" (or the 25 s auto-skip with an AI connected) must be able to end it at any point
+    const tess=async()=>{const w=await ocrInit();const prepd=await Promise.race([ocrPrep(it.file),new Promise(r2=>setTimeout(()=>r2(it.file),15000))]);
+      const rd=async img=>{const d=(await Promise.race([w.recognize(img),new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),60000))])).data;return{text:(d&&d.text||"").replace(/[ \t]+\n/g,"\n").trim(),conf:d&&d.confidence||0}};
+      let o=await rd(prepd);
+      if(o.text.length<=8){try{const o2=await rd(it.file);if(o2.text.length>o.text.length)o=o2}catch(e){}} // nothing came out: try the untouched picture once
+      return o.text.length>8?{text:o.text,conf:Math.round(o.conf),engine:"Tesseract",status:"ok"}:{text:o.text,conf:0,engine:"Tesseract",status:"fail",err:"empty"}};
+    try{const job=tess();job.catch(()=>{});r=await (skip?Promise.race([job,skip]):job)}
     catch(e){r={text:"",conf:0,engine:"none",status:"fail",err:e&&e.message==="skip"?"skipped":e&&e.message==="timeout"?"timeout":"unavailable"}}}
   if(r.status!=="fail")ixOcrCache.set(it.hash,r);return r}
 // ---- item = one picture: classify + extract
@@ -5280,9 +5281,11 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
     ixS.stage="prep";const items=await Promise.all(files.map(async(f,i)=>({i,file:f,blob:await shrinkImage(f),hash:await fileHash(f)})));
     if(run!==ixS.run)return;ixS.items=items;ixS.T.prep=Date.now()-t0;
     ixS.stage="ocr";ocrListeners=[t=>{if(/Screenshot reader/.test(t))msg=t.replace("Screenshot reader: ","Reader: ")}];
-    await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone…`});ocrListeners=[];
+    // the phone reader can hang for minutes (slow phone, no data, app in the background): with an AI connected, give it 25 s, then let the AI read
+    const autoSk=setTimeout(()=>{try{if(ixAiReady()&&!items.some(x=>x.ocr&&x.ocr.status==="ok")&&ixS.skip){ixS.skip();msg="Phone reader is slow. Your AI is reading the pictures…"}}catch(e){}},25000);
+    await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone…`});clearTimeout(autoSk);ocrListeners=[];
     if(run!==ixS.run)return;
-    if(items.every(x=>x.ocr.status==="fail")){ocrPromise=null;ocrWorker=null;items.forEach(x=>ixOcrCache.delete(x.hash));msg="Reader didn't start, trying again…";await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone (2nd try)…`});ocrListeners=[];if(run!==ixS.run)return}
+    if(items.every(x=>x.ocr.status==="fail")&&!ixAiReady()&&!items.some(x=>x.ocr.err==="skipped")){ocrPromise=null;ocrWorker=null;items.forEach(x=>ixOcrCache.delete(x.hash));msg="Reader didn't start, trying again…";await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone (2nd try)…`});ocrListeners=[];if(run!==ixS.run)return}
     ixS.T.ocr=Date.now()-t0;const failed=items.filter(x=>x.ocr.status==="fail");
     if(failed.length===items.length){ // phone reader unavailable → let the AI read everything, if one is connected
       if(!ixAiReady()){clearInterval(tick);card.innerHTML=`<div class="ah">OCR UNAVAILABLE</div><div class="note">The phone reader couldn't start (${esc(items[0].ocr.err==="timeout"?"it took too long to download":items[0].ocr.err==="empty"?"it started but read no text from the pictures":"not available here")}). Your screenshots are kept. You can paste the payment SMS text instead, connect an AI in Settings, or try again on a better connection.</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ocrPromise=null;ixOcrCache.clear();ixS.busy=false;ixRun()};return}
@@ -5679,7 +5682,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=92;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=93;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5746,6 +5749,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00093","10 Oct 2026",["Smart intake: with an AI connected, if the phone reader has read nothing after 25 seconds, the AI takes over by itself (no need to press Skip), and the reader no longer retries for minutes before the AI gets the pictures"]],
   ["0.0.0.00092","10 Oct 2026",["Smart intake: when the phone reader fails, the AI reads every picture on its own (up to 6) and part payments are matched to their order again (this had been lost in the step back to 0.0.0.00085)"]],
   ["0.0.0.00091","10 Oct 2026",["New app (APK): screenshots are now read by the phone's own reader (Google ML Kit, built into the app), so reading no longer needs internet and no longer hangs. The old reader is kept as a backup. Install the new APK once from About → Check for updates"]],
   ["0.0.0.00091","10 Oct 2026",["Smart intake: when the phone reader returns no text for every picture, the app now treats it as a failed reader: your AI (if connected) reads each picture, otherwise a clear message with Try again is shown, instead of a silent Not sure"]],
