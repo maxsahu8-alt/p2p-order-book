@@ -1,9 +1,9 @@
 {
- "web": "0.0089",
- "build": 89,
- "display": "0.0.0.00089",
+ "web": "0.0090",
+ "build": 90,
+ "display": "0.0.0.00090",
  "files": {
-  "index.html": "ccbfad780d143fc128d609dc32bad5e42cb5d62f",
+  "index.html": "8785d1a76e680132d6b71bdb6d4d8f59cb140168",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 21,
   "name": "0.0.0.00070",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Smart intake: part payments list with a bank picker per part; AI reads each part"
+  "notes": "Smart intake: What the reader saw panel"
  }
 }
