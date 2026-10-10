@@ -48,4 +48,6 @@ dependencies {
     implementation 'androidx.webkit:webkit:1.11.0'
     implementation 'androidx.core:core:1.13.1'
     implementation 'androidx.core:core-splashscreen:1.0.1'
+    // on-phone text reader for screenshots (model is bundled, works without internet)
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
 }

@@ -36,6 +36,11 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+
 import androidx.core.content.FileProvider;
 import androidx.core.splashscreen.SplashScreen;
 import androidx.webkit.WebViewAssetLoader;
@@ -177,6 +182,7 @@ public class MainActivity extends Activity {
             }
         });
         web.addJavascriptInterface(new Bridge(), "P2PNative");
+        web.addJavascriptInterface(new OcrBridge(), "P2POcr");
         setContentView(web);
         web.loadUrl(START);
         if (state == null) handleShare(getIntent());
@@ -384,6 +390,53 @@ public class MainActivity extends Activity {
 
     static final int CAM_REQ = 7301;
     Uri camUri = null;
+
+    // Screenshot reader on the phone itself (Google ML Kit, model bundled in the app): no internet, fast.
+    // The page calls P2POcr.recognize(id, base64); the answer comes back through window.P2POcrResult(id, text, conf, err).
+    TextRecognizer ocrRec;
+
+    class OcrBridge {
+        @JavascriptInterface
+        public void recognize(final String id, final String b64) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String s = b64 == null ? "" : b64;
+                        int comma = s.indexOf(',');
+                        if (s.startsWith("data:") && comma > 0) s = s.substring(comma + 1);
+                        byte[] raw = Base64.decode(s, Base64.DEFAULT);
+                        BitmapFactory.Options bo = new BitmapFactory.Options();
+                        bo.inJustDecodeBounds = true;
+                        BitmapFactory.decodeByteArray(raw, 0, raw.length, bo);
+                        int longSide = Math.max(bo.outWidth, bo.outHeight);
+                        int sample = 1;
+                        while (longSide / sample > 3200) sample *= 2;
+                        BitmapFactory.Options o = new BitmapFactory.Options();
+                        o.inSampleSize = sample;
+                        Bitmap bmp = BitmapFactory.decodeByteArray(raw, 0, raw.length, o);
+                        if (bmp == null) { ocrOut(id, "", 0, "decode"); return; }
+                        if (ocrRec == null) ocrRec = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+                        ocrRec.process(InputImage.fromBitmap(bmp, 0))
+                            .addOnSuccessListener(new com.google.android.gms.tasks.OnSuccessListener<com.google.mlkit.vision.text.Text>() {
+                                @Override
+                                public void onSuccess(com.google.mlkit.vision.text.Text result) {
+                                    ocrOut(id, result.getText(), 90, null);
+                                }
+                            })
+                            .addOnFailureListener(new com.google.android.gms.tasks.OnFailureListener() {
+                                @Override
+                                public void onFailure(Exception e) {
+                                    ocrOut(id, "", 0, String.valueOf(e.getMessage()));
+                                }
+                            });
+                    } catch (Throwable t) {
+                        ocrOut(id, "", 0, String.valueOf(t.getMessage()));
+                    }
+                }
+            }).start();
+        }
+    }
 
     void ocrOut(String id, String text, long conf, String err) {
         final String js = "window.P2POcrResult&&P2POcrResult(" + JSONObject.quote(id) + "," + JSONObject.quote(text) + "," + conf + ","
