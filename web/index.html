@@ -2438,10 +2438,7 @@ async function ixOcr(it,skip){if(ixOcrCache.has(it.hash))return ixOcrCache.get(i
   if(!r){try{
       const run=(async()=>{const w=await ocrInit();const {data}=await Promise.race([w.recognize(await ocrPrep(it.file)),new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),60000))]);return data});
       const data=await (skip?Promise.race([run,skip]):run);
-      let text=(data&&data.text||"").replace(/[ \t]+\n/g,"\n").trim(),dc=data&&data.confidence||0;
-      if(text.length<=8){ // nothing came out: try the untouched picture once before giving up
-        try{const w=await ocrInit();const d2=(await Promise.race([w.recognize(it.file),new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),60000))])).data;const t2=(d2&&d2.text||"").replace(/[ \t]+\n/g,"\n").trim();if(t2.length>text.length){text=t2;dc=d2.confidence||0}}catch(e){}}
-      r=text.length>8?{text,conf:Math.round(dc),engine:"Tesseract",status:"ok"}:{text,conf:0,engine:"Tesseract",status:"fail",err:"empty"}}
+      const text=(data&&data.text||"").replace(/[ \t]+\n/g,"\n").trim();r={text,conf:Math.round(data&&data.confidence||0),engine:"Tesseract",status:text.length>8?"ok":"partial"}}
     catch(e){r={text:"",conf:0,engine:"none",status:"fail",err:e&&e.message==="skip"?"skipped":e&&e.message==="timeout"?"timeout":"unavailable"}}}
   if(r.status!=="fail")ixOcrCache.set(it.hash,r);return r}
 // ---- item = one picture: classify + extract
@@ -4870,30 +4867,21 @@ async function ocrPick(){let last=null;
       return{script:d+"tesseract.min.js",worker:d+"worker.min.js",core:c}}catch(e){last=e}}
     await new Promise(r=>setTimeout(r,1500*(round+1)))}
   throw last||new Error("no mirror")}
-// ---- the engine files are kept on the phone after the first good start, so a later start needs no internet
-const OCR_CACHE="pexai-ocr-v1",OCR_KEY=n=>"https://pexai.invalid/ocr/"+n;
-const ocrCore=()=>{let simd=false;try{simd=WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11]))}catch(e){}return simd?"tesseract-core-simd-lstm.wasm.js":"tesseract-core-lstm.wasm.js"};
-async function ocrCacheGet(){try{if(!window.caches)return null;const c=await caches.open(OCR_CACHE),core=ocrCore(),u={};
-  for(const n of ["tesseract.min.js","worker.min.js",core]){const r=await c.match(OCR_KEY(n));if(!r)return null;u[n]=URL.createObjectURL(new Blob([await r.arrayBuffer()],{type:"text/javascript"}))}
-  return{script:u["tesseract.min.js"],worker:u["worker.min.js"],core:u[core]+"#tesseract-core.js"}}catch(e){return null}}
-async function ocrCacheSave(B){try{if(!window.caches)return;const c=await caches.open(OCR_CACHE),core=ocrCore();
-  for(const [n,u] of [["tesseract.min.js",B.script],["worker.min.js",B.worker],[core,B.core.replace(/\/$/,"")+"/"+core]]){if(await c.match(OCR_KEY(n)))continue;const r=await fetch(u);if(!r.ok)throw new Error("save");await c.put(OCR_KEY(n),new Response(await r.blob(),{headers:{"content-type":"text/javascript"}}))}}catch(e){}}
-async function ocrCacheClear(){try{await caches.delete(OCR_CACHE)}catch(e){}}
 function ocrInit(){
   if(ocrWorker)return Promise.resolve(ocrWorker);
   if(ocrPromise)return ocrPromise;
   const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),ms))]);
   ocrPromise=withTimeout((async()=>{
-    const logger=m=>{if(m&&m.status&&m.status!=="recognizing text"){ocrStatus("Screenshot reader: "+m.status+(m.progress?` ${Math.round(m.progress*100)}%`:"")+"…")}else if(m&&m.status==="recognizing text"){ocrListeners.forEach(f=>{try{f("reading "+Math.round((m.progress||0)*100)+"%")}catch(e){}})}};
-    const start=async(wp,cp)=>{const data=await fetchWithProgress("ocr/eng-traineddata.wasm",p=>ocrStatus(`Screenshot reader: downloading language ${p}% (2 of 3)…`));
-      ocrStatus("Screenshot reader: starting engine (3 of 3)…");
-      return Tesseract.createWorker([{code:"eng",data}],1,{workerPath:wp,corePath:cp,gzip:false,cacheMethod:"none",logger})};
-    // 1) the engine saved on this phone by an earlier good start: works with no internet. If it will not start, forget it and use the download
-    const saved=await ocrCacheGet();
-    if(saved){try{ocrStatus("Screenshot reader: starting saved engine…");await loadScript(saved.script);
-      ocrWorker=await Promise.race([start(saved.worker,saved.core),new Promise((_,no)=>setTimeout(()=>no(new Error("saved engine timeout")),30000))])}catch(e){ocrWorker=null;ocrCacheClear()}}
-    // 2) download (several mirrors), then save it for next time
-    if(!ocrWorker){ocrStatus("Screenshot reader: downloading (1 of 3)…");const B=await ocrPick();await loadScript(B.script);ocrWorker=await start(B.worker,B.core);ocrCacheSave(B)}
+    ocrStatus("Screenshot reader: downloading (1 of 3)…");
+    const B=await ocrPick();
+    await loadScript(B.script);
+    const data=await fetchWithProgress("ocr/eng-traineddata.wasm",p=>ocrStatus(`Screenshot reader: downloading language ${p}% (2 of 3)…`));
+    ocrStatus("Screenshot reader: starting engine (3 of 3)…");
+    ocrWorker=await Tesseract.createWorker([{code:"eng",data}],1,{
+      workerPath:B.worker,
+      corePath:B.core,
+      gzip:false,cacheMethod:"none",
+      logger:m=>{if(m&&m.status&&m.status!=="recognizing text"){ocrStatus("Screenshot reader: "+m.status+(m.progress?` ${Math.round(m.progress*100)}%`:"")+"…")}else if(m&&m.status==="recognizing text"){ocrListeners.forEach(f=>{try{f("reading "+Math.round((m.progress||0)*100)+"%")}catch(e){}})}}});
     ocrStatus("Screenshot reader ready ✓");
     return ocrWorker;
   })(),120000).catch(e=>{ocrPromise=null;ocrWorker=null;ocrStatus(e.message==="timeout"?"Screenshot reader took too long. Check internet and try again.":"Screenshot reader couldn't start on this browser ("+String(e&&e.message||e).slice(0,80)+").");throw e});
@@ -5258,13 +5246,6 @@ async function ixFinish(groups,useAI){for(const g of groups){ixVerify(g);
     else if(g.reasonsAI.length&&!ixAiReady())g.ai="na";
     if(!g.histId)await ixHistAdd(g)}}
 // the whole run
-// when the phone reader is down, the AI reads each picture alone; this turns its answer into the same item the phone reader would have made
-function ixAiItem(it,X){const P=X.pay||{},O=X.ord||{};const nP=[P.amount,P.utr,P.receiver,P.sender,P.status,P.date].filter(v=>v!=null&&v!=="").length,nO=[O.id,O.fiat,O.crypto,O.price,O.buyer,O.seller,O.when].filter(v=>v!=null&&v!=="").length;
-  it.ocr={text:"",conf:null,engine:"AI",status:"ok"};it.list=null;it.ledger=null;it.pay=null;it.ord=null;
-  if(nO>nP||(nO&&nO===nP&&(O.id||O.fiat))){it.ord={...O,cp:O.side==="SELL"?O.buyer:(O.seller||O.buyer),nick:null,tds:null,tdsQ:null,why:[],whenAlt:null,whenAlts:null,platform:null,conf:O.conf};it.cls={type:"EX_ORDER",conf:0.6};it.ext=O.fiat!=null&&O.id?"ok":"partial"}
-  else if(nP){const l4=String(P.acct||"").replace(/\D/g,"").slice(-4);it.pay={...P,last4:l4,ok:!!(P.amount&&P.utr),vpa:(String(P.acct||P.bank||"").match(/\S+@\S+/)||[])[0]||null,fromLabel:null,fromLast4:null,amountAlts:null,alts:null};it.cls={type:"PAY_RECEIPT",conf:0.6};it.ext=P.amount!=null&&P.utr?"ok":P.amount!=null||P.utr?"partial":"fail"}
-  else{it.cls={type:"UNKNOWN",conf:0};it.ext="fail"}
-  return it}
 async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;ixS.T={};setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
   const out=$("#i2-ix");out.innerHTML="";const card=document.createElement("div");card.className="acard ixprog";out.appendChild(card);const t0=Date.now();let msg="Getting your screenshots ready…";let skipShown=false;
   const paint=()=>{const sec=Math.round((Date.now()-t0)/1000);card.innerHTML=`<div class="ah">ANALYSING ${files.length} SCREENSHOT${files.length>1?"S":""}</div><div class="ires">${esc(msg)} ${sec}s</div>${sec>=15&&!ixS.ocrReady&&!skipShown?"":""}`+(sec>=15&&ixS.stage==="ocr"?`<div class="note">${ixAiReady()?"The phone reader is slow to start. You can skip it and let your AI read the pictures.":"The phone reader is still starting (first use downloads about 10 MB). Please keep this page open."}</div>${ixAiReady()?'<button class="mini ghost" type="button" data-skipocr>Skip phone reader</button>':""}`:"")+ixLiveHtml()+'<button class="mini ghost" type="button" data-ixcancel style="margin-top:8px">Cancel analysis</button>';const cb=card.querySelector("[data-ixcancel]");if(cb)cb.onclick=()=>{ixS.run++;clearInterval(tick);card.remove();ixS.busy=false;try{ixRail()}catch(e){}toast("Analysis cancelled")};const sb=card.querySelector("[data-skipocr]");if(sb)sb.onclick=()=>ixS.skip&&ixS.skip()};
@@ -5278,17 +5259,13 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
     if(items.every(x=>x.ocr.status==="fail")){ocrPromise=null;ocrWorker=null;items.forEach(x=>ixOcrCache.delete(x.hash));msg="Reader didn't start, trying again…";await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone (2nd try)…`});ocrListeners=[];if(run!==ixS.run)return}
     ixS.T.ocr=Date.now()-t0;const failed=items.filter(x=>x.ocr.status==="fail");
     if(failed.length===items.length){ // phone reader unavailable → let the AI read everything, if one is connected
-      if(!ixAiReady()){clearInterval(tick);card.innerHTML=`<div class="ah">OCR UNAVAILABLE</div><div class="note">The phone reader couldn't start (${esc(items[0].ocr.err==="timeout"?"it took too long to download":items[0].ocr.err==="empty"?"it started but read no text from the pictures":"not available here")}). Your screenshots are kept. You can paste the payment SMS text instead, connect an AI in Settings, or try again on a better connection.</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ocrPromise=null;ixOcrCache.clear();ixS.busy=false;ixRun()};return}
+      if(!ixAiReady()){clearInterval(tick);card.innerHTML=`<div class="ah">OCR UNAVAILABLE</div><div class="note">The phone reader couldn't start (${esc(items[0].ocr.err==="timeout"?"it took too long to download":"not available here")}). Your screenshots are kept. You can paste the payment SMS text instead, connect an AI in Settings, or try again on a better connection.</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ocrPromise=null;ixOcrCache.clear();ixS.busy=false;ixRun()};return}
       ixS.stage="ai";msg="Phone reader unavailable. Your AI is reading the pictures…";
-      const used=items.slice(0,6);let errMsg="";
-      for(let k=0;k<used.length;k++){msg=`Phone reader unavailable. Your AI is reading picture ${k+1} of ${used.length}…`;
-        try{const o=await verExtract([used[k].blob]);ixAiItem(used[k],o.X)}catch(e){errMsg=e&&e.message||"AI could not read it";used[k].cls={type:"UNKNOWN",conf:0};used[k].ocr={text:"",conf:null,engine:"AI",status:"fail"}}
-        if(run!==ixS.run)return}
-      if(used.every(x=>!x.pay&&!x.ord))throw new Error(errMsg||"The AI could not read these pictures.");
-      ixS.items=items;
-      ixS.stage="match";msg="Matching payments with orders…";ixS.groups=ixGroup(used.filter(x=>x.pay||x.ord));ixS.groups.forEach(g=>{g.ai="ok"});
-      ixS.stage="verify";msg="Verifying…";await ixFinish(ixS.groups,false);
-      if(items.length>used.length)toast("Only the first "+used.length+" pictures were read without the phone reader");
+      const pairBlobs=items.slice(0,2).map(x=>x.blob);const o=await verExtract(pairBlobs);
+      const g={order:null,pays:[],unknown:[],items:items.slice(0,2),ai:"ok"};const a=items[0],b=items[1];
+      a.cls={type:"PAY_RECEIPT",conf:0.5};a.ocr={text:"",conf:null,engine:"AI",status:"ok"};a.hash=a.hash;a.pay=o.X.pay;a.ext="ok";a.cls={type:"PAY_RECEIPT",conf:0.5};
+      if(b){b.cls={type:"EX_ORDER",conf:0.5};b.ocr={text:"",conf:null,engine:"AI",status:"ok"};b.ord=o.X.ord;b.ext="ok";g.order=b}g.pays=[a];g.id="g0";g.aiPay=o.X.pay;g.aiOrd=b?o.X.ord:null;g.aiFlags=o.X.flags;ixS.groups=[g];
+      ixVerify(g);if(!g.histId)await ixHistAdd(g);if(items.length>2)toast("Only the first 2 pictures were read without the phone reader");
     }else{
       ixS.stage="extract";msg="Identifying and extracting…";items.forEach(it=>ixItem(it));ixReconcile(items);
       ixS.stage="match";msg="Matching payments with orders…";ixS.groups=ixGroup(items);
@@ -5672,7 +5649,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=87;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=88;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5739,9 +5716,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
-  ["0.0.0.00087","10 Oct 2026",["Smart intake: if the reader returns no text for a picture it now tries the untouched picture once, and a picture with no readable text is reported as such (AI or a clear message) instead of silently showing Not sure"]],
-  ["0.0.0.00086","10 Oct 2026",["Smart intake: when the phone reader cannot start, your AI now reads each picture on its own (up to 6) and the app matches payments, part payments and orders itself, instead of reading only the first 2 pictures"]],
-  ["0.0.0.00086","10 Oct 2026",["Smart intake: the screenshot reader engine is now saved on your phone after the first good start, so later starts need no internet (falls back to the download if the saved copy will not start)"]],
+  ["0.0.0.00088","10 Oct 2026",["Back to the screenshot reader of 0.0.0.00085: the saved-engine change (86) and the empty-read retry (87) are removed. Nothing else changed"]],
   ["0.0.0.00085","10 Oct 2026",["Smart intake: GPay / PhonePe style receipts (\"Payment Successful\", no UTR on the first screen) are now recognised as payments by themselves, so you are not asked what the picture is","Screenshot reader: gentler contrast so grey labels on exchange order pages (Total Amount, Counterparty, Created At) are not lost; engine now tries 4 download mirrors with retries and retries once by itself before giving up"]],
   ["0.0.0.00084","10 Oct 2026",["Smart intake: part payments from wallet apps now group with their order (e.g. ₹30,000 + ₹1,905 for one ₹31,905.25 buy). A rupee sign misread as a digit (\"71,905\" for ₹1,905) is resolved using the order total"]],
   ["0.0.0.00083","9 Oct 2026",["TDS on a SELL now comes out of your USDT stock too (exact USDT from wallet history or the order page, else rupees ÷ rate), so USDT left matches the exchange wallet","Wallet: tap the USDT left card for a wallet history like KuCoin: Buy Crypto, Sell Crypto and the Tax line of the same sell, with a running balance"]],
