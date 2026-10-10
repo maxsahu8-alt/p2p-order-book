@@ -2805,7 +2805,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   P.dir=/debited from|paid to|money sent|sent to|transferred to|you paid/i.test(flat)?"out":/received|credited (?:to|in|by|with)|credit alert/i.test(flat)?"in":"";
   P.method=/\bIMPS\b/i.test(flat)?"IMPS":/\bNEFT\b|\bRTGS\b/i.test(flat)?"NEFT":"UPI";
   const flatB=flat.replace(/\S+@\S+/g," ");const B=PAY_BANKS.find(([,re])=>re.test(flatB));P.bank=B?B[0]:"";
-  const l4=flat.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*(\d{4})\b/i)||flat.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);P.last4=l4?l4[1]:"";
+  const l4=flat.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*\d*?(\d{4})\b/i)||flat.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);P.last4=l4?l4[1]:"";
   P.time=payTime(flat)||payTime(flat.replace(/['’‘`´]\s?(\d{2})\b/g," 20$1"));
   {const ta=ixTimeAlts(flat);P.timeAlts=ta.amb&&ta.alts.includes(P.time)?ta.alts:(P.time?[P.time]:ta.alts);if(!P.time&&ta.alts.length)P.time=ta.alts[0]}
   const nameOf=v=>{v=v.replace(/\(.*?\)/g," ").replace(/\S+@\S+/g," ");PAY_BANKS.forEach(([,re])=>{v=v.replace(new RegExp(re.source,"ig")," ")});v=v.replace(/\b(?:a\/c|acct?|account|no\.?|ref|upi|vpa|bank|ltd|limited)\b/ig," ").replace(/[xX*•]{2,}\d*/g," ").replace(/[^A-Za-z .'\-]/g," ").replace(/\s+/g," ").trim();v=ixNameClean(v)||"";return v.length>=2?v.slice(0,40):""};
@@ -5112,7 +5112,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
     const split=bk&&P.amount?[{bank:bk.id,amt:+P.amount,method}]:[];const notes=[];if(P.amount&&!bk)notes.push("Bank not matched · assign it later");
     // part payments (several payments that together make this order): each one becomes its own bank split
     if(g.partSum){try{split.length=0;notes.length=0;let lost=0;const seen=new Set();
-      g.pays.filter(x=>x.part&&x.pay&&x.pay.amount>0).forEach(x=>{const q=x.pay,b2=ixBankOf(q,ixSide(g));
+      g.pays.filter(x=>x.part&&x.pay&&x.pay.amount>0).forEach(x=>{const q=x.pay,b2=ixPartBank(x,ixSide(g));
         if(!b2){lost++;return}const k=b2.id+"|"+(+q.amount);if(seen.has(k))return;seen.add(k);
         split.push({bank:b2.id,amt:+q.amount,method:METHODS.includes(String(verMeth(q.method)))?verMeth(q.method):"UPI"})});
       if(lost)notes.push(lost+" part payment"+(lost>1?"s":"")+" had no matching bank · assign later");
@@ -5160,6 +5160,13 @@ function ixWhy(g){const F=g.cmp.fields,out=[];
   return out.slice(0,5)}
 function ixOwnRow(l4){const c=banks.filter(b=>b.type!=="Cash"&&!String(b.accNo||"").replace(/\D/g,""));
   return c.length?`<div class="ixown"><select data-ixown aria-label="Which bank is this?">${c.map(b=>`<option value="${esc(b.id)}">${esc(b.name||b.bankName)}</option>`).join("")}</select><button type="button" class="mini" data-ix="own:${esc(l4)}">Yes, it's mine</button></div>`:`<div class="ixown"><button type="button" class="mini ghost" data-ix="addbank">Add ••${esc(l4)} in Bank</button></div>`}
+// part payments: which of YOUR banks each part came out of / went into (auto from the account digits or UPI id, or picked here)
+function ixPartBank(x,sd){if(x.bankPick){const b=banks.find(k=>k.id===x.bankPick);if(b)return b}const q=x.pay||{};return ixBankOf(q,sd)||ixVpaBank(q.vpa)||null}
+function ixPartsHtml(g){if(!g.partSum)return"";const sd=ixSide(g),mine=banks.filter(b=>b.type!=="Cash"),parts=g.pays.filter(x=>x.part&&x.pay&&x.pay.amount>0);if(!parts.length)return"";
+  const tot=parts.reduce((t,x)=>t+(+x.pay.amount),0);
+  return`<div class="ixmine"><b>Part payments</b><div class="note" style="margin:2px 0 6px">${sd==="SELL"?"Each part goes into the bank it was received in":"Each part is taken out of the bank it was paid from"}. Total ${inr(+tot.toFixed(2))}.</div>`+parts.map(x=>{const q=x.pay,b=ixPartBank(x,sd),acct=q.last4?"••"+q.last4:q.fromLast4?"••"+q.fromLast4:"";
+    return`<div class="ixpart" style="display:flex;gap:8px;align-items:center;margin:6px 0"><div style="min-width:0;flex:1"><b>${inr(+(+q.amount).toFixed(2))}</b><div class="note" style="margin:0">${[q.time?q.time:"",acct,q.bank||"",q.vpa||""].filter(Boolean).map(esc).join(" · ")||"account not read"}</div></div>`
+      +(mine.length?`<select class="ssel" data-ixpart="${esc(x.hash)}" style="flex:1;min-width:0"><option value="">Which bank?</option>${mine.map(k=>`<option value="${esc(k.id)}"${b&&b.id===k.id?" selected":""}>${esc(k.name||k.bankName)}</option>`).join("")}</select>`:'<span class="note">Add your banks first</span>')+`</div>`}).join("")+`</div>`}
 function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall],S=ixStatuses(g);const amt=P.amount!=null?P.amount:O.fiat;
   const yn=v=>v==null||v===""?"—":"✓";const ck=(l,v)=>`<div class="ixk ${v==null||v===""?"na":""}"><span>${v==null||v===""?"—":"✓"}</span> ${l}</div>`;
   const partial=!(P.amount!=null&&P.utr&&(!g.order||(O.id&&(O.fiat!=null||O.crypto!=null))))&&g.cmp.overall!=="VERIFIED";
@@ -5177,6 +5184,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     <div class="ixflow">${party(L)}<div class="ixmid"><div class="ixamt">${amt!=null?inr(amt):"Amount not read"}</div><div class="ixline"><span></span></div>${O.fiat!=null&&P.amount!=null&&Math.abs(O.fiat-P.amount)>1?`<small>order says ${inr(O.fiat)}</small>`:""}</div>${party(R)}</div>
     <div class="vt">${deal?esc(deal)+" · ":""}${g.cancelOnly?"Nothing to verify, no money moves on a cancelled order":g.cmp.overall==="VERIFIED"?"Screenshots appear consistent":g.cmp.overall==="REVIEW"?"Needs your review":"Potential inconsistency detected"}${g.order?"":" · payment only"}</div>
     ${ixScoreHtml(g)}
+    ${ixPartsHtml(g)}
     ${g.unknown&&g.unknown.length&&!g.order&&!g.pays.length?`<div class="ixmine warn"><b>Couldn't tell what this picture is</b><div style="margin:6px 0">Is it a payment, or an exchange order (a cancelled order is an order too)?</div><div class="row2">${g.unknown.map(u=>`<button class="mini ghost" data-ix="type:${u.hash}:PAY_RECEIPT">Payment</button><button class="mini ghost" data-ix="type:${u.hash}:EX_ORDER">Order</button>`).join("")}</div></div>`:""}
     ${ixLinkHtml(g)}
     ${g.roleFix?`<div class="ixmine ok"><b>Who is who</b><ul><li class="ok">${esc(g.roleFix)}</li></ul></div>`:""}
@@ -5207,7 +5215,7 @@ function ixDraw(){try{ixRail()}catch(e){}try{i2Thumbs()}catch(e){}const out=$("#
   if(G.length>1){const h=document.createElement("div");h.className="acard ixhead";h.innerHTML=`<div class="ah">${G.length} TRANSACTIONS DETECTED</div><div class="row2"><button class="primary" type="button" data-ixall="save">SAVE ALL</button><button class="mini ghost" type="button" data-ixall="review">REVIEW INDIVIDUALLY</button></div><div class="note" data-ixallmsg></div>`;
     h.querySelector('[data-ixall="save"]').onclick=ixSaveAll;h.querySelector('[data-ixall="review"]').onclick=()=>{out.querySelectorAll(".ixg").forEach((e,i)=>{e.open=i===0});h.querySelector("[data-ixallmsg]").textContent="Open each transaction below and check it before saving."};out.appendChild(h)}
   G.forEach((g,i)=>{const d=document.createElement(G.length>1?"details":"div");d.className="acard ixg";d.dataset.gid=g.id;if(G.length>1){d.open=ixS.open===g.id||G.length<=2;d.innerHTML=`<summary><b>TRANSACTION ${i+1}</b> · ${g.items.length} screenshot${g.items.length>1?"s":""} · ${g.X.pay.amount!=null?inr(g.X.pay.amount):g.X.ord.fiat!=null?inr(g.X.ord.fiat):"?"} · ${VER_TXT[g.cmp.overall][1]}${g.saved?" · saved":""}</summary><div class="ixb">${ixCardHtml(g,true)}</div>`}else d.innerHTML=`<div class="ixb"><div class="pcsec" style="margin-top:0">TRANSACTION 1 · ${g.items.length} screenshot${g.items.length>1?"s":""}</div>${ixCardHtml(g,false)}</div>`;
-    d.addEventListener("click",e=>{const b=e.target.closest("[data-ix]");if(!b)return;ixAct(g,b.dataset.ix,b)});out.appendChild(d);
+    d.addEventListener("click",e=>{const b=e.target.closest("[data-ix]");if(!b)return;ixAct(g,b.dataset.ix,b)});d.addEventListener("change",e=>{const sel=e.target.closest("[data-ixpart]");if(!sel)return;const it=g.pays.find(p=>p.hash===sel.dataset.ixpart);if(it){it.bankPick=sel.value||null}});out.appendChild(d);
     const slot=d.querySelector("[data-paycard]");if(slot){const it=g.pays.find(x=>!x.support)||g.pays[0];try{if(it&&it.ocr&&it.ocr.text){const pp=payParse(it.ocr.text);if(pp.ok||pp.amount)slot.appendChild(payCard(pp,it.file,"phone"))}}catch(e){console.error(e)}}})}
 async function ixAct(g,a,btn){
   if(a==="linknames"){const c=ixLinkCand(g);if(c){await ixLinkNames(c.nick,c.real);ixS.groups.forEach(x=>{try{ixVerify(x)}catch(e){}});ixDraw();toast(`Linked ${c.nick} = ${c.real}`)}return}
@@ -5238,7 +5246,10 @@ async function ixDeep(g){const pay=(g.pays.find(x=>!x.support)||g.pays[0]),ord=g
   try{const out=await Promise.race([verExtract(files.map(f=>f.blob)),new Promise((_,no)=>setTimeout(()=>no(aiErr("busy","slow")),85000))]);
     const m1=ixMerge(g.pays[0]?g.pays[0].pay:{},out.X.pay,pay&&pay.ocr?pay.ocr.conf/100:null),m2=ixMerge(ord?ord.ord:{},out.X.ord,ord&&ord.ocr?ord.ocr.conf/100:null);
     g.aiPay=m1.v;g.aiOrd=m2.v;g.aiFlags=out.X.flags;g.aiFilled=new Set([...m1.filled.map(k=>"pay."+k),...m2.filled.map(k=>"ord."+k)]);g.conflicts=[...m1.diffs.map(k=>"payment "+k),...m2.diffs.map(k=>"order "+k)];g.ai="ok";await ixlLearnLayout(g);ixVerify(g)}
-  catch(e){g.ai="unavailable";g.aiErr=e&&e.code;ixVerify(g)}}
+  catch(e){g.ai="unavailable";g.aiErr=e&&e.code;ixVerify(g)}
+  // part payments: each part picture is read on its own, so every part has its own amount, account and time (the AI only fills what the phone missed)
+  if(g.partSum){for(const x of g.pays.filter(k=>k.part&&k.blob).slice(0,4)){const q=x.pay||{};if(q.amount>0&&(q.last4||q.bank||q.vpa)&&q.time&&q.date)continue;
+    try{const r=(await verExtract([x.blob])).X.pay||{};const m=ixMerge(q,r,x.ocr&&x.ocr.conf!=null?x.ocr.conf/100:null);x.pay={...q,...m.v};if(!x.pay.last4&&r.acct)x.pay.last4=String(r.acct).replace(/\D/g,"").slice(-4);if(!x.pay.time&&r.time)x.pay.time=r.time;if(!x.pay.date&&r.date)x.pay.date=r.date}catch(e){}}}}
 async function ixOcrAll(items,prog){let n=0;const skip=new Promise((_,no)=>{ixS.skip=()=>no(new Error("skip"))});skip.catch(()=>{});
   for(const it of items){if(prog)prog(n,items.length);it.ocr=await ixOcr(it,skip);n++;await new Promise(r=>setTimeout(r,0))}}
 async function ixFinish(groups,useAI){for(const g of groups){ixVerify(g);
@@ -5649,7 +5660,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=88;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=89;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5716,6 +5727,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00089","10 Oct 2026",["Smart intake, part payments: the card now lists every part with its amount, time and account, and a bank picker for each (pre-filled from the account digits or UPI id). Each part is taken out of its own bank when you save. The AI also reads each part picture on its own to fill a missing amount, account or time"]],
   ["0.0.0.00088","10 Oct 2026",["Back to the screenshot reader of 0.0.0.00085: the saved-engine change (86) and the empty-read retry (87) are removed. Nothing else changed"]],
   ["0.0.0.00085","10 Oct 2026",["Smart intake: GPay / PhonePe style receipts (\"Payment Successful\", no UTR on the first screen) are now recognised as payments by themselves, so you are not asked what the picture is","Screenshot reader: gentler contrast so grey labels on exchange order pages (Total Amount, Counterparty, Created At) are not lost; engine now tries 4 download mirrors with retries and retries once by itself before giving up"]],
   ["0.0.0.00084","10 Oct 2026",["Smart intake: part payments from wallet apps now group with their order (e.g. ₹30,000 + ₹1,905 for one ₹31,905.25 buy). A rupee sign misread as a digit (\"71,905\" for ₹1,905) is resolved using the order total"]],
