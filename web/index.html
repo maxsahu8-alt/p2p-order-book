@@ -5264,6 +5264,13 @@ async function ixFinish(groups,useAI){for(const g of groups){ixVerify(g);
     if(useAI&&g.reasonsAI.length&&ixAiReady()&&(g.pays.length||g.order)&&!g.ai){await ixDeep(g);g.needAI=false}
     else if(g.reasonsAI.length&&!ixAiReady())g.ai="na";
     if(!g.histId)await ixHistAdd(g)}}
+// when the phone reader is down, the AI reads each picture alone; this turns its answer into the same item the phone reader would have made
+function ixAiItem(it,X){const P=X.pay||{},O=X.ord||{};const nP=[P.amount,P.utr,P.receiver,P.sender,P.status,P.date].filter(v=>v!=null&&v!=="").length,nO=[O.id,O.fiat,O.crypto,O.price,O.buyer,O.seller,O.when].filter(v=>v!=null&&v!=="").length;
+  it.ocr={text:"",conf:null,engine:"AI",status:"ok"};it.list=null;it.ledger=null;it.pay=null;it.ord=null;
+  if(nO>nP||(nO&&nO===nP&&(O.id||O.fiat))){it.ord={...O,cp:O.side==="SELL"?O.buyer:(O.seller||O.buyer),nick:null,tds:null,tdsQ:null,why:[],whenAlt:null,whenAlts:null,platform:null,conf:O.conf};it.cls={type:"EX_ORDER",conf:0.6};it.ext=O.fiat!=null&&O.id?"ok":"partial"}
+  else if(nP){const l4=String(P.acct||"").replace(/\D/g,"").slice(-4);it.pay={...P,last4:l4,ok:!!(P.amount&&P.utr),vpa:(String(P.acct||P.bank||"").match(/\S+@\S+/)||[])[0]||null,fromLabel:null,fromLast4:null,amountAlts:null,alts:null};it.cls={type:"PAY_RECEIPT",conf:0.6};it.ext=P.amount!=null&&P.utr?"ok":P.amount!=null||P.utr?"partial":"fail"}
+  else{it.cls={type:"UNKNOWN",conf:0};it.ext="fail"}
+  return it}
 // the whole run
 async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;ixS.T={};setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
   const out=$("#i2-ix");out.innerHTML="";const card=document.createElement("div");card.className="acard ixprog";out.appendChild(card);const t0=Date.now();let msg="Getting your screenshots ready…";let skipShown=false;
@@ -5280,11 +5287,15 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
     if(failed.length===items.length){ // phone reader unavailable → let the AI read everything, if one is connected
       if(!ixAiReady()){clearInterval(tick);card.innerHTML=`<div class="ah">OCR UNAVAILABLE</div><div class="note">The phone reader couldn't start (${esc(items[0].ocr.err==="timeout"?"it took too long to download":items[0].ocr.err==="empty"?"it started but read no text from the pictures":"not available here")}). Your screenshots are kept. You can paste the payment SMS text instead, connect an AI in Settings, or try again on a better connection.</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ocrPromise=null;ixOcrCache.clear();ixS.busy=false;ixRun()};return}
       ixS.stage="ai";msg="Phone reader unavailable. Your AI is reading the pictures…";
-      const pairBlobs=items.slice(0,2).map(x=>x.blob);const o=await verExtract(pairBlobs);
-      const g={order:null,pays:[],unknown:[],items:items.slice(0,2),ai:"ok"};const a=items[0],b=items[1];
-      a.cls={type:"PAY_RECEIPT",conf:0.5};a.ocr={text:"",conf:null,engine:"AI",status:"ok"};a.hash=a.hash;a.pay=o.X.pay;a.ext="ok";a.cls={type:"PAY_RECEIPT",conf:0.5};
-      if(b){b.cls={type:"EX_ORDER",conf:0.5};b.ocr={text:"",conf:null,engine:"AI",status:"ok"};b.ord=o.X.ord;b.ext="ok";g.order=b}g.pays=[a];g.id="g0";g.aiPay=o.X.pay;g.aiOrd=b?o.X.ord:null;g.aiFlags=o.X.flags;ixS.groups=[g];
-      ixVerify(g);if(!g.histId)await ixHistAdd(g);if(items.length>2)toast("Only the first 2 pictures were read without the phone reader");
+      const used=items.slice(0,6);let errMsg="";
+      for(let k=0;k<used.length;k++){msg=`Phone reader unavailable. Your AI is reading picture ${k+1} of ${used.length}…`;
+        try{const o=await verExtract([used[k].blob]);ixAiItem(used[k],o.X)}catch(e){errMsg=e&&e.message||"AI could not read it";used[k].cls={type:"UNKNOWN",conf:0};used[k].ocr={text:"",conf:null,engine:"AI",status:"fail"}}
+        if(run!==ixS.run)return}
+      if(used.every(x=>!x.pay&&!x.ord))throw new Error(errMsg||"The AI could not read these pictures.");
+      ixS.items=items;
+      ixS.stage="match";msg="Matching payments with orders…";ixS.groups=ixGroup(used.filter(x=>x.pay||x.ord));ixS.groups.forEach(g=>{g.ai="ok"});
+      ixS.stage="verify";msg="Verifying…";await ixFinish(ixS.groups,false);
+      if(items.length>used.length)toast("Only the first "+used.length+" pictures were read without the phone reader");
     }else{
       ixS.stage="extract";msg="Identifying and extracting…";items.forEach(it=>ixItem(it));ixReconcile(items);
       ixS.stage="match";msg="Matching payments with orders…";ixS.groups=ixGroup(items);
@@ -5668,7 +5679,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=91;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=92;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5735,6 +5746,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00092","10 Oct 2026",["Smart intake: when the phone reader fails, the AI reads every picture on its own (up to 6) and part payments are matched to their order again (this had been lost in the step back to 0.0.0.00085)"]],
   ["0.0.0.00091","10 Oct 2026",["New app (APK): screenshots are now read by the phone's own reader (Google ML Kit, built into the app), so reading no longer needs internet and no longer hangs. The old reader is kept as a backup. Install the new APK once from About → Check for updates"]],
   ["0.0.0.00091","10 Oct 2026",["Smart intake: when the phone reader returns no text for every picture, the app now treats it as a failed reader: your AI (if connected) reads each picture, otherwise a clear message with Try again is shown, instead of a silent Not sure"]],
   ["0.0.0.00090","10 Oct 2026",["Smart intake: under the screenshots a new \"What the reader saw\" shows, for each picture, the reader, how sure it is and the exact text it read, so a wrong or empty read is visible (and can be sent to be fixed)"]],
