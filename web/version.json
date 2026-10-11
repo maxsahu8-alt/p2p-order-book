@@ -1,9 +1,9 @@
 {
- "web": "0.0096",
- "build": 96,
- "display": "0.0.0.00096",
+ "web": "0.0097",
+ "build": 97,
+ "display": "0.0.0.00097",
  "files": {
-  "index.html": "2e5f05091df41ae1b4625dd99ba79cab2d5fb042",
+  "index.html": "75aebd481cc56c9c89c99ed719857ddf631c6ae1",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 22,
   "name": "0.0.0.00091",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Smart intake: order read column by column is paired up again (coin amount no longer shown as rupees)"
+  "notes": "Smart intake: shows the exact reason when the AI check cannot run"
  }
 }
