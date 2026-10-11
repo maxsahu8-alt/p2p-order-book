@@ -1,17 +1,17 @@
 {
- "web": "0.0097",
- "build": 97,
- "display": "0.0.0.00097",
+ "web": "0.0098",
+ "build": 98,
+ "display": "0.0.0.00098",
  "files": {
-  "index.html": "75aebd481cc56c9c89c99ed719857ddf631c6ae1",
+  "index.html": "22346b48fc82b517912184280478607d5e4236fa",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
  },
  "apk": {
-  "code": 22,
-  "name": "0.0.0.00091",
+  "code": 23,
+  "name": "0.0.0.00098",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Smart intake: shows the exact reason when the AI check cannot run"
+  "notes": "Phone reader now keeps line positions: labels and values on the same row are joined (new APK)"
  }
 }
