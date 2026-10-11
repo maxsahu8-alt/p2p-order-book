@@ -188,6 +188,7 @@ table.coins td.pos{color:var(--buy)} table.coins td.neg{color:var(--sell)}
 .splitbar .link{color:var(--primary);font-size:.82rem}
 .bank{display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;padding:13px 14px;border-top:1px solid var(--line);align-items:center;cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left;color:var(--fg);font:inherit}
 .bank:first-child{border-top:0}
+.bico.bbrand{letter-spacing:-.02em;box-shadow:none;font-weight:900}
 .bico{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--primary) 11%,transparent);color:var(--primary);font:800 .8rem var(--body);grid-row:span 2}
 .bank .bname{font-weight:700;font-size:.95rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bank .bbal{font:600 1rem var(--mono);text-align:right;white-space:nowrap}
@@ -3612,6 +3613,12 @@ function flowChart(el,{labels,vin,vout,full,c1,c2,every}){
 }
 function limBar(b,use){const L=b.limits||{};const ms=["UPI","IMPS","NEFT","ALL"].filter(m=>+L[m]);if(!ms.length)return"";
   return `<span class="lims">${ms.map(m=>{const u=((use[b.id]||{})[m])||0,p=Math.min(100,u/L[m]*100);return `<span class="lim"><span class="lt"><b>${m==="ALL"?"Total":m}</b> ${inr(Math.max(0,L[m]-u))} left${m==="UPI"?upiNextFree(b,use):""}</span><span class="lb"><i style="width:${p}%;${p>=90?"background:var(--sell)":p>=70?"background:var(--warn)":""}"></i></span></span>`}).join("")}</span>`}
+// bank badge: brand-coloured tile picked automatically from the bank's name, UPI handle or IFSC (no internet, no image files)
+const BANK_BRAND=[[/\bsbi\b|state bank|sbin|@sbi|@oksbi|ybl.*sbi/i,"#2d7fd3","#fff","SBI"],[/hdfc|@hdfcbank|@okhdfc|hdfc0/i,"#17458f","#fff","HDFC","#ed232a"],[/icici|@icici|@ibl|eazypay|icic0/i,"#f47a20","#fff","ICICI","#b02a30"],[/axis|@axisbank|@okaxis|@axl|utib/i,"#97144d","#fff","AXIS"],[/kotak|@kotak|kkbk/i,"#ed1c24","#fff","KOTAK","#003874"],[/yes\s*bank|@yesbank|@ybl|yesb/i,"#00518f","#fff","YES"],[/punjab national|\bpnb\b|@pnb|punb/i,"#a6192e","#fff","PNB","#fdb913"],[/baroda|\bbob\b|@barodampay|barb/i,"#f15a22","#fff","BOB"],[/canara|@cnrb|cnrb/i,"#00a0e3","#fff","CNRB","#fdb913"],[/union bank|@unionbank|ubin/i,"#d51f2b","#fff","UBI","#1a4a9b"],[/idfc|@idfcbank|idfb/i,"#9c1d26","#fff","IDFC"],[/indusind|@indus|indb/i,"#8c1c34","#fff","IND"],[/federal|@fbl|fdrl/i,"#f8b712","#14304d","FED"],[/paytm|@paytm|pytm/i,"#00b9f1","#002e6e","PAYTM"],[/airtel/i,"#e40000","#fff","AIRTEL"],[/jio/i,"#0a2885","#fff","JIO"],[/india post|ippb/i,"#e1251b","#fff","IPPB"],[/central bank|cbin/i,"#e31e24","#fff","CBI"],[/bank of india|boi|bkid/i,"#f58220","#0a3a7a","BOI"],[/indian bank|idib/i,"#14418a","#fff","IND"],[/uco/i,"#0f4c93","#fff","UCO"],[/idbi/i,"#00836c","#fff","IDBI","#f58220"],[/rbl|ratn/i,"#21409a","#fff","RBL"],[/\bau\b|aubl|small finance/i,"#6a2c91","#fff","AU"],[/bandhan|bdbl/i,"#e4202b","#fff","BAND"],[/slice/i,"#6b4bff","#fff","SLICE"],[/cash/i,"#2f9e5b","#fff","₹"]];
+function bankBadge(b){const key=[b.name,b.bankName,b.upi,b.ifsc].filter(Boolean).join(" ");const h=BANK_BRAND.find(r=>r[0].test(key));
+  if(!h){const t=(b.name||"?").replace(/[^A-Za-z0-9]/g,"").slice(0,2).toUpperCase()||"₹";return `<span class="bico">${esc(t)}</span>`}
+  const lab=h[3],fs=lab.length<=2?".95rem":lab.length===3?".8rem":lab.length===4?".66rem":".56rem";
+  return `<span class="bico bbrand" style="background:${h[1]};color:${h[2]};font-size:${fs}${h[4]?`;box-shadow:inset 0 -4px 0 ${h[4]}`:""}">${esc(lab)}</span>`}
 function renderWallet(){
   const {bal,mv}=balances();
   const total=banks.reduce((t,b)=>t+bal[b.id],0);
@@ -3621,7 +3628,7 @@ function renderWallet(){
   $("#bankCount").textContent=banks.length?banks.length+" accounts":"";
   const use=limitUse();
   $("#bankList").innerHTML=banks.length?banks.map(b=>{const t=mv.filter(x=>x.bank===b.id&&isToday(x.time));const i=t.filter(x=>x.amt>0).reduce((s,x)=>s+x.amt,0),o=-t.filter(x=>x.amt<0).reduce((s,x)=>s+x.amt,0);
-    return `<button class="bank" type="button" data-sheet="ledger:${b.id}"><span class="bico">${esc((b.name||"?").replace(/[^A-Za-z0-9]/g,"").slice(0,2).toUpperCase()||"₹")}</span><span class="bname">${esc(b.name)}${b.type==="Cash"?' <span class="mtag">Cash</span>':""}${bankTag(b,mv)}</span><span class="bbal ${bal[b.id]<0?"neg":""}">${inr(bal[b.id])}</span>${limBar(b,use)}<span class="bsub">${b.accNo?"A/c ••"+esc(b.accNo.slice(-4))+" · ":""}${b.upi?esc(b.upi)+" · ":""}Today <span class="in">+${inr(i)}</span> · <span class="out">−${inr(o)}</span>${(()=>{const q=t.length;const pe=mv.filter(x=>x.bank===b.id&&x.pend).length;return (q?" · "+q+" txn":"")+(pe?" · "+pe+" pending":"")})()}</span></button>`}).join("")
+    return `<button class="bank" type="button" data-sheet="ledger:${b.id}">${bankBadge(b)}<span class="bname">${esc(b.name)}${b.type==="Cash"?' <span class="mtag">Cash</span>':""}${bankTag(b,mv)}</span><span class="bbal ${bal[b.id]<0?"neg":""}">${inr(bal[b.id])}</span>${limBar(b,use)}<span class="bsub">${b.accNo?"A/c ••"+esc(b.accNo.slice(-4))+" · ":""}${b.upi?esc(b.upi)+" · ":""}Today <span class="in">+${inr(i)}</span> · <span class="out">−${inr(o)}</span>${(()=>{const q=t.length;const pe=mv.filter(x=>x.bank===b.id&&x.pend).length;return (q?" · "+q+" txn":"")+(pe?" · "+pe+" pending":"")})()}</span></button>`}).join("")
     :'<div class="empty"><strong>No banks yet</strong>Tap “Add bank” to add each account with its current balance. Add one with type Cash for cash in hand.</div>';
   const st=stockLeft();
   $("#stockCards").innerHTML=Object.entries(st).filter(([c,q])=>c==="USDT"||Math.abs(q)>1e-9).map(([c,q])=>`<div class="mcard" data-sheet="coinledger:${esc(c)}" style="cursor:pointer"><div class="lbl">${esc(c)} left</div><div class="val" style="${q<0?"color:var(--sell)":""}">${fmtQ(+q.toFixed(6))}</div><div class="sm">${q<0?"Sold more than bought":"Wallet history ›"}</div></div>`).join("");
@@ -5776,7 +5783,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=104;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=105;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5843,6 +5850,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00105","12 Oct 2026",["Wallet: every bank now shows its own coloured logo badge (SBI, HDFC, ICICI, Axis, Kotak, PNB, Baroda, Canara, Union, Paytm and more). It is picked automatically from the bank name, UPI handle or IFSC, so a new bank gets its badge the moment you add it"]],
   ["0.0.0.00104","11 Oct 2026",["Smart intake: one order paid in parts from different banks (for example \u20b930,000 + \u20b91,905) is now one transaction even when the receipts have no clear date or a different name. If the parts add up to the order total to the rupee they are joined, and the card asks you to check once"]],
   ["0.0.0.00103","11 Oct 2026",["Smart intake: part payments from scrolled-down PhonePe receipts are read again. When the amount is only shown at the end of the \"Debited from\" row (with the rupee sign lost or read as a digit), it is now picked up and matched to the order total"]],
   ["0.0.0.00102","11 Oct 2026",["New app (APK): every screenshot is now read up to three times by the phone reader (as it is, enhanced and flipped when dark, and the biggest number cut out and enlarged). The readings fill each other\u0027s gaps and a number they disagree on is settled by the order total or flagged for you. The card also shows which app made the screenshot (PhonePe, Google Pay, KuCoin …)"]],
