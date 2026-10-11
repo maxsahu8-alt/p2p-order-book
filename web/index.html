@@ -2782,7 +2782,10 @@ function ixRisk(g){const F=g.cmp.fields,hi=[],me=[],fl=g.cmp.flags;const f=k=>F.
   if(g.cmp.local.some(x=>/Duplicate UTR/.test(x)))hi.push("Duplicate UTR");
   if((g.dups||[]).some(d=>d.k==="amt"))me.push("Possible duplicate transaction");if((g.dups||[]).some(d=>d.k==="shot"))hi.push("Screenshot already used");
   if(f("status").res==="MISMATCH")hi.push("Payment shows as failed");else if(f("status").res==="UNCLEAR")me.push("Payment status missing or unclear");
-  if(f("time").res==="MISMATCH")hi.push("Suspicious date / time");else if(f("time").res==="UNCLEAR")me.push("Date / time unclear");
+  if(f("time").res==="MISMATCH")hi.push("Suspicious date / time");else if(f("time").res==="UNCLEAR"){
+    // a receipt whose time simply was not read is no alarm when amount, UTR and status all agree (the same screenshot and the same UTR can still not be used twice)
+    const solid=f("amount").res==="MATCH"&&f("utr").res==="FOUND"&&f("status").res==="MATCH"&&/not visible/i.test(f("time").note||"");
+    if(!solid)me.push("Date / time unclear")}
   if(f("utr").res==="NOTFOUND"||f("utr").res==="UNCLEAR")me.push("Incomplete receipt (no reliable UTR)");
   if(f("method").res==="UNCLEAR")me.push("Payment method differs between screenshots");
   if(fl.includes("EDITED_LOOKING"))hi.push("Screenshot looks edited");
@@ -2800,7 +2803,8 @@ function sheetAuditLog(){const L=[...audits].sort((a,b)=>b.time-a.time).slice(0,
 // ================= PAYMENT SCREENSHOT READER — reads UPI / bank screenshots and SMS on the phone, you confirm
 const PAY_BANKS=[["SBI",/state bank(?: of(?: india)?)?|\bsbi\b/i],["HDFC Bank",/hdfc(?: bank)?/i],["ICICI Bank",/icici(?: bank)?/i],["Axis Bank",/axis(?: bank)?/i],["Kotak Bank",/kotak(?: mahindra)?(?: bank)?/i],["Yes Bank",/yes bank/i],["PNB",/punjab national(?: bank)?|\bpnb\b/i],["Bank of Baroda",/bank of baroda|\bbob\b/i],["Canara Bank",/canara(?: bank)?/i],["Union Bank",/union bank(?: of india)?/i],["IDFC First",/idfc(?: first)?(?: bank)?/i],["IndusInd Bank",/indusind(?: bank)?/i],["Federal Bank",/federal bank/i],["Paytm Payments Bank",/paytm payments bank/i],["Airtel Payments Bank",/airtel payments bank/i],["Jio Payments Bank",/jio payments bank/i],["India Post Payments Bank",/india post payments bank|\bippb\b/i],["Central Bank",/central bank(?: of india)?/i],["Bank of India",/bank of india/i],["Indian Bank",/indian bank/i],["UCO Bank",/uco bank/i],["IDBI Bank",/idbi(?: bank)?/i],["RBL Bank",/rbl(?: bank)?/i],["AU Small Finance",/au small finance(?: bank)?/i],["Bandhan Bank",/bandhan(?: bank)?/i]];
 const PAY_MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
-function payTime(t){const yy=v=>{v=+v;return v<100?2000+v:v};let mi=0;
+function payTime(t){t=String(t||"").replace(/\b0(?=ct\b)/gi,"O").replace(/\bn0v\b/gi,"Nov").replace(/\b2[Oo](\d\d)\b/g,"20$1").replace(/(\d{1,2})\.(\d{2})(\s*[ap]\.?m\b)/gi,"$1:$2$3"); // OCR slips: 0CT, 2O26, 11.47 AM
+  const yy=v=>{v=+v;return v<100?2000+v:v};let mi=0;
   const tm=x=>{const m=String(x||"").match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?/i);if(!m)return null;let H=+m[1];const A=(m[3]||"").toLowerCase();if(A==="pm"&&H<12)H+=12;if(A==="am"&&H===12)H=0;return H>23?null:[H,+m[2]]};
   const MN="(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)";let m,d,mo,y,r=null;
   if(m=t.match(new RegExp("(\\d{1,2})(?:st|nd|rd|th)?[\\s\\-\\/.,]+"+MN+"[a-z]*\\.?[\\s\\-\\/.,]+(\\d{2,4})(?![\\d:])(.{0,32})","i"))){d=+m[1];mo=PAY_MON[m[2].toLowerCase()];y=yy(m[3]);r=tm(m[4]);mi=m.index}
@@ -5724,7 +5728,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=98;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=99;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5791,6 +5795,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00099","11 Oct 2026",["Smart intake: dates are read even when the phone reader slips (0CT for OCT, 2O26, 11.47 AM), and a payment whose time was simply not read no longer raises the risk to Medium when amount, UTR and status all match"]],
   ["0.0.0.00098","11 Oct 2026",["New app (APK): the phone reader now also gives the position of every line, so a label and its value on the same row are joined again (Total Amount ... 19,000 INR) and the text is read in the same order as you see the screen. Install the new APK once from About → Check for updates"]],
   ["0.0.0.00097","11 Oct 2026",["Smart intake: when the AI check cannot run, the card now says exactly why (no key, wrong model name, no internet, no credit, answer not understood) instead of only \"Cloud AI unavailable\""]],
   ["0.0.0.00096","11 Oct 2026",["Smart intake: when the phone reader gives an exchange order column by column (labels first, then values), they are paired up again, so the coin amount is no longer shown as rupees and the order total is read correctly"]],
