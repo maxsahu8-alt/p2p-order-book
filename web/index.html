@@ -1114,6 +1114,23 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 .dpc .dkp div{background:rgba(255,255,255,.06)}
 .dpc .dkp span{color:rgba(255,255,255,.6)}.dpc .dkp b{color:#fff;font-size:.95rem}
 .dpc .dkp .pos{color:#4ade80}.dpc .dkp .neg{color:#fb7185}.dpc .dkp b small{color:#fbbf24}
+.dpc .dnw{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px}
+.dpc .dnwl span{display:block;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:600}
+.dpc .dnwl b{display:block;font-size:1.7rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px;cursor:pointer}
+.dpc .dpeye.off{background:rgba(255,255,255,.2)}
+.dpc .dtp{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:12px;padding:11px 12px;border-radius:14px;background:rgba(255,255,255,.07);cursor:pointer}
+.dpc .dtp span{display:block;font-size:.68rem;color:rgba(255,255,255,.6)}
+.dpc .dtp b{display:block;font-size:1.05rem;font-variant-numeric:tabular-nums;margin-top:2px;color:#fff}
+.dpc .dtp b.pos,.dpc .dtp em.pos{color:#4ade80}.dpc .dtp b.neg,.dpc .dtp em.neg{color:#fb7185}
+.dpc .dtp em{display:block;font-style:normal;font-size:.68rem;font-weight:600;margin-top:3px}
+.dpc .dspk{display:flex;align-items:flex-end;gap:4px;height:34px;flex:none}
+.dpc .dspk i{display:block;width:6px;border-radius:3px;background:rgba(74,222,128,.45)}
+.dpc .dspk i.n{background:rgba(251,113,133,.5)}.dpc .dspk i.t{background:#4ade80}.dpc .dspk i.n.t{background:#fb7185}
+.dpc .dkp3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.dpc .dkp3 button{border:0;font:inherit;text-align:left;color:#fff;background:rgba(255,255,255,.07);border-radius:13px;padding:9px 10px;min-width:0;cursor:pointer}
+.dpc .dkp3 span{display:block;font-size:.64rem;color:rgba(255,255,255,.6);white-space:nowrap}
+.dpc .dkp3 b{display:block;font-size:.95rem;font-variant-numeric:tabular-nums;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dpc .dkp3 .warn b{color:#fbbf24}.dpc .dkp3 .bad b{color:#fb7185}
 .dsearch{border-radius:14px;padding:12px 12px 12px 14px;background:var(--surface);border-color:transparent;box-shadow:0 1px 2px rgba(0,0,0,.05)}
 .dsearch span{flex:1}.dsearch kbd{font:600 .66rem var(--body);color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
 .dqac{background:var(--surface);border-radius:18px;padding:8px 4px;gap:0;box-shadow:0 1px 2px rgba(0,0,0,.05)}
@@ -4680,12 +4697,18 @@ function openDrawer(){
   const sync=$("#syncNote").textContent||"";const cloud=/cloud/i.test(sync);
   const A=lastAlerts||[],hi=A.filter(a=>a.hi).length;
   const pinOn=pinHas();
+  const dayP=i=>{const d0=new Date();d0.setHours(0,0,0,0);const f=d0.getTime()-i*864e5,t=f+864e5;try{return stats(orders.filter(o=>o.time>=f&&o.time<t&&o.status==="Completed")).profit||0}catch(e){return 0}};
+  const wk=[6,5,4,3,2,1,0].map(dayP),dd=wk.some(v=>v)?wk[6]-wk[5]:null;
+  const usdt=(()=>{try{return stockLeft().USDT||0}catch(e){return 0}})();
+  const spark=(()=>{const mx=Math.max(1,...wk.map(Math.abs));return wk.some(v=>v)&&!hideAmt?`<div class="dspk" title="Last 7 days">${wk.map((v,i)=>`<i class="${v<0?"n":""}${i===6?" t":""}" style="height:${Math.max(8,Math.round(Math.abs(v)/mx*100))}%"></i>`).join("")}</div>`:""})();
   const qa=[["add","t-green",'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',"New order"],["intake","t-blue",'<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>',"Intake"],["pay","t-violet",'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M17 8h5M19.5 5.5 22 8l-2.5 2.5"/>',"Pay party"],["ai","t-amber",'<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/>',"Ask AI"]];
   $("#dTop").innerHTML=`
     <div class="dpc">
       <div class="dpch"><span class="dava" style="--c:${pref("avColor")||"#8b5cf6"}">${pref("avatar")?`<img src="/_blob/${encodeURIComponent(pref("avatar"))}" alt="">`:esc(ini)}</span><div class="dpn"><b>${esc(n)}</b><small>${esc([own&&biz&&biz.toLowerCase()!==own.toLowerCase()?biz:"",pref("role")||"P2P merchant",pref("city")].filter(Boolean).join(" · "))}</small></div><button type="button" class="dedit2" id="dEdit" aria-label="Edit profile"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button></div>
       <div class="dpills"><span class="dpl ${cloud?"ok":""}"><i></i>${esc(sync||"Offline")}</span>${pinOn?'<span class="dpl"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>PIN on</span>':""}<span class="dpl">${esc(pref("plat")||"Binance")}</span></div>
-      <div class="dkp"><div><span>Net worth</span><b>${H(inr(Math.round(nw)))}</b></div><div><span>Today profit</span><b class="${st.profit>0?"pos":st.profit<0?"neg":""}">${H((st.profit<0?"−":st.profit>0?"+":"")+inr(Math.abs(Math.round(st.profit))))}</b></div><div><span>Orders today</span><b>${td.length}${pend?`<small> · ${pend} open</small>`:""}</b></div></div>
+      <div class="dnw"><div class="dnwl"><span>Net worth</span><b data-dpc="nw">${H(inr(Math.round(nw)))}</b></div><button type="button" class="dedit2 dpeye${hideAmt?" off":""}" id="dEye" aria-label="${hideAmt?"Show amounts":"Hide amounts"}"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>${hideAmt?'<path d="M4 4l16 16"/>':""}</svg></button></div>
+      <div class="dtp" data-dpc="profit"><div><span>Today profit</span><b class="${st.profit>0?"pos":st.profit<0?"neg":""}">${H((st.profit<0?"−":st.profit>0?"+":"")+inr(Math.abs(Math.round(st.profit))))}</b>${dd!==null?`<em class="${dd>=0?"pos":"neg"}">${dd>=0?"▲":"▼"} ${H(inr(Math.abs(Math.round(dd))))} vs yesterday</em>`:""}</div>${spark}</div>
+      <div class="dkp3"><button type="button" data-dpc="orders"><span>Orders today</span><b>${td.length}</b></button><button type="button" data-dpc="open" class="${pend?"warn":""}"><span>Open now</span><b>${pend}</b></button><button type="button" data-dpc="stock" class="${usdt<0?"bad":""}"><span>USDT stock</span><b>${hideAmt?"•••••":usdt.toLocaleString("en-IN",{maximumFractionDigits:2})}</b></button></div>
     </div>
     <button type="button" class="dsearch" id="dSearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg><span>Search orders, parties, banks…</span></button>
     <div class="dqa dqac">${qa.map(([k,t,svg,l])=>`<button type="button" class="dq" data-dq="${k}"><span class="qri ${t}"><svg viewBox="0 0 24 24">${svg}</svg></span><small>${l}</small></button>`).join("")}</div>
@@ -4712,6 +4735,8 @@ function openDrawer(){
   const close=()=>{$("#drawer").hidden=true};
   $("#dSearch").onclick=()=>{close();openUS()};
   $("#dEdit").onclick=()=>{close();sheets.profile()};
+  $("#dEye").onclick=()=>{hideAmt=!hideAmt;try{localStorage.setItem("p2p_hide",hideAmt?"1":"0")}catch(err){}renderHero();openDrawer()};
+  document.querySelectorAll("#drawer [data-dpc]").forEach(e=>e.onclick=()=>{const k=e.dataset.dpc;if(k==="nw"){if(hideAmt)return;close();sheetNetWorth()}else{close();if(k==="stock")goTo("wallet");else if(k==="profit")goTo("report");else goPage("orders")}});
   document.querySelectorAll("#drawer [data-dq]").forEach(b=>b.onclick=()=>{const k=b.dataset.dq;close();if(k==="pay")pickParty(id=>sheets.pay(id));else document.querySelector(`[data-go="${k}"]`)?goTo(k):0});
   const dAll=$("#dAll");if(dAll)dAll.onclick=()=>{close();$("#t-home").click();alertsOpen=true;renderAlerts();setTimeout(()=>$("#alerts").scrollIntoView({behavior:"smooth",block:"center"}),80)};
   document.querySelectorAll("#drawer [data-th]").forEach(b=>b.onclick=()=>{devSet("p2p_theme",b.dataset.th);applyTheme();const sel=$("#st-theme");if(sel)sel.value=b.dataset.th;document.querySelectorAll("#drawer [data-th]").forEach(x=>x.classList.toggle("on",x===b))});
@@ -5682,7 +5707,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=93;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=94;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5749,6 +5774,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00094","11 Oct 2026",["Menu profile card is now more professional and useful: big Net worth with a hide/show eye, Today profit with change vs yesterday and a 7-day mini chart, and tap-able Orders today, Open now and USDT stock tiles that open the right page"]],
   ["0.0.0.00093","10 Oct 2026",["Smart intake: with an AI connected, if the phone reader has read nothing after 25 seconds, the AI takes over by itself (no need to press Skip), and the reader no longer retries for minutes before the AI gets the pictures"]],
   ["0.0.0.00092","10 Oct 2026",["Smart intake: when the phone reader fails, the AI reads every picture on its own (up to 6) and part payments are matched to their order again (this had been lost in the step back to 0.0.0.00085)"]],
   ["0.0.0.00091","10 Oct 2026",["New app (APK): screenshots are now read by the phone's own reader (Google ML Kit, built into the app), so reading no longer needs internet and no longer hangs. The old reader is kept as a backup. Install the new APK once from About → Check for updates"]],
