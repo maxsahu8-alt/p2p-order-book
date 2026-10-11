@@ -1,9 +1,9 @@
 {
- "web": "0.0103",
- "build": 103,
- "display": "0.0.0.00103",
+ "web": "0.0104",
+ "build": 104,
+ "display": "0.0.0.00104",
  "files": {
-  "index.html": "eed73f1c9f362bc8b991326c363dda4df9edd3e9",
+  "index.html": "6ff34b2a0861c673a60f73ccdd3729842b6873f8",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -11,7 +11,7 @@
  "apk": {
   "code": 24,
   "name": "0.0.0.00102",
-  "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Smart intake: part payment amount read from the end of the Debited from row of PhonePe receipts"
+  "url": "",
+  "notes": ""
  }
 }

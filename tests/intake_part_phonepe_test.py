@@ -14,7 +14,7 @@ async def main():
   b2={"id":"B2","kind":"bank","name":"SBI","bankName":"SBI","accNo":"XXXXXX4871","type":"Bank","opening":100000,"time":now-30*864e5}
   async with async_playwright() as p:
     b=await p.chromium.launch()
-    for label,r1,r2 in [("rupee sign lost","XXXXXX2594 30,000","XXXXXX4871 1,905.25"),("rupee sign read as 7","XXXXXX2594 730,000","XXXXXX4871 71,905.25"),("rupee sign kept","XXXXXX2594 ₹30,000","XXXXXX4871 ₹1,905.25")]:
+    for label,r1,r2 in [("rupee sign lost","XXXXXX2594 30,000","XXXXXX4871 1,905.25"),("rupee sign read as 7","XXXXXX2594 730,000","XXXXXX4871 71,905.25"),("rupee sign kept","XXXXXX2594 ₹30,000","XXXXXX4871 ₹1,905.25"),("wrong date and other name","XXXXXX2594 ₹30,000\nPaid to\nRAMESH KUMAR\n11 Jan 2025, 10:00 pm","XXXXXX4871 ₹1,905.25\nPaid to\nRAMESH KUMAR\n11 Jan 2025, 10:05 pm")]:
       A=BASE%("1",r1,"250623501155");B=BASE%("2",r2,"250623501166")
       pg,e=await scen(b,[SET,b1,b2],{"a.png":A,"b.png":B,"o.png":O},["a.png","b.png","o.png"])
       g=await pg.evaluate("ixS.groups.map(g=>({n:g.items.length,part:g.partSum,amts:g.pays.map(p=>p.pay&&p.pay.amount),why:g.risk.reasons}))")

@@ -2684,7 +2684,14 @@ function ixGroup(items){items=items.filter(x=>!x.list&&!x.ledger);const pays=ite
       let pick=null;const walk=(i,acc,ch)=>{if(pick)return;if(i===sub.length){if(Math.abs(acc-amt)<=tol)pick=ch;return}opts(sub[i]).forEach(a=>walk(i+1,acc+a,ch.concat(a)))};walk(0,0,[]);if(!pick)continue;
       const u=sub.map(x=>x.pay.utr?normRef(x.pay.utr):"").filter(Boolean);if(new Set(u).size<u.length)continue; // the same payment twice is not two part payments
       if(!best||sub.length<best.length){best=sub;best.pick=pick}}
-    if(best){best.forEach((p,i)=>{if(!(p.pay.amount>0)){p.pay.amount=best.pick[i];p.pay.amountAlts=null;p.pay.amountFixed=true}used.add(p);p.part=true;p.pairScore=3});taken.add(j);groups[j].pays.push(...best);groups[j].partSum=best.reduce((t,x)=>t+x.pay.amount,0)}}catch(e){}});
+    let loose=false;
+    // nothing fit once names / times were checked (dark receipts often lose the date, or name the sender differently): the parts still add up to this order's total to the rupee, so it is the same trade. Needs 2-3 unused payments, never the same UTR twice
+    if(!best){const cand2=pays.filter(p=>!used.has(p)&&opts(p).some(a=>a>0&&a<amt-tol)).slice(0,6),t2=Math.max(1,amt*0.0005);
+      for(let m=1;m<(1<<cand2.length);m++){const sub=cand2.filter((_,i)=>m&(1<<i));if(sub.length<2||sub.length>3)continue;
+        let pick=null;const walk=(i,acc,ch)=>{if(pick)return;if(i===sub.length){if(Math.abs(acc-amt)<=t2)pick=ch;return}opts(sub[i]).forEach(a=>walk(i+1,acc+a,ch.concat(a)))};walk(0,0,[]);if(!pick)continue;
+        const u=sub.map(x=>x.pay.utr?normRef(x.pay.utr):"").filter(Boolean);if(new Set(u).size<u.length)continue;
+        if(!best||sub.length<best.length){best=sub;best.pick=pick;loose=true}}}
+    if(best){best.forEach((p,i)=>{if(!(p.pay.amount>0)){p.pay.amount=best.pick[i];p.pay.amountAlts=null;p.pay.amountFixed=true}used.add(p);p.part=true;p.pairScore=3});taken.add(j);groups[j].pays.push(...best);groups[j].partSum=best.reduce((t,x)=>t+x.pay.amount,0);if(loose)groups[j].partLoose=true}}catch(e){}});
   // pass 1: strong evidence, one payment per order first
   pairs.forEach(x=>{if(used.has(x.p)||taken.has(x.j)||x.s<2||x.hard)return;used.add(x.p);taken.add(x.j);groups[x.j].pays.push(x.p);x.p.pairScore=x.s});
   // pass 2: whatever is left. A lone order and a lone payment are the same transaction unless they clearly contradict each other
@@ -2801,7 +2808,7 @@ function ixMine(g){try{const X=g.X,P=X.pay,O=X.ord;const side=ixSide(g);if(!side
   {const other=side==="BUY"?(O.seller||O.cp):(O.buyer||O.cp),role=side==="BUY"?"seller":"buyer";if(other){const k=ixlKnown(other,side);if(k)add("ok",`Known ${role}: ${k} earlier deal${k>1?"s":""} with ${other}`);else add("na",`New ${role}: first deal with ${other}`)}else if(g.order)add("na",`The ${role}'s name was not found on the order. Tap DEEP AI CHECK once and I will learn where it sits on this screen.`)}
   return{side,verdict:L.length?w:"na",lines:L,bank:bk,acct}}catch(e){return{side:null,verdict:"na",lines:[],bank:null}}}
 // ---- risk: LOW / MEDIUM / HIGH with the reasons
-function ixRisk(g){const F=g.cmp.fields,hi=[],me=[],fl=g.cmp.flags;const f=k=>F.find(x=>x.k===k)||{};
+function ixRisk(g){const F=g.cmp.fields,hi=[],me=[],fl=g.cmp.flags;const f=k=>F.find(x=>x.k===k)||{};if(g.partLoose)me.push("Part payments were joined only because they add up to the order total (names / time did not confirm). Check once.");
   if(f("amount").res==="MISMATCH")hi.push("Amount mismatch");
   if(f("buyer").res==="MISMATCH"||f("seller").res==="MISMATCH")hi.push("Name mismatch");else if(f("buyer").res==="UNCLEAR"||f("seller").res==="UNCLEAR")me.push("Names only partly match");
   if(g.cmp.local.some(x=>/Duplicate UTR/.test(x)))hi.push("Duplicate UTR");
@@ -5769,7 +5776,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=103;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=104;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5836,6 +5843,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00104","11 Oct 2026",["Smart intake: one order paid in parts from different banks (for example \u20b930,000 + \u20b91,905) is now one transaction even when the receipts have no clear date or a different name. If the parts add up to the order total to the rupee they are joined, and the card asks you to check once"]],
   ["0.0.0.00103","11 Oct 2026",["Smart intake: part payments from scrolled-down PhonePe receipts are read again. When the amount is only shown at the end of the \"Debited from\" row (with the rupee sign lost or read as a digit), it is now picked up and matched to the order total"]],
   ["0.0.0.00102","11 Oct 2026",["New app (APK): every screenshot is now read up to three times by the phone reader (as it is, enhanced and flipped when dark, and the biggest number cut out and enlarged). The readings fill each other\u0027s gaps and a number they disagree on is settled by the order total or flagged for you. The card also shows which app made the screenshot (PhonePe, Google Pay, KuCoin …)"]],
   ["0.0.0.00101","11 Oct 2026",["Smart intake: a sell paid to an account whose number ends like one of your saved accounts (or whose UPI handle belongs to your one bank of that name) is now treated as yours at once, without the \"Is this your account?\" question"]],
