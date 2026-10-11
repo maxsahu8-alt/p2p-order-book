@@ -4,3 +4,6 @@ android/app/build/
 android/local.properties
 *.jks
 *.keystore
+
+# screenshots written by the test scripts
+tests/*.png
