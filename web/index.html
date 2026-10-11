@@ -2637,6 +2637,10 @@ function ixGroup(items){items=items.filter(x=>!x.list&&!x.ledger);const pays=ite
   const oTot=o=>{const O=o.ord;return O.fiat!=null?O.fiat:(O.crypto&&O.price?O.crypto*O.price:null)};
   // a figure whose rupee sign was read as a digit ("71,905"): if one reading is exactly an order's total, take it
   pays.forEach(p=>{const A=p.pay.amountAlts;if(!(A&&A.length)||p.pay.amount>0)return;const hit=A.find(a=>ords.some(o=>{const t=oTot(o);return t>0&&Math.abs(a-t)<=Math.max(1,t*0.002)}));if(hit){p.pay.amount=hit;p.pay.amountAlts=null;p.pay.amountFixed=true}});
+  // the rupee sign read as a digit and glued on ("₹3,207.21" read as 73,207.21): if cutting that first 7 / 2 / 1 gives exactly an order's total (and the figure as read fits no order), the sign was misread
+  pays.forEach(p=>{const v=p.pay.amount;if(!(v>0)||ords.some(o=>{const t=oTot(o);return t>0&&Math.abs(v-t)<=Math.max(1,t*0.002)}))return;
+    const str=v.toFixed(2).replace(/\.00$/,"");if(!/^[721]/.test(str)||str.replace(/\.\d+$/,"").length<4)return;const cut=+str.slice(1);
+    if(cut>0&&ords.some(o=>{const t=oTot(o);return t>0&&Math.abs(cut-t)<=Math.max(1,t*0.002)})){p.pay.amountRead=v;p.pay.amount=cut;p.pay.amountFixed=true}});
   ords.forEach((o,j)=>{try{const O=o.ord,amt=O.fiat!=null?O.fiat:(O.crypto&&O.price?O.crypto*O.price:null);if(!(amt>0))return;const tol=Math.max(1,amt*0.002);
     if(pays.some(p=>!used.has(p)&&p.pay.amount!=null&&Math.abs(p.pay.amount-amt)<=tol))return; // one payment already fits the whole order
     const ot=verWhen((O.when||"").slice(0,10),(O.when||"").slice(11,16));
@@ -5707,7 +5711,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=94;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=95;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5774,6 +5778,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00095","11 Oct 2026",["Smart intake: a payment amount whose rupee sign was read as a digit (₹3,207.21 read as 73,207.21) is now corrected when the order shows the real amount, so it no longer shows a false MISMATCH"]],
   ["0.0.0.00094","11 Oct 2026",["Menu profile card is now more professional and useful: big Net worth with a hide/show eye, Today profit with change vs yesterday and a 7-day mini chart, and tap-able Orders today, Open now and USDT stock tiles that open the right page"]],
   ["0.0.0.00093","10 Oct 2026",["Smart intake: with an AI connected, if the phone reader has read nothing after 25 seconds, the AI takes over by itself (no need to press Skip), and the reader no longer retries for minutes before the AI gets the pictures"]],
   ["0.0.0.00092","10 Oct 2026",["Smart intake: when the phone reader fails, the AI reads every picture on its own (up to 6) and part payments are matched to their order again (this had been lost in the step back to 0.0.0.00085)"]],
