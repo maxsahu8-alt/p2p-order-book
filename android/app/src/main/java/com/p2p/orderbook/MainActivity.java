@@ -415,32 +415,43 @@ public class MainActivity extends Activity {
                         BitmapFactory.Options o = new BitmapFactory.Options();
                         o.inSampleSize = sample;
                         Bitmap bmp = BitmapFactory.decodeByteArray(raw, 0, raw.length, o);
-                        if (bmp == null) { ocrOut(id, "", 0, "decode"); return; }
+                        if (bmp == null) { ocrOut(id, "", 0, "decode", null); return; }
                         if (ocrRec == null) ocrRec = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
                         ocrRec.process(InputImage.fromBitmap(bmp, 0))
                             .addOnSuccessListener(new com.google.android.gms.tasks.OnSuccessListener<com.google.mlkit.vision.text.Text>() {
                                 @Override
                                 public void onSuccess(com.google.mlkit.vision.text.Text result) {
-                                    ocrOut(id, result.getText(), 90, null);
+                                    // every line with its box, so the page can put labels and values that sit on the same row back together
+                                    JSONArray ls = new JSONArray();
+                                    try {
+                                        for (com.google.mlkit.vision.text.Text.TextBlock tb : result.getTextBlocks()) {
+                                            for (com.google.mlkit.vision.text.Text.Line ln : tb.getLines()) {
+                                                android.graphics.Rect r = ln.getBoundingBox();
+                                                if (r == null) continue;
+                                                ls.put(new JSONArray().put(ln.getText()).put(r.left).put(r.top).put(r.right).put(r.bottom));
+                                            }
+                                        }
+                                    } catch (Throwable ignore) { }
+                                    ocrOut(id, result.getText(), 90, null, ls.toString());
                                 }
                             })
                             .addOnFailureListener(new com.google.android.gms.tasks.OnFailureListener() {
                                 @Override
                                 public void onFailure(Exception e) {
-                                    ocrOut(id, "", 0, String.valueOf(e.getMessage()));
+                                    ocrOut(id, "", 0, String.valueOf(e.getMessage()), null);
                                 }
                             });
                     } catch (Throwable t) {
-                        ocrOut(id, "", 0, String.valueOf(t.getMessage()));
+                        ocrOut(id, "", 0, String.valueOf(t.getMessage()), null);
                     }
                 }
             }).start();
         }
     }
 
-    void ocrOut(String id, String text, long conf, String err) {
+    void ocrOut(String id, String text, long conf, String err, String lines) {
         final String js = "window.P2POcrResult&&P2POcrResult(" + JSONObject.quote(id) + "," + JSONObject.quote(text) + "," + conf + ","
-            + (err == null ? "null" : JSONObject.quote(err)) + ")";
+            + (err == null ? "null" : JSONObject.quote(err)) + "," + (lines == null ? "null" : lines) + ")";
         runOnUiThread(() -> web.evaluateJavascript(js, null));
     }
 
