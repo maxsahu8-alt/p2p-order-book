@@ -1,0 +1,16 @@
+11:50
+Transaction Complete
+Transaction complete. Crypto successfully released.
+N nis***@gmail.com
+I've released the coins. This transacti
+Sell USDT
+Total Amount 19,000 INR
+USDT Price 108.98 INR
+Amount 174.343916 USDT
+Tax 1.743439USDT(1%)
+Counterparty Nishita(nis***@gmail.com)
+Order Number 6acb27a9e50cd50001686
+c70
+Created At 10/11/2026 11:37:37
+Having problems with this order?
+Place Another Order

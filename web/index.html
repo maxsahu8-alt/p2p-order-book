@@ -2419,7 +2419,15 @@ function ixPayFrom(text,conf){const p=payParse(text),d=ixMs(p.time);
   return{status:p.status==="Failed"?"FAILED":p.status==="Pending"?"PENDING":p.status==="Success"?"SUCCESS":null,amount:p.amount||null,currency:p.amount?"INR":null,sender:p.sender||null,receiver:p.receiver||null,utr:p.utr||null,method:p.method||null,bank:p.bank||null,date:d?d.slice(0,10):null,time:d?d.slice(11):null,acct:p.last4?"••"+p.last4:null,conf:conf,dir:p.dir||"",last4:p.last4||"",ok:p.ok,vpa:ixVpa(text),amountAlts:p.amountAlts||null,fromLabel:p.fromLabel||null,fromLast4:p.fromLast4||null,alts:(p.timeAlts||[]).length>1?p.timeAlts.map(ixMs):null}}
 function ixOrdSide(flat){const C="(?:usdt|usdc|btc|eth|bnb|trx|xrp|sol|doge|dai|ltc|matic|shib)";const b=new RegExp("\\b(?:buy|buying|bought)\\s+"+C+"\\b","i").test(flat)||/\bBuy\s+[A-Z]{3,5}\b/.test(flat),s=new RegExp("\\b(?:sell|selling|sold)\\s+"+C+"\\b","i").test(flat)||/\bSell\s+[A-Z]{3,5}\b/.test(flat);
   if(b&&!s)return"BUY";if(s&&!b)return"SELL";if(!b&&!s){if(/you\s*pay\b/i.test(flat)&&!/you\s*(?:will\s*)?receive\s*(?:₹|rs|inr)/i.test(flat))return"BUY";if(/you\s*(?:will\s*)?receive\s*(?:₹|rs|inr)/i.test(flat))return"SELL"}return null}
-function ixOrdFrom(text,conf){const t=String(text||""),flat=t.replace(/\s+/g," ");const num=s=>{const n=parseFloat(String(s).replace(/,/g,""));return isFinite(n)?n:null};
+// some pictures are read column by column: all the labels first, then all the values ("Total Amount / USDT Price / Amount" … "19,000 INR / 108.98 INR / 174.34 USDT"). Pair them up again and put the pairs in front of the text
+function ixZipCols(text){try{const L=String(text||"").split(/\n/).map(x=>x.trim()).filter(Boolean);
+  const LAB=/^(total\s*amount|total\s*price|fiat\s*amount|usdt\s*price|unit\s*price|price|amount|quantity|tax|tds|fee|counter\s*-?\s*party|order\s*(?:number|no\.?|id)|created\s*(?:at|time)|payment\s*(?:method|time)|status|buyer|seller)\s*[?:]?\s*[?⌀ⓘ]?$/i;
+  let i=0;while(i<L.length){if(!LAB.test(L[i])){i++;continue}let j=i;while(j<L.length&&LAB.test(L[j]))j++;const n=j-i;
+    if(n>=3){const labs=L.slice(i,j).map(x=>x.replace(/[?:⌀ⓘ]/g,"").trim()),vals=L.slice(j,j+n);
+      if(vals.length===n&&!vals.some(v=>LAB.test(v))){return labs.map((l,q)=>l+" "+vals[q]).join("\n")+"\n"+L.join("\n")}}
+    i=j}
+  return String(text||"")}catch(e){return String(text||"")}}
+function ixOrdFrom(text,conf){const t=ixZipCols(text),flat=t.replace(/\s+/g," ");const num=s=>{const n=parseFloat(String(s).replace(/,/g,""));return isFinite(n)?n:null};
   const CUR="(?:₹|Rs\\.?|INR|[~£<¥%?=])";
   let id=null;{const wm=t.match(/(?:order\s*(?:no\.?|number|id|#)|订单号?)\s*[:：#]?\s*([0-9A-Za-z]{14,40})(?:[ \t]+[^\s]{1,2})?[ \t]*\n+[ \t]*([0-9A-Za-z]{2,8})[ \t]*(?:\n|$)/i);if(wm&&(/\d/.test(wm[2])||(/^[0-9a-f]{1,8}$/i.test(wm[2])&&wm[1].length>=18&&wm[1].length+wm[2].length<=34))&&!IX_LABELISH.test(wm[2]))id=wm[1]+wm[2]}
   if(!id)id=(flat.match(/(?:order\s*(?:no\.?|number|id|#)|订单号?)\s*[:：#]?\s*([0-9A-Za-z]{8,30})/i)||[])[1]||(flat.match(/#\s*(\d{10,24})/)||[])[1]||(flat.match(/\b(\d{16,24})\b/)||[])[1]||null;
@@ -5711,7 +5719,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=95;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=96;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5778,6 +5786,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00096","11 Oct 2026",["Smart intake: when the phone reader gives an exchange order column by column (labels first, then values), they are paired up again, so the coin amount is no longer shown as rupees and the order total is read correctly"]],
   ["0.0.0.00095","11 Oct 2026",["Smart intake: a payment amount whose rupee sign was read as a digit (₹3,207.21 read as 73,207.21) is now corrected when the order shows the real amount, so it no longer shows a false MISMATCH"]],
   ["0.0.0.00094","11 Oct 2026",["Menu profile card is now more professional and useful: big Net worth with a hide/show eye, Today profit with change vs yesterday and a 7-day mini chart, and tap-able Orders today, Open now and USDT stock tiles that open the right page"]],
   ["0.0.0.00093","10 Oct 2026",["Smart intake: with an AI connected, if the phone reader has read nothing after 25 seconds, the AI takes over by itself (no need to press Skip), and the reader no longer retries for minutes before the AI gets the pictures"]],
