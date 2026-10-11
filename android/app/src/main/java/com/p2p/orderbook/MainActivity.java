@@ -415,43 +415,157 @@ public class MainActivity extends Activity {
                         BitmapFactory.Options o = new BitmapFactory.Options();
                         o.inSampleSize = sample;
                         Bitmap bmp = BitmapFactory.decodeByteArray(raw, 0, raw.length, o);
-                        if (bmp == null) { ocrOut(id, "", 0, "decode", null); return; }
+                        if (bmp == null) { ocrOut(id, "", 0, "decode", null, null); return; }
                         if (ocrRec == null) ocrRec = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-                        ocrRec.process(InputImage.fromBitmap(bmp, 0))
+                        final Bitmap bmpF = bmp;
+                        // pass 1: the picture as it is
+                        ocrRec.process(InputImage.fromBitmap(bmpF, 0))
                             .addOnSuccessListener(new com.google.android.gms.tasks.OnSuccessListener<com.google.mlkit.vision.text.Text>() {
                                 @Override
-                                public void onSuccess(com.google.mlkit.vision.text.Text result) {
-                                    // every line with its box, so the page can put labels and values that sit on the same row back together
-                                    JSONArray ls = new JSONArray();
-                                    try {
-                                        for (com.google.mlkit.vision.text.Text.TextBlock tb : result.getTextBlocks()) {
-                                            for (com.google.mlkit.vision.text.Text.Line ln : tb.getLines()) {
-                                                android.graphics.Rect r = ln.getBoundingBox();
-                                                if (r == null) continue;
-                                                ls.put(new JSONArray().put(ln.getText()).put(r.left).put(r.top).put(r.right).put(r.bottom));
-                                            }
+                                public void onSuccess(final com.google.mlkit.vision.text.Text r1) {
+                                    final String t1 = r1.getText();
+                                    final JSONArray l1 = linesOf(r1);
+                                    // pass 2: grey, more contrast, bigger, and flipped when the screen is dark (white text on black)
+                                    runPass(enhance(bmpF), new PassDone() {
+                                        @Override
+                                        public void done(com.google.mlkit.vision.text.Text r2) {
+                                            final JSONObject extra = new JSONObject();
+                                            try {
+                                                if (r2 != null) { extra.put("t2", r2.getText()); extra.put("l2", linesOf(r2)); }
+                                            } catch (Throwable ignore) { }
+                                            // pass 3: only the biggest number on the screen (the amount), cut out and enlarged
+                                            Bitmap big = cropBig(bmpF, l1);
+                                            if (big == null) { ocrOut(id, t1, 90, null, l1.toString(), extra.toString()); return; }
+                                            runPass(big, new PassDone() {
+                                                @Override
+                                                public void done(com.google.mlkit.vision.text.Text r3) {
+                                                    try { if (r3 != null) extra.put("t3", r3.getText()); } catch (Throwable ignore) { }
+                                                    ocrOut(id, t1, 90, null, l1.toString(), extra.toString());
+                                                }
+                                            });
                                         }
-                                    } catch (Throwable ignore) { }
-                                    ocrOut(id, result.getText(), 90, null, ls.toString());
+                                    });
                                 }
                             })
                             .addOnFailureListener(new com.google.android.gms.tasks.OnFailureListener() {
                                 @Override
                                 public void onFailure(Exception e) {
-                                    ocrOut(id, "", 0, String.valueOf(e.getMessage()), null);
+                                    ocrOut(id, "", 0, String.valueOf(e.getMessage()), null, null);
                                 }
                             });
                     } catch (Throwable t) {
-                        ocrOut(id, "", 0, String.valueOf(t.getMessage()), null);
+                        ocrOut(id, "", 0, String.valueOf(t.getMessage()), null, null);
                     }
                 }
             }).start();
         }
     }
 
-    void ocrOut(String id, String text, long conf, String err, String lines) {
+
+    interface PassDone { void done(com.google.mlkit.vision.text.Text t); }
+
+    // one more reading of another version of the picture; a failure just gives null (the first reading is still good)
+    void runPass(Bitmap bm, final PassDone cb) {
+        try {
+            if (bm == null) { cb.done(null); return; }
+            ocrRec.process(InputImage.fromBitmap(bm, 0))
+                .addOnSuccessListener(new com.google.android.gms.tasks.OnSuccessListener<com.google.mlkit.vision.text.Text>() {
+                    @Override public void onSuccess(com.google.mlkit.vision.text.Text r) { cb.done(r); }
+                })
+                .addOnFailureListener(new com.google.android.gms.tasks.OnFailureListener() {
+                    @Override public void onFailure(Exception e) { cb.done(null); }
+                });
+        } catch (Throwable t) { cb.done(null); }
+    }
+
+    // every line with its box: [text, left, top, right, bottom]
+    JSONArray linesOf(com.google.mlkit.vision.text.Text result) {
+        JSONArray ls = new JSONArray();
+        try {
+            for (com.google.mlkit.vision.text.Text.TextBlock tb : result.getTextBlocks()) {
+                for (com.google.mlkit.vision.text.Text.Line ln : tb.getLines()) {
+                    android.graphics.Rect r = ln.getBoundingBox();
+                    if (r == null) continue;
+                    ls.put(new JSONArray().put(ln.getText()).put(r.left).put(r.top).put(r.right).put(r.bottom));
+                }
+            }
+        } catch (Throwable ignore) { }
+        return ls;
+    }
+
+    // grey + stronger contrast + a little bigger; flipped when the screen is mostly dark
+    Bitmap enhance(Bitmap src) {
+        try {
+            int w = src.getWidth(), h = src.getHeight();
+            long sum = 0; int n = 0;
+            for (int y = 0; y < h; y += 16) {
+                for (int x = 0; x < w; x += 16) {
+                    int p = src.getPixel(x, y);
+                    sum += (Color.red(p) * 3 + Color.green(p) * 6 + Color.blue(p)) / 10;
+                    n++;
+                }
+            }
+            boolean dark = n > 0 && (sum / n) < 110;
+            int longSide = Math.max(w, h);
+            float scale = longSide < 2400 ? Math.min(1.6f, 3200f / longSide) : 1f;
+            int nw = Math.max(1, Math.round(w * scale)), nh = Math.max(1, Math.round(h * scale));
+            Bitmap out = Bitmap.createBitmap(nw, nh, Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas c = new android.graphics.Canvas(out);
+            android.graphics.ColorMatrix cm = new android.graphics.ColorMatrix();
+            cm.setSaturation(0f);
+            float k = 1.5f, t = (-0.5f * k + 0.5f) * 255f;
+            cm.postConcat(new android.graphics.ColorMatrix(new float[] {
+                k, 0, 0, 0, t,
+                0, k, 0, 0, t,
+                0, 0, k, 0, t,
+                0, 0, 0, 1, 0 }));
+            if (dark) {
+                cm.postConcat(new android.graphics.ColorMatrix(new float[] {
+                    -1, 0, 0, 0, 255,
+                    0, -1, 0, 0, 255,
+                    0, 0, -1, 0, 255,
+                    0, 0, 0, 1, 0 }));
+            }
+            android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG);
+            paint.setColorFilter(new android.graphics.ColorMatrixColorFilter(cm));
+            c.drawBitmap(src, null, new android.graphics.Rect(0, 0, nw, nh), paint);
+            return out;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    // the line with the tallest letters that holds at least 3 digits (on a payment receipt that is the amount), cut out and enlarged
+    Bitmap cropBig(Bitmap src, JSONArray lines) {
+        try {
+            int bi = -1, bh = 0;
+            for (int i = 0; i < lines.length(); i++) {
+                JSONArray l = lines.optJSONArray(i);
+                if (l == null) continue;
+                String t = l.optString(0);
+                int digits = 0;
+                for (int q = 0; q < t.length(); q++) if (Character.isDigit(t.charAt(q))) digits++;
+                int h = l.optInt(4) - l.optInt(2);
+                if (digits >= 3 && h > bh) { bh = h; bi = i; }
+            }
+            if (bi < 0) return null;
+            JSONArray l = lines.getJSONArray(bi);
+            int pad = Math.max(8, bh / 3);
+            int left = Math.max(0, l.optInt(1) - pad), top = Math.max(0, l.optInt(2) - pad);
+            int right = Math.min(src.getWidth(), l.optInt(3) + pad), bottom = Math.min(src.getHeight(), l.optInt(4) + pad);
+            int w = right - left, h = bottom - top;
+            if (w < 10 || h < 10) return null;
+            Bitmap piece = Bitmap.createBitmap(src, left, top, w, h);
+            float f = Math.max(1.5f, Math.min(4f, 140f / h));
+            return Bitmap.createScaledBitmap(piece, Math.max(1, Math.round(w * f)), Math.max(1, Math.round(h * f)), true);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    void ocrOut(String id, String text, long conf, String err, String lines, String extra) {
         final String js = "window.P2POcrResult&&P2POcrResult(" + JSONObject.quote(id) + "," + JSONObject.quote(text) + "," + conf + ","
-            + (err == null ? "null" : JSONObject.quote(err)) + "," + (lines == null ? "null" : lines) + ")";
+            + (err == null ? "null" : JSONObject.quote(err)) + "," + (lines == null ? "null" : lines) + "," + (extra == null ? "null" : extra) + ")";
         runOnUiThread(() -> web.evaluateJavascript(js, null));
     }
 
