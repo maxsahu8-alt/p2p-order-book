@@ -2855,7 +2855,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   P.receiver=grab(/^(?:banking name|beneficiary(?: name)?)\b\s*[:\-]?\s*(.*)$/i)||grab(/^(?:paid to|money sent to|sent to|transferred to|credited to|beneficiary(?: name)?|banking name|to)\b\s*[:\-]?\s*(.*)$/i);
   // Google Pay / PhonePe style: the name (often wrapped over 2 lines) sits right above the masked UPI id ("••••8047-1@ybl")
   if(!P.receiver){const i=lines.findIndex(l=>/^\S{0,10}\d{3,}[\w.\-]*@[a-z]{2,}\b/i.test(l)&&!/[a-z]{4,}/i.test(l.split("@")[0].replace(/^\S{0,10}(?=\d)/,"")));
-    if(i>0){const nl=[];for(let j=i-1;j>=0&&nl.length<3;j--){const l=lines[j].replace(/^[^A-Za-z]+/,"");if(/^[A-Za-z][A-Za-z.' ]{1,28}$/.test(l)&&!/\b(?:successful|payment|paid|done|share|receipt|details|split|expense|completed|failed|pending)\b/i.test(l)&&!/\b(?:\d{1,2}\s+\w+\s+\d{4})\b/.test(l))nl.unshift(l.replace(/^[lI](?=[a-z]{3})/,"I"));else break}
+    if(i>0){const nl=[];for(let j=i-1;j>=0&&nl.length<3;j--){const l=lines[j].replace(/^[^A-Za-z]+/,"");if(/^[A-Za-z][A-Za-z.' ]{1,28}$/.test(l)&&!/\b(?:successful|payment|paid|done|share|receipt|details|split|expense|completed|failed|pending|transaction|status|sent|received|history)\b/i.test(l)&&!/\b(?:\d{1,2}\s+\w+\s+\d{4})\b/.test(l))nl.unshift(l.replace(/^[lI](?=[a-z]{3})/,"I"));else break}
       const n=nameOf(nl.join(" "));if(n)P.receiver=n}}
   if(!P.receiver){const i=lines.findIndex(l=>/^UPI ID\s*[:\-]/i.test(l));if(i>0){const n=nameOf(lines[i-1]);if(n)P.receiver=n}}
   if(!P.status&&/pay again|check balance/i.test(flat)&&!/fail|declin|reject|cancel/i.test(flat))P.status="Success";
@@ -5162,6 +5162,13 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
   if(g.dups.length&&!force){const c=await confirmRisk(g.dups.map(d=>({k:d.k,msg:d.msg})),"Possible duplicate","Save anyway");if(!c)return{state:"skipped",msg:"Not saved · possible duplicate"}}
   try{
     const pp=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{};const bk=P.amount!=null?ixBankOf({last4:pp.last4||"",bank:P.bank||"",dir:pp.dir||P.dir||"",vpa:pp.vpa||P.vpa||""},ixSide(g)):null;
+    // a SELL paid to an account the app could place on one of your banks: saving it means it is yours, so next time the UPI ID and name are known
+    try{const vp=String(pp.vpa||P.vpa||"").toLowerCase();
+      if(bk&&ixSide(g)==="SELL"&&vp&&(pp.dir||P.dir)!=="out"&&P.amount>0&&g.risk&&g.risk.level!=="HIGH"&&!ixMyVpas().includes(vp)&&!(P.receiver&&ixIsMe(P.receiver))){
+        await patchRec(bk.id,{vpas:[...new Set([...(bk.vpas||[]),vp])]});
+        let V=[];try{V=JSON.parse(pref("myVpas")||"[]")}catch(e){}if(!V.includes(vp)){V.push(vp);setPref("myVpas",JSON.stringify(V))}
+        let N=[];try{N=JSON.parse(pref("myNames")||"[]")}catch(e){}if(P.receiver&&!N.includes(P.receiver)){N.push(P.receiver);setPref("myNames",JSON.stringify(N))}
+        g.learnedMine=vp;toast("Saved "+vp+" as yours on "+(bk.name||bk.bankName||"your bank"))}}catch(e){}
     let proofs=[];if(assetsApi){try{proofs=await uploadProofs(g.items.map(x=>x.file))}catch(e){}}
     const shots=g.items.map(x=>x.hash);const pv=g.cmp.overall==="VERIFIED"?"verified":"ai";const method=METHODS.includes(String(verMeth(P.method)))?verMeth(P.method):"UPI";
     const split=bk&&P.amount?[{bank:bk.id,amt:+P.amount,method}]:[];const notes=[];if(P.amount&&!bk)notes.push("Bank not matched · assign it later");
@@ -5728,7 +5735,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=99;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=100;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5795,6 +5802,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00100","11 Oct 2026",["Smart intake: when you save a sell that was paid to an account placed on one of your banks, its UPI ID and name are saved as yours automatically, so the \"Is this your account?\" warning does not come back for the same account"]],
   ["0.0.0.00099","11 Oct 2026",["Smart intake: dates are read even when the phone reader slips (0CT for OCT, 2O26, 11.47 AM), and a payment whose time was simply not read no longer raises the risk to Medium when amount, UTR and status all match"]],
   ["0.0.0.00098","11 Oct 2026",["New app (APK): the phone reader now also gives the position of every line, so a label and its value on the same row are joined again (Total Amount ... 19,000 INR) and the text is read in the same order as you see the screen. Install the new APK once from About → Check for updates"]],
   ["0.0.0.00097","11 Oct 2026",["Smart intake: when the AI check cannot run, the card now says exactly why (no key, wrong model name, no internet, no credit, answer not understood) instead of only \"Cloud AI unavailable\""]],
