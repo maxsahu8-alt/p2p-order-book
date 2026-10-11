@@ -1,9 +1,9 @@
 {
- "web": "0.0100",
- "build": 100,
- "display": "0.0.0.00100",
+ "web": "0.0101",
+ "build": 101,
+ "display": "0.0.0.00101",
  "files": {
-  "index.html": "c5990bf5a1a9731a2ee4e55c7d90fae2dc8205e1",
+  "index.html": "485feba5dd84017641d79331a9a5fe31638edf5e",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
@@ -12,6 +12,6 @@
   "code": 23,
   "name": "0.0.0.00098",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Smart intake: your own UPI ID and name are learned when you save a sell; receiver name read on wallet receipts"
+  "notes": "Smart intake: accounts proven to be yours (account number or UPI handle) are accepted at once"
  }
 }

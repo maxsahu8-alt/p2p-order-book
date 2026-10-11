@@ -2483,7 +2483,8 @@ function ixItem(it,forceType){const o=it.ocr||{text:"",conf:0};const c=ixClassif
   it.ext=it.pay?(it.pay.amount!=null&&it.pay.utr?"ok":it.pay.amount!=null||it.pay.utr?"partial":"fail"):it.ord?(it.ord.fiat!=null&&it.ord.id?"ok":it.ord.fiat!=null||it.ord.id||it.ord.crypto!=null?"partial":"fail"):"fail";return it}
 
 // ---- v74: who is who. The exchange order page shows only the OTHER person; a sell is paid to YOUR account, whatever name it carries
-function ixMyNames(){const s=[pref("owner"),pref("nick")];try{s.push(...JSON.parse(pref("myNames")||"[]"))}catch(e){}banks.forEach(b=>{if(b.holder)s.push(b.holder)});return s.filter(Boolean)}
+const ixTrusted=new Set(); // receivers proven to be your own account (account number or UPI handle matches one of your banks)
+function ixMyNames(){const s=[pref("owner"),pref("nick"),...ixTrusted];try{s.push(...JSON.parse(pref("myNames")||"[]"))}catch(e){}banks.forEach(b=>{if(b.holder)s.push(b.holder)});return s.filter(Boolean)}
 function ixMyVpas(){let v=[];try{v=JSON.parse(pref("myVpas")||"[]")}catch(e){}banks.forEach(b=>(b.vpas||[]).forEach(x=>v.push(x)));return v.map(x=>String(x).toLowerCase())}
 const ixIsMe=n=>!!n&&ixMyNames().some(m=>{const r=verName(m,n);if(r==="M")return true;if(r!=="U")return false;const x=verTok(m)[0],y=verTok(n)[0];return!!(x&&y&&(x===y||x.startsWith(y)||y.startsWith(x)))}); // same surname alone is not you
 // the bank a payment belongs to. On a sell, a payment proof that shows money SENT carries the buyer's bank, not yours
@@ -2700,6 +2701,8 @@ function ixMerge(local,ai,conf){const out={...local},diffs=[],filled=[];Object.k
   return{v:out,diffs,filled}}
 function ixAiReady(){return aiCfg.prov!=="builtin"||i2Max>0}
 // ---- analyse one group: verify locally, decide if AI is needed, risk, duplicates
+// proof that an account is yours: its number ends like one of your saved accounts, or its UPI handle (@oksbi, @axisbank …) belongs to the one bank of that name you saved and that bank is where the money was placed
+function ixOwnAcct(l4,vp,dir,bk){if(dir==="out")return null;if(l4){const x=banks.find(y=>y.type!=="Cash"&&y.accNo&&String(y.accNo).replace(/\D/g,"").endsWith(l4));if(x)return x}const vb=vp?ixVpaBank(vp):null;return vb&&bk&&bk.id===vb.id?vb:null}
 function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(g.order||{}).ord;
   const X={pay:g.aiPay||P||{status:null,amount:null,currency:null,sender:null,receiver:null,utr:null,method:null,bank:null,date:null,time:null,acct:null,conf:null},ord:g.aiOrd||O||{id:null,status:null,buyer:null,seller:null,fiat:null,crypto:null,coin:null,price:null,method:null,when:null,acct:null,conf:null},flags:g.aiFlags||[]};
   // clean junk names, then fill in YOUR side: the receipt rarely prints your own name, and the exchange order never prints it
@@ -2707,6 +2710,7 @@ function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(
   ["sender","receiver"].forEach(k=>{if(X.pay[k]){const c=ixNameClean(X.pay[k]);X.pay[k]=c||null}});["buyer","seller"].forEach(k=>{if(X.ord[k]){const c=ixNameClean(X.ord[k]);X.ord[k]=c||null}});
   ixResolveDates(g,X);
   g.X=X;try{ixNumFix(g,X)}catch(e){}
+  try{const sd1=ixSide(g),pp1=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{},d1=X.pay.dir||pp1.dir||"";if(sd1==="SELL"&&X.pay.receiver&&X.pay.amount!=null){const l41=String(pp1.last4||X.pay.acct||"").replace(/\D/g,"").slice(-4),vp1=pp1.vpa||X.pay.vpa||"";const bk1=ixBankOf({last4:l41,bank:X.pay.bank||"",dir:d1,vpa:vp1},sd1);if(ixOwnAcct(l41,vp1,d1,bk1))ixTrusted.add(X.pay.receiver)}}catch(e){} // your own account: its name counts as you from here on
   try{const sd=ixSide(g),O2=X.ord;g.roleFix=null;if(sd&&O2){const mk=sd==="SELL"?"seller":"buyer",ok2=sd==="SELL"?"buyer":"seller";if(!O2[ok2]&&O2.cp)O2[ok2]=O2.cp;
     const v=O2[mk];if(v&&ixMyNames().length&&!ixIsMe(v)&&O2[ok2]&&!ixIsMe(O2[ok2])&&verName(O2[ok2],v)!=="M"){g.roleFix=`“${v}” on the order is the other person's nickname, not you. On a ${sd} order the exchange page shows only the other person, so your side is you.`;O2[mk]=null}}}catch(e){}
   try{const pp0=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{},dir0=X.pay.dir||pp0.dir||"",ow=pref("owner"),sd0=ixSide(g);
@@ -2764,13 +2768,16 @@ function ixMine(g){try{const X=g.X,P=X.pay,O=X.ord;const side=ixSide(g);if(!side
     if(P.receiver&&O.seller&&verName(P.receiver,O.seller)==="M")add("ok","Receiver is the seller on the order");
   }else{
     const vp=pp.vpa||P.vpa||"",vpMine=!!vp&&ixMyVpas().includes(vp.toLowerCase());
+    // proof that the account is yours: its number ends like one of your saved accounts, or its UPI handle (@oksbi, @axisbank …) belongs to the one bank of that name you saved and that bank is where the money was placed
+    const sb=ixOwnAcct(l4,vp,dir,bk);
     if(dir==="out"&&isMe(P.sender))add("bad","This is a SELL order, but this payment shows money sent by you, not received.","SELL order, but payment shows money sent");
     else if(dir==="out")add("na","This is the buyer's payment proof: money sent to your account.");
     if(bk&&dir!=="out")add("ok",`Received in your ${acct}`);
     else if(!bk&&haveBanks&&(l4||P.bank)&&dir!=="out"){add("warn",`Money went to an account that is not in your bank list${l4?" (••"+l4+")":""}. Is it yours?`,"Received in an account not in your bank list");if(l4)L[L.length-1].own=l4}
     if(P.receiver){if((g.inferred||[]).includes("receiver"))add("ok",vpMine?`Paid to your saved UPI ID ${vp}`:"Receiver is you (credited to your own bank)");else if(isMe(P.receiver))add("ok","Receiver name is you");
+      else if(notMe(P.receiver)&&sb){ixTrusted.add(P.receiver);add("ok",`Receiver “${P.receiver}” is your own account: ${sb.name||sb.bankName}, matched by ${l4?"account number ••"+l4:"UPI handle"}`)}
       else if(notMe(P.receiver)){if(dir==="out"&&isMe(P.sender))add("bad",`Receiver “${P.receiver}” is not you. The money did not go to your account.`,"Money went to someone else's account");else{add("warn",`Receiver “${P.receiver}” is not in your saved accounts yet. Is this your account?`,"Receiver is not one of your saved accounts yet");L[L.length-1].mine={name:P.receiver,vpa:vp}}}}
-    else if(vp){if(vpMine)add("ok",`Paid to your saved UPI ID ${vp}`);else{add("warn",`Paid to UPI ID ${vp}, which is not saved as yours yet. Is it yours?`,"UPI ID is not saved as yours yet");L[L.length-1].mine={name:"",vpa:vp}}}
+    else if(vp){if(vpMine)add("ok",`Paid to your saved UPI ID ${vp}`);else if(sb)add("ok",`Paid to your own account: ${sb.name||sb.bankName}, matched by ${l4?"account number ••"+l4:"UPI handle"}`);else{add("warn",`Paid to UPI ID ${vp}, which is not saved as yours yet. Is it yours?`,"UPI ID is not saved as yours yet");L[L.length-1].mine={name:"",vpa:vp}}}
     if(P.sender&&O.buyer&&verName(P.sender,O.buyer)==="M")add("ok","Sender is the buyer on the order");
   }
   {const other=side==="BUY"?(O.seller||O.cp):(O.buyer||O.cp),role=side==="BUY"?"seller":"buyer";if(other){const k=ixlKnown(other,side);if(k)add("ok",`Known ${role}: ${k} earlier deal${k>1?"s":""} with ${other}`);else add("na",`New ${role}: first deal with ${other}`)}else if(g.order)add("na",`The ${role}'s name was not found on the order. Tap DEEP AI CHECK once and I will learn where it sits on this screen.`)}
@@ -5735,7 +5742,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=100;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=101;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5802,6 +5809,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00101","11 Oct 2026",["Smart intake: a sell paid to an account whose number ends like one of your saved accounts (or whose UPI handle belongs to your one bank of that name) is now treated as yours at once, without the \"Is this your account?\" question"]],
   ["0.0.0.00100","11 Oct 2026",["Smart intake: when you save a sell that was paid to an account placed on one of your banks, its UPI ID and name are saved as yours automatically, so the \"Is this your account?\" warning does not come back for the same account"]],
   ["0.0.0.00099","11 Oct 2026",["Smart intake: dates are read even when the phone reader slips (0CT for OCT, 2O26, 11.47 AM), and a payment whose time was simply not read no longer raises the risk to Medium when amount, UTR and status all match"]],
   ["0.0.0.00098","11 Oct 2026",["New app (APK): the phone reader now also gives the position of every line, so a label and its value on the same row are joined again (Total Amount ... 19,000 INR) and the text is read in the same order as you see the screen. Install the new APK once from About → Check for updates"]],
