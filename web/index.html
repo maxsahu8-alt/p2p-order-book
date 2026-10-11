@@ -2455,16 +2455,16 @@ function ixOrdFrom(text,conf){const t=ixZipCols(text),flat=t.replace(/\s+/g," ")
 const ixOcrCache=new Map();let ixNative=0;
 function ixNativeOcr(blob,ms){return new Promise((ok,no)=>{if(!(window.P2POcr&&P2POcr.recognize))return no(new Error("none"));
   const id="o"+(++ixNative);window.__ocrCb=window.__ocrCb||{};const t=setTimeout(()=>{delete window.__ocrCb[id];no(new Error("timeout"))},ms||30000);
-  window.__ocrCb[id]=(text,conf,err,lines)=>{clearTimeout(t);delete window.__ocrCb[id];err?no(new Error(err)):ok({text:text||"",conf:conf,lines:Array.isArray(lines)?lines:null})};
+  window.__ocrCb[id]=(text,conf,err,lines,extra)=>{clearTimeout(t);delete window.__ocrCb[id];err?no(new Error(err)):ok({text:text||"",conf:conf,lines:Array.isArray(lines)?lines:null,extra:extra&&typeof extra==="object"?extra:null})};
   verB64(blob).then(b64=>P2POcr.recognize(id,b64)).catch(e=>{clearTimeout(t);no(e)})})}
 // the reader gives lines with their boxes: lines that sit on the same row of the screen (a label on the left, its value on the right) are joined into one line, in reading order
 function ixRowsText(lines){try{const L=(lines||[]).filter(x=>x&&x[0]&&String(x[0]).trim()).map(x=>({t:String(x[0]).trim(),l:+x[1],tp:+x[2],r:+x[3],b:+x[4]})).filter(x=>x.b>x.tp&&x.r>x.l);if(L.length<2)return"";
   L.forEach(x=>{x.cy=(x.tp+x.b)/2;x.h=x.b-x.tp});L.sort((a,b)=>a.cy-b.cy||a.l-b.l);
   const rows=[];L.forEach(x=>{const r=rows[rows.length-1];if(r&&Math.abs(x.cy-r.cy)<=0.45*Math.min(x.h,r.h)){r.items.push(x);r.cy=r.items.reduce((t,i)=>t+i.cy,0)/r.items.length;r.h=Math.min(r.h,x.h)}else rows.push({items:[x],cy:x.cy,h:x.h})});
   return rows.map(r=>r.items.sort((a,b)=>a.l-b.l).map(i=>i.t).join("   ")).join("\n")}catch(e){return""}}
-window.P2POcrResult=(id,text,conf,err,lines)=>{const f=(window.__ocrCb||{})[id];if(f)f(text,conf,err,lines)};
+window.P2POcrResult=(id,text,conf,err,lines,extra)=>{const f=(window.__ocrCb||{})[id];if(f)f(text,conf,err,lines,extra)};
 async function ixOcr(it,skip){if(ixOcrCache.has(it.hash))return ixOcrCache.get(it.hash);let r=null;
-  if(window.P2POcr&&P2POcr.recognize){try{const n=await ixNativeOcr(it.file,45000);const rt=ixRowsText(n.lines);r={text:rt&&rt.replace(/\s/g,"").length>=n.text.replace(/\s/g,"").length*0.8?rt:n.text,raw:n.text,conf:n.conf==null?90:n.conf,engine:"ML Kit",status:n.text.trim().length>8?"ok":"partial"}}catch(e){}}
+  if(window.P2POcr&&P2POcr.recognize){try{const n=await ixNativeOcr(it.file,45000);const rt=ixRowsText(n.lines),X2=n.extra||{},alt2=X2.l2?ixRowsText(X2.l2):"";r={text:rt&&rt.replace(/\s/g,"").length>=n.text.replace(/\s/g,"").length*0.8?rt:n.text,raw:n.text,alt:(alt2&&alt2.replace(/\s/g,"").length>=20?alt2:(X2.t2||"")),big:X2.t3||"",conf:n.conf==null?90:n.conf,engine:"ML Kit",status:n.text.trim().length>8?"ok":"partial"}}catch(e){}}
   if(!r){
     // everything the phone reader does for this picture is one job; "skip" (or the 25 s auto-skip with an AI connected) must be able to end it at any point
     const tess=async()=>{const w=await ocrInit();const prepd=await Promise.race([ocrPrep(it.file),new Promise(r2=>setTimeout(()=>r2(it.file),15000))]);
@@ -2475,12 +2475,29 @@ async function ixOcr(it,skip){if(ixOcrCache.has(it.hash))return ixOcrCache.get(i
     try{const job=tess();job.catch(()=>{});r=await (skip?Promise.race([job,skip]):job)}
     catch(e){r={text:"",conf:0,engine:"none",status:"fail",err:e&&e.message==="skip"?"skipped":e&&e.message==="timeout"?"timeout":"unavailable"}}}
   if(r.status!=="fail")ixOcrCache.set(it.hash,r);return r}
+// ---- more than one reading of the same picture: the normal one, an enhanced one (contrast, bigger, flipped when dark) and the biggest number cut out and enlarged. Gaps are filled from the others, and a number the readings disagree on is settled by the order total or the cut-out number
+function ixBigNum(t){const m=String(t||"").replace(/[\s₹]/g,"").match(/\d[\d,]*\.\d{1,2}|\d[\d,]*/);if(!m)return null;const v=+m[0].replace(/,/g,"");return v>0?v:null}
+function ixMergeReads(it){try{const o=it.ocr;if(!o||!o.alt||o.alt===o.text)return it;const cf=o.conf==null?null:o.conf/100,big=ixBigNum(o.big),diff=[];
+  const fill=(a,b,ks)=>{ks.forEach(k=>{if((a[k]==null||a[k]==="")&&b[k]!=null&&b[k]!=="")a[k]=b[k]})};
+  if(it.pay){const b=ixPayFrom(o.alt,cf),a=it.pay;fill(a,b,["utr","date","time","receiver","sender","last4","acct","vpa","status","bank","method","dir"]);
+    if(a.amount>0&&b.amount>0&&Math.abs(a.amount-b.amount)>0.004){
+      if(big&&Math.abs(big-b.amount)<0.005&&Math.abs(big-a.amount)>=0.005){a.amountRead=a.amount;a.amount=b.amount}
+      else if(!(big&&Math.abs(big-a.amount)<0.005)){a.amountAlts=[...new Set([a.amount,b.amount,...(big?[big]:[])])];a.amountConflict=true}}
+    else if(!(a.amount>0)&&b.amount>0)a.amount=b.amount;
+    if(a.utr&&b.utr&&String(a.utr)!==String(b.utr)){const d12=x=>/^\d{12}$/.test(String(x));if(!d12(a.utr)&&d12(b.utr))a.utr=b.utr;else if(d12(a.utr)&&d12(b.utr)){a.utrAlt=b.utr;diff.push("UTR")}}
+    a.ok=!!(a.amount&&a.utr)}
+  else if(it.ord){const b=ixOrdFrom(o.alt,cf),a=it.ord;fill(a,b,["id","crypto","coin","price","buyer","seller","cp","when","status","tds","tdsQ","method","platform","side"]);
+    if(a.fiat!=null&&b.fiat!=null&&Math.abs(a.fiat-b.fiat)>0.004){const q=a.crypto,r=a.price;if(q>0&&r>0){const da=Math.abs(a.fiat-q*r),db=Math.abs(b.fiat-q*r);if(db<da-0.5)a.fiat=b.fiat;else if(Math.abs(da-db)<=0.5){a.fiatAlt=b.fiat;diff.push("total")}}else{a.fiatAlt=b.fiat;diff.push("total")}}
+    else if(a.fiat==null&&b.fiat!=null)a.fiat=b.fiat}
+  it.disagree=diff;it.ext=it.pay?(it.pay.amount!=null&&it.pay.utr?"ok":it.pay.amount!=null||it.pay.utr?"partial":"fail"):it.ord?(it.ord.fiat!=null&&it.ord.id?"ok":it.ord.fiat!=null||it.ord.id||it.ord.crypto!=null?"partial":"fail"):it.ext}catch(e){}return it}
+// which app made the screenshot (shown on the card, and a hint for what to expect on it)
+function ixApp(t){const x=String(t||"");const L=[[/phonepe|phone\s*pe/i,"PhonePe"],[/google\s*pay|\bg\s*pay\b|gpay/i,"Google Pay"],[/paytm/i,"Paytm"],[/bhim/i,"BHIM"],[/amazon\s*pay/i,"Amazon Pay"],[/cred\b/i,"CRED"],[/\bsbi\b|yono|state bank/i,"SBI"],[/hdfc/i,"HDFC"],[/icici|imobile/i,"ICICI"],[/axis\s*bank/i,"Axis"],[/kotak/i,"Kotak"],[/slice/i,"Slice"],[/kucoin/i,"KuCoin"],[/binance/i,"Binance"],[/\bhtx\b|huobi/i,"HTX"],[/bybit/i,"Bybit"],[/\bokx\b/i,"OKX"]];const h=L.find(r=>r[0].test(x));return h?h[1]:""}
 // ---- item = one picture: classify + extract
 function ixItem(it,forceType){const o=it.ocr||{text:"",conf:0};const c=ixClassify(o.text);it.cls=forceType?{type:forceType,conf:1,forced:true}:c;
   it.pay=null;it.ord=null;it.list=null;it.ledger=null;const cf=o.conf==null?null:o.conf/100;if(it.cls.type==="EX_LEDGER"){it.ledger=c.ledger||ixLedgerRows(o.text);it.ext=it.ledger.pairs.length?"ok":"fail";return it}if(it.cls.type==="EX_LIST"){it.list=c.rows||ixListRows(o.text);it.ext=it.list.length?"ok":"fail";return it}
   if(ixIsPay(it.cls.type)||(it.cls.type==="UNKNOWN"&&payParse(o.text).ok&&!forceType)){it.pay=ixPayFrom(o.text,cf);if(it.cls.type==="UNKNOWN"){it.cls={type:"PAY_RECEIPT",conf:0.5}}}
   else if(ixIsOrd(it.cls.type)){it.ord=ixOrdFrom(o.text,cf)}
-  it.ext=it.pay?(it.pay.amount!=null&&it.pay.utr?"ok":it.pay.amount!=null||it.pay.utr?"partial":"fail"):it.ord?(it.ord.fiat!=null&&it.ord.id?"ok":it.ord.fiat!=null||it.ord.id||it.ord.crypto!=null?"partial":"fail"):"fail";return it}
+  it.ext=it.pay?(it.pay.amount!=null&&it.pay.utr?"ok":it.pay.amount!=null||it.pay.utr?"partial":"fail"):it.ord?(it.ord.fiat!=null&&it.ord.id?"ok":it.ord.fiat!=null||it.ord.id||it.ord.crypto!=null?"partial":"fail"):"fail";it.app=ixApp(o.text);return ixMergeReads(it)}
 
 // ---- v74: who is who. The exchange order page shows only the OTHER person; a sell is paid to YOUR account, whatever name it carries
 const ixTrusted=new Set(); // receivers proven to be your own account (account number or UPI handle matches one of your banks)
@@ -2650,7 +2667,7 @@ function ixGroup(items){items=items.filter(x=>!x.list&&!x.ledger);const pays=ite
   // pass 0: part payments. Several payments (other banks / other amounts) that add up to exactly one order's total are ONE transaction
   const oTot=o=>{const O=o.ord;return O.fiat!=null?O.fiat:(O.crypto&&O.price?O.crypto*O.price:null)};
   // a figure whose rupee sign was read as a digit ("71,905"): if one reading is exactly an order's total, take it
-  pays.forEach(p=>{const A=p.pay.amountAlts;if(!(A&&A.length)||p.pay.amount>0)return;const hit=A.find(a=>ords.some(o=>{const t=oTot(o);return t>0&&Math.abs(a-t)<=Math.max(1,t*0.002)}));if(hit){p.pay.amount=hit;p.pay.amountAlts=null;p.pay.amountFixed=true}});
+  pays.forEach(p=>{const A=p.pay.amountAlts;if(!(A&&A.length)||(p.pay.amount>0&&!p.pay.amountConflict))return;const hit=A.find(a=>ords.some(o=>{const t=oTot(o);return t>0&&Math.abs(a-t)<=Math.max(1,t*0.002)}));if(hit){p.pay.amount=hit;p.pay.amountAlts=null;p.pay.amountConflict=false;p.pay.amountFixed=true}});
   // the rupee sign read as a digit and glued on ("₹3,207.21" read as 73,207.21): if cutting that first 7 / 2 / 1 gives exactly an order's total (and the figure as read fits no order), the sign was misread
   pays.forEach(p=>{const v=p.pay.amount;if(!(v>0)||ords.some(o=>{const t=oTot(o);return t>0&&Math.abs(v-t)<=Math.max(1,t*0.002)}))return;
     const str=v.toFixed(2).replace(/\.00$/,"");if(!/^[721]/.test(str)||str.replace(/\.\d+$/,"").length<4)return;const cut=+str.slice(1);
@@ -2709,6 +2726,7 @@ function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(
   g.inferred=[];X.pay={...X.pay};X.ord={...X.ord};if(g.partSum&&X.pay)X.pay.amount=g.partSum;
   ["sender","receiver"].forEach(k=>{if(X.pay[k]){const c=ixNameClean(X.pay[k]);X.pay[k]=c||null}});["buyer","seller"].forEach(k=>{if(X.ord[k]){const c=ixNameClean(X.ord[k]);X.ord[k]=c||null}});
   ixResolveDates(g,X);
+  if(!g.partSum)try{g.pays.filter(x=>x.support&&x.pay&&x!==(g.pays.find(y=>!y.support)||g.pays[0])).forEach(x=>{["utr","date","time","last4","vpa","bank","receiver","sender","status"].forEach(k=>{if((X.pay[k]==null||X.pay[k]==="")&&x.pay[k])X.pay[k]=x.pay[k]})})}catch(e){} // a second picture of the same payment fills what the first one missed
   g.X=X;try{ixNumFix(g,X)}catch(e){}
   try{const sd1=ixSide(g),pp1=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay||{},d1=X.pay.dir||pp1.dir||"";if(sd1==="SELL"&&X.pay.receiver&&X.pay.amount!=null){const l41=String(pp1.last4||X.pay.acct||"").replace(/\D/g,"").slice(-4),vp1=pp1.vpa||X.pay.vpa||"";const bk1=ixBankOf({last4:l41,bank:X.pay.bank||"",dir:d1,vpa:vp1},sd1);if(ixOwnAcct(l41,vp1,d1,bk1))ixTrusted.add(X.pay.receiver)}}catch(e){} // your own account: its name counts as you from here on
   try{const sd=ixSide(g),O2=X.ord;g.roleFix=null;if(sd&&O2){const mk=sd==="SELL"?"seller":"buyer",ok2=sd==="SELL"?"buyer":"seller";if(!O2[ok2]&&O2.cp)O2[ok2]=O2.cp;
@@ -2799,6 +2817,8 @@ function ixRisk(g){const F=g.cmp.fields,hi=[],me=[],fl=g.cmp.flags;const f=k=>F.
   ["CROPPED_DETAILS","INCONSISTENT_FONTS","SUSPICIOUS_AMOUNT_FORMAT","MULTIPLE_TRANSACTIONS","BLURRY"].forEach(k=>{if(fl.includes(k))me.push(VER_RISK[k])});
   {const M=ixMine(g);M.lines.forEach(l=>{if(l.s==="bad")hi.push(l.r);else if(l.s==="warn")me.push(l.r)})}
   if(g.conflicts&&g.conflicts.length)me.push("Phone reading and AI reading differ");
+  {const cf=g.pays.filter(p=>p.pay&&p.pay.amountConflict&&p.pay.amountAlts);if(cf.length)me.push("Two readings of the payment screenshot gave different amounts ("+cf[0].pay.amountAlts.map(v=>inr(v)).join(" / ")+"). Please check the amount");
+   const dg=[...new Set(g.items.flatMap(x=>x.disagree||[]))];if(dg.length)me.push("Two readings of a screenshot differ on the "+dg.join(", ")+". Please check")}
   if((g.fixes||[]).length)me.push("A misread number was corrected automatically. Please check it");if(g.numBad)me.push("Quantity × rate does not equal the total, so a number may be misread");
   {const uo=ixUtrOdd(g.X.pay.utr);if(uo)me.push(uo);const an=ixAcctNew(g);g.acctNew=an;if(an)me.push(an.kind==="new"?`New UPI ID for ${an.name}: ${an.vpa} (before: ${an.old}). Make sure it is really theirs`:`This UPI ID ${an.vpa} was earlier used for ${an.other}, not ${an.name}`)}
   if(g.pays.some(p=>p.uncertain))me.push("Screenshots may belong to another order");
@@ -5262,7 +5282,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     ${g.auto&&g.saved?`<div class="ixmine ok"><b>Saved automatically</b><ul><li class="ok">Verified and low risk. Use Undo auto-save at the top if it is wrong.</li></ul></div>`:""}
     ${M.lines.length?`<div class="ixmine ${M.verdict}"><b>Your account check</b><ul>${M.lines.map(l=>`<li class="${l.s}">${esc(l.t)}${l.own?ixOwnRow(l.own):""}${l.mine?ixMineRow(l.mine):""}</li>`).join("")}</ul></div>`:""}
     <div class="ixwhy"><b>WHY</b><ul>${ixWhy(g).map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>
-    <div class="ixai">${g.ai==="ok"?"✨ Checked by AI vision on top of the phone reading":g.ai==="unavailable"?"⚠ Cloud AI unavailable"+(g.aiErr==="bad_key"?" (key rejected)":g.aiErr==="rate_limited"?" (no free requests left)":g.aiErr==="busy"?" (busy or slow)":g.aiMsg&&g.aiMsg!=="slow"?" ("+esc(g.aiMsg)+")":"")+": results below are from on-device analysis":g.ai==="na"?"AI not connected: results are from on-device analysis":"📷 Read on your phone"}${g.items[0]&&g.items[0].ocr?` · ${esc(g.items.map(x=>x.ocr&&x.ocr.engine).filter((v,i,a)=>v&&a.indexOf(v)===i).join(" + "))}`:""}</div>
+    <div class="ixai">${g.ai==="ok"?"✨ Checked by AI vision on top of the phone reading":g.ai==="unavailable"?"⚠ Cloud AI unavailable"+(g.aiErr==="bad_key"?" (key rejected)":g.aiErr==="rate_limited"?" (no free requests left)":g.aiErr==="busy"?" (busy or slow)":g.aiMsg&&g.aiMsg!=="slow"?" ("+esc(g.aiMsg)+")":"")+": results below are from on-device analysis":g.ai==="na"?"AI not connected: results are from on-device analysis":"📷 Read on your phone"}${g.items[0]&&g.items[0].ocr?` · ${esc(g.items.map(x=>x.ocr&&x.ocr.engine).filter((v,i,a)=>v&&a.indexOf(v)===i).join(" + "))}`:""}${(()=>{const A=[...new Set(g.items.map(x=>x.app).filter(Boolean))];return A.length?" · "+esc(A.join(" + ")):""})()}</div>
     ${aiNote&&g.ai!=="unavailable"&&g.ai!=="na"&&partial?`<div class="note" style="margin:6px 0 0"><b>PARTIAL READING</b><br>Some information could not be confidently read.</div>`:""}
     <div class="ixchips">${ixChip("OCR",S.ocr,"OCR_STATUS")}${ixChip("Type",S.cls,"CLASSIFICATION_STATUS")}${ixChip("Extract",S.ext,"EXTRACTION_STATUS")}${ixChip("AI",S.ai,"AI_STATUS")}${ixChip("Verify",S.ver,"VERIFICATION_STATUS")}${ixChip("Save",S.sv,"SAVE_STATUS")}</div></div>
     <div class="pvs">${g.items.map(x=>`<span class="pv"><img src="${URL.createObjectURL(x.file)}" alt=""><small class="ixt">${esc(IX_TYPES[x.cls.type])}</small></span>`).join("")}</div>
@@ -5742,7 +5762,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=101;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=102;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -5809,6 +5829,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00102","11 Oct 2026",["New app (APK): every screenshot is now read up to three times by the phone reader (as it is, enhanced and flipped when dark, and the biggest number cut out and enlarged). The readings fill each other\u0027s gaps and a number they disagree on is settled by the order total or flagged for you. The card also shows which app made the screenshot (PhonePe, Google Pay, KuCoin …)"]],
   ["0.0.0.00101","11 Oct 2026",["Smart intake: a sell paid to an account whose number ends like one of your saved accounts (or whose UPI handle belongs to your one bank of that name) is now treated as yours at once, without the \"Is this your account?\" question"]],
   ["0.0.0.00100","11 Oct 2026",["Smart intake: when you save a sell that was paid to an account placed on one of your banks, its UPI ID and name are saved as yours automatically, so the \"Is this your account?\" warning does not come back for the same account"]],
   ["0.0.0.00099","11 Oct 2026",["Smart intake: dates are read even when the phone reader slips (0CT for OCT, 2O26, 11.47 AM), and a payment whose time was simply not read no longer raises the risk to Medium when amount, UTR and status all match"]],

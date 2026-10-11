@@ -1,17 +1,17 @@
 {
- "web": "0.0101",
- "build": 101,
- "display": "0.0.0.00101",
+ "web": "0.0102",
+ "build": 102,
+ "display": "0.0.0.00102",
  "files": {
-  "index.html": "485feba5dd84017641d79331a9a5fe31638edf5e",
+  "index.html": "f2f5d7ce4246588a0bb14594d0f4354bf77d41ae",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
  },
  "apk": {
-  "code": 23,
-  "name": "0.0.0.00098",
+  "code": 24,
+  "name": "0.0.0.00102",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": "Smart intake: accounts proven to be yours (account number or UPI handle) are accepted at once"
+  "notes": "Phone reader reads each screenshot up to 3 times and merges the readings; app name shown on the card (new APK)"
  }
 }
