@@ -1296,6 +1296,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 .apsend,.apmic{width:44px;height:44px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer}
 .apsend{background:var(--fg);color:var(--bg)}.apmic{background:var(--surface);color:var(--fg)}.apmic[hidden]{display:none}.apmic.on{background:var(--sell);color:#fff;animation:pulse 1s infinite}
 @keyframes pulse{50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--sell) 25%,transparent)}}
+.apsend .wv{display:none}.apsend.vcap.vmode svg:not(.wv){display:none}.apsend.vcap.vmode .wv{display:block}
 .apsend svg,.apmic svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .brthink{margin-top:8px;font-size:.74rem;color:var(--muted)}.brthink summary{cursor:pointer;font-weight:700;color:#8b5cf6;list-style:none}.brthink summary::-webkit-details-marker{display:none}.brthink ol{margin:6px 0 0;padding-left:18px;line-height:1.5}
 .toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + 20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:99px;font-size:.85rem;font-weight:600;z-index:20;box-shadow:var(--shadow);white-space:nowrap}
@@ -1725,10 +1726,10 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 </div>
 <button type="button" class="aifab" id="aiFab" aria-label="Ask AI"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button>
 <div class="ih aipop" id="aiPop"><div class="apbox" role="dialog" aria-label="Ask AI">
-  <div class="aphead"><span class="apic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg></span><div><b>Ask anything</b><small id="apSub">P2P Brain</small></div><button type="button" class="apx apvoice ih" id="apVoice" aria-label="Voice assistant"><svg viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg></button><button type="button" class="apx" id="apMax" aria-label="Open full chat"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button><button type="button" class="apx" id="apClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="aphead"><span class="apic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg></span><div><b>Ask anything</b><small id="apSub">P2P Brain</small></div><button type="button" class="apx apvoice ih" id="apVoice" aria-label="Support" title="Support"><svg viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg></button><button type="button" class="apx" id="apMax" aria-label="Open full chat"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button><button type="button" class="apx" id="apClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <div class="apmsgs msgs" id="apMsgs"></div>
   <div class="apchips" id="apChips"></div>
-  <form class="apform" id="apForm"><button type="button" class="ih apmic" id="apMic" aria-label="Speak"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><input id="apIn" placeholder="Ask, or tell me what happened…" autocomplete="off"><button type="submit" class="apsend" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2-7z"/></svg></button></form>
+  <form class="apform" id="apForm"><button type="button" class="ih apmic" id="apMic" aria-label="Speak"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><input id="apIn" placeholder="Ask, or tell me what happened…" autocomplete="off"><button type="submit" class="apsend" id="apSend" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2-7z"/></svg><svg class="wv" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg></button></form>
 </div></div>
 <nav class="tabs" role="tablist" aria-label="Main">
   <button role="tab" id="t-home" aria-selected="true" data-tab="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
@@ -4721,7 +4722,7 @@ function openAiPop(){const pg=apPage();$("#apChips").innerHTML=[...new Set([...b
 function closeAiPop(){const p=$("#aiPop");p.classList.remove("open");setTimeout(()=>p.hidden=true,180)}
 $("#aiFab").onclick=openAiPop;$("#apClose").onclick=closeAiPop;$("#aiPop").addEventListener("click",e=>{if(e.target.id==="aiPop")closeAiPop()});
 $("#apMax").onclick=()=>{closeAiPop();goTo("ai")};
-$("#apForm").onsubmit=e=>{e.preventDefault();const q=$("#apIn").value.trim();if(!q)return;$("#apIn").value="";ask(q)};
+$("#apForm").onsubmit=e=>{e.preventDefault();const q=$("#apIn").value.trim();if(!q){if($("#apSend").classList.contains("vcap")){try{voiceMode()}catch(err){}}return}if(window.apSendSync)setTimeout(window.apSendSync,0);$("#apIn").value="";ask(q)};
 $("#apChips").onclick=e=>{const b=e.target.closest("[data-apq]");if(b)ask(b.dataset.apq)};
 $("#apMsgs").addEventListener("click",e=>{if(e.target.closest("#apIns [data-nz]")){document.querySelectorAll("#apIns [data-apq]").forEach(x=>brSnooze(x.dataset.apq,24));const c=$("#apIns");if(c)c.remove();return}const b=e.target.closest("#apIns [data-apq]");if(b){brSnooze(b.dataset.apq,12);b.remove();if(!document.querySelector("#apIns [data-apq]")){const c=$("#apIns");if(c)c.remove()}ask(b.dataset.apq)}});
 document.addEventListener("click",e=>{if(e.target.closest("#apMsgs [data-go],#apMsgs [data-sheet]"))closeAiPop()});
@@ -4828,7 +4829,10 @@ function voiceTop(n){const st=voiceStats();return Object.entries(st.q||{}).sort(
 function thinkHTML(t){return`<span class="thk"><span class="thk-orb"></span><span class="thk-txt">${esc(t)}</span><span class="thk-dots"><i></i><i></i><i></i></span></span>`}
 (function(){const m=$("#apMic");if(!(VOICE.native||window.SpeechRecognition||window.webkitSpeechRecognition))return;m.hidden=false;
   m.onclick=async()=>{if(m.classList.contains("on"))return;m.classList.add("on");try{const q=voiceNorm((await VOICE.listen()).trim());if(q){$("#apIn").value="";ask(q)}}catch(e){toast(e.message||"Couldn't hear. Try again")}m.classList.remove("on")};
-  const v=$("#apVoice");if(v){v.hidden=false;v.onclick=()=>voiceMode()}})();
+  // empty box: the right button becomes the voice assistant (wave); with text it sends
+  const sb=$("#apSend"),sync=()=>{const e=!$("#apIn").value.trim();sb.classList.toggle("vmode",e);sb.setAttribute("aria-label",e?"Voice assistant":"Send")};$("#apIn").addEventListener("input",sync);sync();window.apSendSync=sync;sb.classList.add("vcap")})();
+// headphone icon = support (feedback / report a problem)
+(function(){const v=$("#apVoice");if(v){v.hidden=false;v.onclick=()=>{try{closeAiPop()}catch(e){}setTimeout(()=>sheets.feedback("send"),200)}}})();
 function apFabSync(){const pg=apPage();$("#aiFab").hidden=pg==="ai"||!$("#sheetBg").hidden||!$("#drawer").hidden}
 document.addEventListener("click",()=>setTimeout(apFabSync,0));setInterval(apFabSync,800);
 // ---------- automatic checks: runs by itself on every change, no AI cost ----------
@@ -5991,7 +5995,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=111;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=112;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6005,7 +6009,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   const L=fbList().sort((a,b)=>b.time-a.time);const wait=L.filter(q=>q.status==="new").length,prev=L.filter(q=>q.status==="proposed");
   const nx=fbNextRun();const nxs=nx.toLocaleString("en-IN",{weekday:"short",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
   let type=pre.type||"bug",prio="normal",shots=[];
-  openSheet(`<div class="insw fbw"><div class="insh"><h3>Feedback</h3><button type="button" class="link fbab" id="fb-ab">Updates ›</button></div>
+  openSheet(`<div class="insw fbw"><div class="insh"><h3>Support &amp; feedback</h3><button type="button" class="link fbab" id="fb-ab">Updates ›</button></div>
     <div class="seg iseg" id="fb-tab" style="grid-template-columns:1fr 1fr">${[["send","Send"],["mine",`My feedback${L.length?" ("+L.length+")":""}`]].map(([k,l])=>`<button type="button" data-t="${k}" class="${k===tab?"on":""}">${l}</button>`).join("")}</div>
     ${prev.length&&tab!=="mine"?`<button type="button" class="fbprev" data-t2="mine"><span>🎉</span><div><b>New version ready to try</b><small>${prev.length} change${prev.length>1?"s":""} built from your feedback. Tap to see and apply.</small></div><em>›</em></button>`:""}
     ${tab==="send"?`<div class="fbnext"><div><span>Next update</span><b>${esc(nxs)}</b></div><div><span>Waiting</span><b>${wait}</b></div></div>
@@ -6058,6 +6062,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00112","15 Oct 2026",["Ask anything: the headphone icon now opens Support (send a problem or idea). The voice assistant moved to the button on the right of the message box: when the box is empty it shows a sound wave and opens the voice assistant, and when you type it becomes the send arrow"]],
   ["0.0.0.00111","15 Oct 2026",["Voice screen is now a small bottom strip (under a third of the screen) so the chat and the page stay visible; suggestion buttons sit in one row you can swipe. The USDT-below-zero alert no longer shows as a voice button, and every alert can be hidden: tapping one hides it for 12 hours, and Hide for today in Needs your attention hides them all"]],
   ["0.0.0.00110","15 Oct 2026",["Voice screen, smarter: (1) say yes or no to confirm: when you speak a command like \"Axis se SBI me 30k transfer karo\" the app reads the entry back and waits for \"haan\" (saves it) or \"nahi\" (cancels), nothing is saved without a yes; (2) suggestion buttons now come from your habits, what needs attention (shown in red), the time of day and real names from your data, and change after each answer to the likely next question; (3) amounts are spoken the Indian way (2 lakh 13 hazaar 875 rupees) and long answers are shortened, the rest stays on screen; (4) better hearing: letters said one by one (\"s b i\", \"h d f c\"), common bank name mishearings and number words are fixed; (5) thanks / shukriya ends the talk"]],
   ["0.0.0.00109","15 Oct 2026",["Ask anything in English too: bank advice, transfers, profit by trader and night questions now also understand English (\"which bank should I pay from\", \"who made me the most profit\", \"what happened last night\"), and the Needs your attention list follows your language"]],
