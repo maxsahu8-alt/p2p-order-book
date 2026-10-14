@@ -1284,6 +1284,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 :root[data-theme="light"] .aifab .lg{animation:lgFloat 4s ease-in-out infinite!important;filter:drop-shadow(0 2px 3px rgba(12,40,30,.22))}:root[data-theme="light"] .aifab .lg::before{background:#0b3d2e!important;box-shadow:8.6px 0 0 #0b3d2e!important}
 @keyframes lgFloat{0%,100%{transform:translateY(1px)}50%{transform:translateY(-2px)}}@keyframes lgShine{0%,65%{background-position:-150% 0}100%{background-position:150% 0}}@keyframes lgGlow{0%,100%{filter:drop-shadow(0 3px 5px rgba(0,0,0,.30)) drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 22%,transparent))}50%{filter:drop-shadow(0 3px 5px rgba(0,0,0,.30)) drop-shadow(0 0 9px color-mix(in srgb,var(--accent) 38%,transparent))}}@media(prefers-reduced-motion:reduce){.aifab,.aifab .lg,.aifab .lg::after,.aifab .lg::before{animation:none!important}}
 /* bot moods */.aifab .lg::before{width:3.7px!important;height:5.7px!important;margin:-2.85px 0 0 -6.2px!important;box-shadow:8.8px 0 0 #fff!important}:root[data-theme="light"] .aifab .lg::before{box-shadow:8.8px 0 0 #0b3d2e!important}.aifab.think .lg::before{animation:lgBlink 3.2s infinite,lgThink 1.5s ease-in-out infinite}@keyframes lgThink{0%,100%{translate:-1.8px -.6px}50%{translate:1.8px .6px}}.aifab.warn .lg::before{scale:1 .8;animation:lgBlink 2.6s infinite,lgTwitch 5s ease-in-out infinite}@keyframes lgTwitch{0%,70%,100%{translate:0 0}74%{translate:-1.4px 0}78%{translate:1.4px 0}82%{translate:0 0}}.aifab.tap .lg::before{animation:lgTapBlink .32s ease}@keyframes lgTapBlink{0%,100%{transform:scaleY(1)}45%{transform:scaleY(.06)}}.aifab.tap .lg{transform:scale(.9)}.aifab .lg{transition:transform .15s}.aifab::after{content:"";position:absolute;top:3px;right:5px;width:9px;height:9px;border-radius:50%;background:#f43f5e;border:1.5px solid var(--bg);display:none;z-index:3}.aifab.alert::after{display:block;animation:lgDot 1.8s ease-in-out infinite}.aifab.alert.amb::after{background:#f59e0b}@keyframes lgDot{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}.aifab.nudge .lg{animation:lgNudge .7s ease-in-out 2,lgGlow 4s ease-in-out infinite}@keyframes lgNudge{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4px) rotate(-5deg)}60%{transform:translateY(0) rotate(5deg)}}.aifab{transition:translate .5s cubic-bezier(.3,.8,.3,1),opacity .4s}.aifab.sleep{opacity:.82}.aifab.sleep .lg::before{animation:lgSnore 4.5s ease-in-out infinite;scale:1 .14}@keyframes lgSnore{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.5)}}.aifab.sleep .lg{animation:lgBreath 4.5s ease-in-out infinite}@keyframes lgBreath{0%,100%{transform:translateY(1px) scale(.98)}50%{transform:translateY(0) scale(1.01)}}.aifab.sleepR{translate:26px 0}.aifab.sleepL{translate:-26px 0}.aifab.sleep.alert{opacity:1}@media(prefers-reduced-motion:reduce){.aifab,.aifab.think .lg::before,.aifab.warn .lg::before,.aifab.sleep .lg::before,.aifab.sleep .lg,.aifab.nudge .lg,.aifab.alert::after{animation:none!important}.aifab{transition:none}}
+/* bot extras */.aifab.ok::after{display:block;background:#22c55e;width:7px;height:7px;top:5px;right:7px;opacity:.9}.aifab.night:not(.warn) .lg::before{scale:1 .72}.aifab.night .lg{opacity:.92}.aifab.happy .lg::before{height:3.2px!important;margin-top:-1.2px!important;border-radius:50% 50% 0 0!important;animation:none!important}.aifab.happy .lg{animation:lgHop .5s ease-in-out 3,lgGlow 4s ease-in-out infinite}.aifab.happy.hopbig .lg{animation:lgHop .5s ease-in-out 6,lgGlow 4s ease-in-out infinite}@keyframes lgHop{0%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}.fabbub{position:fixed;z-index:17;max-width:min(230px,70vw);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.78rem;line-height:1.3;font-weight:600;box-shadow:0 8px 22px rgba(0,0,0,.28);cursor:pointer;animation:bubIn .22s ease both}.fabbub b{display:block;font-size:.68rem;color:var(--accent);margin-bottom:1px}@keyframes bubIn{from{opacity:0;transform:scale(.92)}}.fabmenu{position:fixed;z-index:18;width:210px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:16px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.35);animation:bubIn .18s ease both;display:grid;gap:6px}.fabmenu small{font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}.fabmenu input{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:8px 10px;font-size:.85rem}.fabmenu button{border:0;background:var(--raised);color:var(--fg);border-radius:10px;padding:9px 10px;font-size:.82rem;font-weight:600;text-align:left;cursor:pointer}.fabmenu button.pr{background:var(--accent);color:#fff;text-align:center}@media(prefers-reduced-motion:reduce){.aifab.happy .lg,.fabbub,.fabmenu{animation:none!important}}
 .aifab:active{transform:scale(.92)}@keyframes fabIn{from{opacity:0}}
 .aipop{position:fixed;inset:0;z-index:55;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,14,22,0);transition:background .18s}
 .aipop[hidden]{display:none}.aipop.open{background:rgba(10,14,22,.4)}
@@ -1730,7 +1731,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 </div>
 <button type="button" class="aifab" id="aiFab" aria-label="Ask AI"><span class="lg"><i></i></span></button>
 <div class="ih aipop" id="aiPop"><div class="apbox" role="dialog" aria-label="Ask AI">
-  <div class="aphead"><span class="apic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg></span><div><b>Ask anything</b><small id="apSub">P2P Brain</small></div><button type="button" class="apx apvoice ih" id="apVoice" aria-label="Support" title="Support"><svg viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg></button><button type="button" class="apx" id="apMax" aria-label="Open full chat"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button><button type="button" class="apx" id="apClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="aphead"><span class="apic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg></span><div><b id="apName">Ask anything</b><small id="apSub">P2P Brain</small></div><button type="button" class="apx apvoice ih" id="apVoice" aria-label="Support" title="Support"><svg viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg></button><button type="button" class="apx" id="apMax" aria-label="Open full chat"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button><button type="button" class="apx" id="apClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <div class="apmsgs msgs" id="apMsgs"></div>
   <div class="apchips" id="apChips"></div>
   <form class="apform" id="apForm"><button type="button" class="ih apmic" id="apMic" aria-label="Speak"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><input id="apIn" placeholder="Ask, or tell me what happened…" autocomplete="off"><button type="submit" class="apsend" id="apSend" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2-7z"/></svg><svg class="wv" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg></button></form>
@@ -4755,23 +4756,52 @@ function save(){try{const r=f.getBoundingClientRect();localStorage.setItem(K,JSO
 let sx,sy,ox,oy,id=null;
 f.addEventListener("pointerdown",e=>{id=e.pointerId;sx=e.clientX;sy=e.clientY;const r=f.getBoundingClientRect();ox=r.left;oy=r.top;moved=false;try{f.setPointerCapture(id)}catch(_){}});
 f.addEventListener("pointermove",e=>{if(e.pointerId!==id)return;const dx=e.clientX-sx,dy=e.clientY-sy;if(!moved&&Math.hypot(dx,dy)<8)return;moved=true;f.classList.add("drag");put(ox+dx,oy+dy)});
-function end(e){if(e.pointerId!==id)return;id=null;f.classList.remove("drag");if(moved){save();setTimeout(()=>{moved=false},60)}}
+function snapEdge(){const r=f.getBoundingClientRect();f.style.transition="left .28s cubic-bezier(.3,.9,.3,1),translate .5s,opacity .4s";put(r.left+r.width/2<innerWidth/2?4:innerWidth-r.width-4,r.top);save();setTimeout(()=>{f.style.transition=""},330)}
+window.fabSnapNow=snapEdge;
+function end(e){if(e.pointerId!==id)return;id=null;f.classList.remove("drag");if(moved){if(localStorage.getItem("p2p_fabsnap")==="1")snapEdge();else save();setTimeout(()=>{moved=false},60)}}
 f.addEventListener("pointerup",end);f.addEventListener("pointercancel",end);
 f.addEventListener("click",e=>{if(moved){e.stopImmediatePropagation();e.preventDefault()}},true);
 addEventListener("resize",()=>{if(f.style.left){const r=f.getBoundingClientRect();put(r.left,r.top)}});
 window.fabReset=function(){f.style.left=f.style.top=f.style.right=f.style.bottom="";try{localStorage.removeItem(K)}catch(e){}};
 load()})();
-(function(){const f=$("#aiFab");if(!f)return;let idle=Date.now(),lastN="";
+(function(){const f=$("#aiFab");if(!f)return;let idle=Date.now(),lastN="",seen=null,tk=0,I=[],lastBub=0,tapT=null,lp=false,lpT=null,sx=0,sy=0,bub=null,menu=null;
+const LSg=k=>{try{return localStorage.getItem(k)}catch(e){return null}},LSs=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const wake=()=>{idle=Date.now();if(f.classList.contains("sleep"))f.classList.remove("sleep","sleepL","sleepR")};
 ["pointerdown","keydown","touchstart","scroll","click"].forEach(ev=>addEventListener(ev,wake,{passive:true,capture:true}));
-f.addEventListener("pointerdown",()=>{f.classList.add("tap");setTimeout(()=>f.classList.remove("tap"),340)});
+function nameSet(){const n=(LSg("p2p_botname")||"").trim().slice(0,16);const h=$("#apName");if(h)h.textContent=n||"Ask anything";return n}
+nameSet();
+function near(el,r){const W=innerWidth,H=innerHeight,w=el.offsetWidth,h=el.offsetHeight;let x=r.left+r.width/2>W/2?r.left-w-8:r.right+8;x=Math.min(Math.max(6,x),W-w-6);let y=Math.min(Math.max(6,r.top+r.height/2-h/2),H-h-6);el.style.left=x+"px";el.style.top=y+"px"}
+function closeBub(){if(bub){bub.remove();bub=null}}
+function closeMenu(){if(menu){menu.remove();menu=null}}
+function say(t,ms){if(f.hidden)return;const pop=$("#aiPop");if(pop&&!pop.hidden)return;closeBub();const d=document.createElement("div");d.className="fabbub";const n=nameSet();d.innerHTML=(n?`<b>${esc(n)}</b>`:"")+esc(t);document.body.appendChild(d);near(d,f.getBoundingClientRect());d.onclick=()=>{closeBub();openAiPop()};bub=d;lastBub=Date.now();setTimeout(()=>{if(bub===d)closeBub()},ms||6000)}
+function happy(big){wake();f.classList.add("happy");f.classList.toggle("hopbig",!!big);setTimeout(()=>f.classList.remove("happy","hopbig"),big?3600:2200)}
+window.fabHappy=happy;window.fabSay=say;
+function dbl(){closeBub();openAiPop();setTimeout(()=>{try{voiceMode()}catch(e){}},320)}
+f.addEventListener("click",e=>{e.stopImmediatePropagation();e.preventDefault();if(lp){lp=false;return}closeBub();closeMenu();
+  if(tapT){clearTimeout(tapT);tapT=null;dbl();return}tapT=setTimeout(()=>{tapT=null;openAiPop()},240)},true);
+f.addEventListener("pointerdown",e=>{f.classList.add("tap");setTimeout(()=>f.classList.remove("tap"),340);sx=e.clientX;sy=e.clientY;clearTimeout(lpT);lpT=setTimeout(()=>{lp=true;if(navigator.vibrate)try{navigator.vibrate(15)}catch(_){}openMenu()},550)});
+f.addEventListener("pointermove",e=>{if(lpT&&Math.hypot(e.clientX-sx,e.clientY-sy)>8){clearTimeout(lpT);lpT=null}});
+["pointerup","pointercancel"].forEach(ev=>f.addEventListener(ev,()=>{clearTimeout(lpT);lpT=null;if(lp)setTimeout(()=>{lp=false},400)}));
+function openMenu(){closeBub();closeMenu();const m=document.createElement("div");m.className="fabmenu";const snap=LSg("p2p_fabsnap")==="1";
+  m.innerHTML=`<small>${LA.t("Bot name","Bot ka naam")}</small><input id="fbName" maxlength="16" placeholder="${LA.t("e.g. Pexi","jaise Pexi")}" value="${esc(nameSet())}"><button type="button" class="pr" data-fb="name">${LA.t("Save name","Naam save karo")}</button><button type="button" data-fb="snap">${LA.t("Stick to edge","Kinaare par chipko")}: ${snap?"ON":"OFF"}</button><button type="button" data-fb="reset">${LA.t("Reset position","Jagah reset karo")}</button>`;
+  document.body.appendChild(m);near(m,f.getBoundingClientRect());menu=m;
+  m.onclick=e=>{const b=e.target.closest("[data-fb]");if(!b)return;const k=b.dataset.fb;
+    if(k==="name"){LSs("p2p_botname",($("#fbName").value||"").trim());nameSet();closeMenu();say(LA.t("Hi, I'm "+(nameSet()||"your assistant")+"!","Namaste, main "+(nameSet()||"aapka assistant")+" hoon!"),3500)}
+    else if(k==="snap"){const on=LSg("p2p_fabsnap")!=="1";LSs("p2p_fabsnap",on?"1":"0");closeMenu();if(on&&window.fabSnapNow)window.fabSnapNow();toast(on?LA.t("Bot will stick to the edge","Bot kinaare par chipkega"):LA.t("Bot stays where you leave it","Bot jahan chhodoge wahin rahega"))}
+    else if(k==="reset"){closeMenu();if(window.fabReset)window.fabReset()}};
+  setTimeout(()=>{const off=e=>{if(menu&&!menu.contains(e.target)){closeMenu();document.removeEventListener("pointerdown",off,true)}};document.addEventListener("pointerdown",off,true)},50)}
 function thinking(){const pop=$("#aiPop");if(!pop||pop.hidden)return false;const m=$("#apMsgs");const l=m&&m.lastElementChild;return !!(l&&l.querySelector&&l.querySelector(".thk"))}
-function tick(){try{const th=thinking();f.classList.toggle("think",th);
- if(!document.hidden&&!f.hidden&&!th){let I=[];try{I=brInsights()}catch(e){}
-  const has=I.length>0,red=I.some(x=>x.k==="r");f.classList.toggle("alert",has);f.classList.toggle("amb",has&&!red);f.classList.toggle("warn",red);
-  const sig=I.map(x=>x.t).join("|");if(has&&sig!==lastN){lastN=sig;wake();f.classList.add("nudge");setTimeout(()=>f.classList.remove("nudge"),1500)}if(!has)lastN=""}
+function tick(){try{const th=thinking();f.classList.toggle("think",th);const hr=new Date().getHours();f.classList.toggle("night",hr>=23||hr<5);
+ if(f.hidden){closeBub();closeMenu()}
+ // happy: a new completed order
+ try{const done=new Set(orders.filter(o=>o.status==="Completed").map(o=>o.id));if(seen===null)seen=done;else{const nw=orders.filter(o=>o.status==="Completed"&&!seen.has(o.id));seen=done;if(nw.length&&nw.length<=3){const big=nw.some(o=>orderTotal(o)>=5e4);happy(big);if(big)say(LA.t("Big order completed 🎉","Bada order complete ho gaya 🎉"),5000)}}}catch(e){}
+ if(!document.hidden&&!f.hidden&&!th){if(tk++%6===0){try{I=brInsights()}catch(e){I=[]}
+  const has=I.length>0,red=I.some(x=>x.k==="r");f.classList.toggle("alert",has);f.classList.toggle("amb",has&&!red);f.classList.toggle("warn",red);f.classList.toggle("ok",!has);
+  const sig=I.map(x=>x.t).join("|");if(has&&sig!==lastN){lastN=sig;wake();f.classList.add("nudge");setTimeout(()=>f.classList.remove("nudge"),1500);if(Date.now()-lastBub>60000)say(I[0].t+(I.length>1?" (+"+(I.length-1)+")":""),6500)}if(!has)lastN="";
+  // morning note about last night
+  if(hr>=5&&hr<11){const day=new Date().toDateString();if(LSg("p2p_morning")!==day){try{const nw=brWin("kal raat order");const c=nw?orders.filter(o=>o.time>=nw.a&&o.time<nw.b&&o.status==="Cancelled").length:0;if(c>0&&Date.now()-lastBub>8000){LSs("p2p_morning",day);say(LA.t(`Good morning! ${c} order${c>1?"s":""} cancelled last night.`,`Good morning! Kal raat ${c} order cancel hue.`),8000)}}catch(e){}}}}}
  const pop=$("#aiPop");const idleMs=Date.now()-idle;
- if(idleMs>25000&&!f.hidden&&(!pop||pop.hidden)&&!f.classList.contains("sleep")&&!f.classList.contains("drag")){f.classList.add("sleep");const r=f.getBoundingClientRect(),W=innerWidth;if(W-r.right<70)f.classList.add("sleepR");else if(r.left<70)f.classList.add("sleepL")}
+ if(idleMs>25000&&!f.hidden&&(!pop||pop.hidden)&&!f.classList.contains("sleep")&&!f.classList.contains("drag")){closeBub();f.classList.add("sleep");const r=f.getBoundingClientRect(),W=innerWidth;if(W-r.right<70)f.classList.add("sleepR");else if(r.left<70)f.classList.add("sleepL")}
 }catch(e){}}
 setInterval(tick,1000);setTimeout(tick,1500)})();
 $("#aiFab").onclick=openAiPop;$("#apClose").onclick=closeAiPop;$("#aiPop").addEventListener("click",e=>{if(e.target.id==="aiPop")closeAiPop()});
@@ -6049,7 +6079,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=122;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=123;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6116,6 +6146,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00123","15 Oct 2026",["Ask bot: double-tap opens the voice assistant straight away; a small speech bubble tells you what needs attention; a morning note about last night's cancelled orders; night mood; happy eyes and a hop when an order completes (bigger for 50k+); green dot when all is fine (red = risk, amber = attention); long-press the bot to give it a name, turn on stick-to-edge, or reset its position."]],
   ["0.0.0.00122","15 Oct 2026",["The Ask bot feels alive: its eyes scan side to side while it is thinking, a red or amber dot with a small hop tells you something needs attention, the eyes narrow when there is a risk, it blinks and squishes when tapped, and after a while of no use it falls asleep (eyes closed, tucked half behind the screen edge) and wakes at a touch."]],
   ["0.0.0.00121","15 Oct 2026",["Ask bot is back to the look from build 118: smooth gradient, slim eyes, calm motion."]],
   ["0.0.0.00120","15 Oct 2026",["Ask logo is back to the clean version: just the Pexai mark in the app colour, without the robot face and antenna."]],
