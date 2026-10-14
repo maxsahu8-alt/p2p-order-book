@@ -1342,7 +1342,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 @keyframes vring{0%{transform:scale(.8);opacity:.7}100%{transform:scale(1.5);opacity:0}}@keyframes vwav{0%,100%{height:6px}50%{height:24px}}@keyframes vbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .vaupd2{background:#ffffff14;color:#cbd5e1;font-size:.78rem;padding:9px 14px}
 .vaupd{border:0;border-radius:14px;padding:12px 22px;font:700 .9rem var(--body);background:#23c58f;color:#04130d;cursor:pointer}
-.vaheard{cursor:pointer}.vaheard small{color:#6b7686;font-size:.72rem}
+.vachips button.w{border-color:#f87171aa;color:#fca5a5}.vaheard{font-size:1.05rem!important;color:#fff!important}.vareply{max-height:11em!important;overflow:auto!important}.vahint{line-height:1.5}.vaheard{cursor:pointer}.vaheard small{color:#6b7686;font-size:.72rem}
 .vafix{display:flex;gap:8px;width:100%}.vafix[hidden]{display:none}.vafix input{flex:1;min-width:0;border:1px solid #ffffff22;background:#ffffff10;color:#fff;border-radius:12px;padding:11px 12px;font:500 .9rem var(--body)}.vafix button{border:0;border-radius:12px;padding:0 14px;background:#8b5cf6;color:#fff;font:700 .82rem var(--body);cursor:pointer}
 .vachips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px}.vachips button{border:1px solid #ffffff22;background:#ffffff0d;color:#e5e7eb;border-radius:99px;padding:8px 12px;font:600 .78rem var(--body);cursor:pointer}
 .pdet{border:1px dashed var(--line);border-radius:12px;padding:10px 12px}.pdet summary{cursor:pointer;font-size:.78rem;font-weight:600;color:var(--muted);list-style:none}.pdet summary::-webkit-details-marker{display:none}
@@ -4728,8 +4728,11 @@ window.P2PVoiceResult=t=>{if(VOICE._res)VOICE._res(t)};
 window.P2PVoicePartial=t=>{const l=$("#vaHeard");if(l)l.textContent=t};
 window.P2PVoiceEvent=e=>{const o=$("#vaBox");if(o)o.dataset.ev=e};
 VOICE.popup=()=>VOICE.native&&String(window.P2PNative.hasVoice())==="1";
-VOICE.clean=t=>String(t||"").replace(/P2P Brain[^\n]*works offline|P2P Brain · partial answer|🧠 Kaise socha[\s\S]*$/g,"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,"").replace(/₹\s?([\d,]+(\.\d+)?)/g,"$1 rupees").replace(/[•·|*_#>]/g," ").replace(/\n+/g,". ").replace(/\s{2,}/g," ").trim().slice(0,600);
-VOICE.speak=function(t){return new Promise(ok=>{const s=VOICE.clean(t);if(!s){ok();return}
+function voiceSayMoney(v){const n=+String(v).replace(/,/g,"");if(!isFinite(n))return v+" rupees";let a=Math.abs(n);const fr=Math.round((a%1)*100);a=Math.floor(a);const P=[],cr=Math.floor(a/1e7);a%=1e7;const l=Math.floor(a/1e5);a%=1e5;const h=Math.floor(a/1e3);a%=1e3;if(cr)P.push(cr+" crore");if(l)P.push(l+" lakh");if(h)P.push(h+" hazaar");if(a||!P.length)P.push(a);return(n<0?"minus ":"")+P.join(" ")+" rupees"+(fr?" "+fr+" paise":"")}
+VOICE.clean=(t,spk)=>String(t||"").replace(/P2P Brain[^\n]*works offline|P2P Brain · partial answer|🧠 Kaise socha[\s\S]*$/g,"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,"").replace(/([−-])?₹\s?([\d,]+(\.\d+)?)/g,(m,sg,n)=>spk?voiceSayMoney((sg?"-":"")+n):(sg?"−":"")+"₹"+n).replace(/[•·|*_#>]/g," ").replace(/\n+/g,". ").replace(/\s{2,}/g," ").trim().slice(0,600);
+// a spoken answer stays short: the first few sentences, the rest is on the screen
+VOICE.short=t=>{const s=VOICE.clean(t,true);if(s.length<=320)return s;const c=s.slice(0,320),i=Math.max(c.lastIndexOf(". "),c.lastIndexOf(", "));return(i>120?c.slice(0,i):c)+". Baaki screen par dekh lo."};
+VOICE.speak=function(t){return new Promise(ok=>{const s=VOICE.short(t);if(!s){ok();return}
   if(VOICE.native&&window.P2PNative.speak){VOICE._spk=()=>{VOICE._spk=null;ok()};try{window.P2PNative.speak(s,VOICE.lang())}catch(e){ok()}setTimeout(()=>{if(VOICE._spk)VOICE._spk()},Math.min(45000,4000+s.length*90));return}
   if(!window.speechSynthesis){ok();return}try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang=VOICE.lang();u.rate=1.03;const v=speechSynthesis.getVoices().find(v=>/en[-_]IN/i.test(v.lang));if(v)u.voice=v;u.onend=u.onerror=()=>ok();speechSynthesis.speak(u)}catch(e){ok()}})};
 window.P2PSpeakDone=()=>{if(VOICE._spk)VOICE._spk()};
@@ -4741,8 +4744,8 @@ async function voiceMode(){if(VOICE.on)return;VOICE.on=true;
     <button type="button" class="vaorb" id="vaOrb" aria-label="Talk"><span class="vr1"></span><span class="vr2"></span><span class="vcore"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span class="vwave"><i></i><i></i><i></i><i></i><i></i></span></button>
     <div class="vastate" id="vaState"></div><div class="vaheard" id="vaHeard"></div><div class="vareply" id="vaReply"></div>
     <div class="vafix" id="vaFix" hidden><input id="vaFixIn" placeholder="Type what you said"><button type="button" id="vaFixGo">Fix & learn</button></div>
-    <div class="vachips" id="vaChips">${(voiceTop(4).length?voiceTop(4):["aaj ka profit","pending orders","kis party ko dena hai"]).map(t=>`<button type="button" data-vq="${esc(t)}">${esc(t)}</button>`).join("")}</div>
-    <div class="vahint">${voiceStats().n?`I learn from you · ${voiceStats().n} voice questions · ${voiceStats().fixes||0} words corrected`:"Try: “aaj ka profit” · “Vineet ko kitna dena hai” · “500 USDT 93 pe becha Ravi ko”"}</div></div>`;
+    <div class="vachips" id="vaChips">${voiceChipsHtml(voiceChips(),VA_WARN)}</div>
+    <div class="vahint">${voiceHint()}</div></div>`;
   document.body.appendChild(o);requestAnimationFrame(()=>o.classList.add("open"));
   if(VOICE.popup()){$("#vaState").insertAdjacentHTML("afterend",'<button type="button" class="vaupd vaupd2" id="vaUpd">Update app · listen without Google popup</button>');$("#vaUpd").onclick=()=>{try{window.P2PNative.openUrl("https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk")}catch(err){}}}
   $("#vaX").onclick=VOICE.stop;o.addEventListener("click",e=>{if(e.target===o)VOICE.stop()});
@@ -4755,20 +4758,36 @@ async function voiceMode(){if(VOICE.on)return;VOICE.on=true;
       try{q=(await VOICE.listen()).trim()}catch(e){vaStage("idle",e.message||"Couldn't hear");if(e.code==="old_apk"&&!$("#vaUpd")){$("#vaState").insertAdjacentHTML("afterend",'<button type="button" class="vaupd" id="vaUpd">Update app</button>');$("#vaUpd").onclick=()=>{try{window.P2PNative.openUrl("https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk")}catch(err){}}}return}
       q=voiceNorm(q);
       if(!VOICE.on)return;if(!q){if(++empty>=2||VOICE.popup()){vaStage("idle");return}continue}empty=0;
-      lastHeard=q;voiceUse(q);$("#vaHeard").innerHTML="“"+esc(q)+"” <small>· wrong? tap to fix</small>";if(/^(bas|stop|band karo|bye|ruk jao|thik hai bas|ok bye)\b/i.test(q)){await VOICE.speak("Theek hai, bye!");VOICE.stop();return}
+      lastHeard=q;voiceUse(q);$("#vaHeard").innerHTML="“"+esc(q)+"” <small>· wrong? tap to fix</small>";if(/^(bas|stop|band karo|bye|ruk jao|thik hai bas|ok bye|thanks|thank you|shukriya|dhanyavad|dhanyawad)\b/i.test(q)){await VOICE.speak("Theek hai, bye!");VOICE.stop();return}
       vaStage("think");$("#vaReply").textContent="";const before=curMsgs().children.length;
       try{await ask(q)}catch(e){}
       let last=[...curMsgs().querySelectorAll(".msg.a")].pop();let tries=0;while(last&&last.querySelector(".thk")&&tries++<60){await new Promise(k=>setTimeout(k,500));last=[...curMsgs().querySelectorAll(".msg.a")].pop()}
-      if(!VOICE.on)return;const ans=last&&curMsgs().children.length>before?last.innerText:"";$("#vaReply").textContent=VOICE.clean(ans).slice(0,220);
+      if(!VOICE.on)return;const ans=last&&curMsgs().children.length>before?last.innerText:"";$("#vaReply").textContent=VOICE.clean(ans).slice(0,320);
+      try{const fl=voiceFollow(),base=voiceChips();$("#vaChips").innerHTML=voiceChipsHtml([...fl,...base].filter((v,i,a)=>a.indexOf(v)===i).slice(0,5),VA_WARN)}catch(e){}
+      // an entry was prepared: say it, then wait for a spoken yes or no
+      const card=[...curMsgs().querySelectorAll(".acard")].pop();
+      if(card&&card.querySelector("[data-apply]")&&curMsgs().children.length>before){const what=[...card.querySelectorAll(".ai span:last-child")].map(e=>e.textContent).join(". ");
+        vaStage("speak");await VOICE.speak((ans.split("\n")[0]||"")+". "+what+". Karun? Haan ya nahi bolo.");
+        let done=false;for(let k=0;k<2&&VOICE.on&&!done;k++){vaStage("listen","Haan ya nahi bolo…");let a="";try{a=voiceNorm(await VOICE.listen())}catch(e){break}
+          $("#vaHeard").textContent="“"+a+"”";
+          if(/^(haan|han|ha|haa|yes|yeah|ok|okay|kar do|karo|kar de|confirm|theek hai|thik hai|sahi hai|laga do|save|done)\b/i.test(a)){card.querySelector("[data-apply]").click();await new Promise(r=>setTimeout(r,1500));const hd=(card.querySelector(".ah")||{}).textContent||"";vaStage("speak");await VOICE.speak(/Recorded ✓/.test(hd)?"Ho gaya, record kar diya.":"Kuch save nahi hua, screen par dekh lo.");done=true}
+          else if(/^(nahi|nahin|no|na|mat karo|cancel|rehne do|ruko|ruk)\b/i.test(a)){const sk=card.querySelector("[data-skip]");if(sk)sk.click();vaStage("speak");await VOICE.speak("Theek hai, nahi kiya.");done=true}}
+        if(!done&&VOICE.on){vaStage("speak");await VOICE.speak("Entry screen par taiyaar hai, aap khud confirm kar lena.")}
+        if(VOICE.popup()){vaStage("idle","Tap the orb to talk again");return}continue}
       vaStage("speak");await VOICE.speak(ans);if(VOICE.popup()){vaStage("idle","Tap the orb to talk again");return}}};
   loop()}
 // what the phone hears → what the user means (numbers, coin names, learned corrections)
+const VN_PH=[[/\b(es+ bee? (ai|eye)|ess? bi ai|asbi|es b i)\b/g,"sbi"],[/\b(aksis|axes|exis|ek sis|aixs|acsis|axix)\b/g,"axis"],[/\b(aaisi aaisi|icic?i|aicici|i see i see i)\b/g,"icici"],[/\b(kotek|cotak|kotuk|kodak)\b/g,"kotak"],[/\b(aitch ?d ?f ?c|hdfc bank|edfc|h d f c)\b/g,"hdfc"],[/\b(pee en bee|pnb bank)\b/g,"pnb"]];
 const VN_NUM={ek:1,do:2,teen:3,char:4,chaar:4,paanch:5,panch:5,chhe:6,che:6,saat:7,aath:8,nau:9,das:10,bees:20,pachas:50,pachaas:50};
 function voiceNorm(q){let x=" "+String(q||"").toLowerCase()+" ";
   x=x.replace(/\b(you|u)\s*s\s*d\s*t\b|\busd\s*t\b|\busdts?\b|\byou sdt\b|\bu sdt\b|\btether\b/g," usdt ").replace(/\bbit ?coin\b/g," btc ").replace(/\brupay(e|ee|es)?\b|\brupees?\b|\brs\b/g," rupees ");
   x=x.replace(/\b(ek|do|teen|char|chaar|paanch|panch|chhe|che|saat|aath|nau|das|bees|pachas|pachaas) (sau|hazaar|hazar|hajar|lakh)\b/g,(m,a,b)=>" "+VN_NUM[a]*(b==="sau"?100:b==="lakh"?100000:1000)+" ");
   x=x.replace(/\b(\d+) (sau|hazaar|hazar|hajar|lakh|thousand|hundred)\b/g,(m,a,b)=>" "+(+a)*(/sau|hundred/.test(b)?100:b==="lakh"?100000:1000)+" ");
   x=x.replace(/(\d),(\d{3})/g,"$1$2");
+  // letters said one by one: "s b i" -> "sbi", "h d f c" -> "hdfc"; and how people say bank names
+  x=x.replace(/\b(?:[a-z]\s+){2,}[a-z]\b/g,m=>m.replace(/\s+/g,""));
+  VN_PH.forEach(([r,to])=>{x=x.replace(r," "+to+" ")});
+  try{x=brNumWords(x)}catch(e){}
   try{x=brainApply(x).q||x}catch(e){}
   return x.replace(/\s+/g," ").trim()}
 // learn from corrections: user fixes what the phone heard → Brain remembers those words for next time
@@ -4776,6 +4795,20 @@ async function voiceLearn(heard,meant){const H=heard.toLowerCase().split(/\s+/),
   if(H.length===M.length)for(let i=0;i<H.length;i++){if(H[i]&&M[i]&&H[i]!==M[i].toLowerCase()&&H[i].length>=2){try{await brainTeach("alias",H[i],M[i]);n++}catch(e){}}}
   else if(H.join(" ")!==meant.toLowerCase()){try{await brainTeach("phrase",heard,meant);n++}catch(e){}}
   const st=voiceStats();st.fixes=(st.fixes||0)+n;voiceSave(st);return n}
+// smart suggestions: your habits, what needs attention now, time of day, real names from your data
+function voiceChipsHtml(L,warn){return L.map(t=>`<button type="button" data-vq="${esc(t)}"${warn&&warn.has(t)?' class="w"':""}>${esc(t)}</button>`).join("")}
+let VA_WARN=new Set();
+function voiceChips(){const out=[],add=q=>{q=String(q||"").trim();if(q&&!out.includes(q)&&out.length<5)out.push(q)};VA_WARN=new Set();
+  const junk=/^(hello|hi|hey|namaste|ok|okay|thik|theek|bas|bye|haan|nahi|test)\b/i,st=voiceStats();
+  voiceTop(8).filter(q=>!junk.test(q)&&q.split(" ").length>=2&&(st.q[q]||0)>=2).slice(0,2).forEach(add);
+  try{brInsights().slice(0,2).forEach(x=>{add(x.q);if(x.k==="r"||x.k==="a")VA_WARN.add(x.q)})}catch(e){}
+  const h=new Date().getHours();if(h>=21||h<5)add("raat ko kaun se bank khule rakhu");else if(h<11)add("kal raat kitne order aaye");
+  try{const pd=parties.map(p=>({n:p.name,v:partyOwed(p.id)-partyPaid(p.id)})).filter(x=>x.v>0.5).sort((a,b)=>b.v-a.v)[0];if(pd)add(pd.n+" ko kitna dena hai")}catch(e){}
+  ["aaj ka profit","pending orders","kaun sa bank me paisa lu"].forEach(add);return out}
+// after an answer: what you would likely ask next
+function voiceFollow(){const C=LA.ctx||{},out=[];if(C.party)out.push(C.party+" ka record",C.party+" ko kitna dena hai");if(C.bank)out.push(C.bank+" ka limit",C.bank+" freeze risk");if(C.trader&&!C.party)out.push(C.trader+" ka record");if(/(profit|kamaya)/.test(C.lastQ||""))out.push("kal ka","is hafte kitna kamaya","sabse zyada profit kis se hua");return[...new Set(out)].slice(0,3)}
+function voiceHint(){const st=voiceStats();let ex=[];try{const b=banks.find(x=>x.type!=="Cash"),p=parties[0];if(b)ex.push("“"+esc(b.name)+" ka limit”");if(p)ex.push("“"+esc(p.name)+" ko kitna dena hai”");if(banks.filter(x=>x.type!=="Cash").length>1){const L=banks.filter(x=>x.type!=="Cash");ex.push("“"+esc(L[0].name)+" se "+esc(L[1].name)+" me 30k transfer karo”")}}catch(e){}
+  return (st.n?`I learn from you · ${st.n} voice questions · ${st.fixes||0} words corrected<br>`:"")+"Try: "+(ex.length?ex.join(" · "):"“aaj ka profit” · “500 USDT 93 pe becha Ravi ko”")+" · confirm bolna: “haan” / “nahi”"}
 function voiceStats(){try{return JSON.parse(localStorage.getItem("p2p_voice")||"{}")}catch(e){return{}}}
 function voiceSave(st){try{localStorage.setItem("p2p_voice",JSON.stringify(st))}catch(e){}}
 function voiceUse(q){const st=voiceStats();st.n=(st.n||0)+1;st.q=st.q||{};const k=q.toLowerCase().slice(0,60);st.q[k]=(st.q[k]||0)+1;const keys=Object.keys(st.q);if(keys.length>60){keys.sort((a,b)=>st.q[a]-st.q[b]).slice(0,keys.length-60).forEach(k=>delete st.q[k])}voiceSave(st)}
@@ -5946,7 +5979,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=109;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=110;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6013,6 +6046,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00110","15 Oct 2026",["Voice screen, smarter: (1) say yes or no to confirm: when you speak a command like \"Axis se SBI me 30k transfer karo\" the app reads the entry back and waits for \"haan\" (saves it) or \"nahi\" (cancels), nothing is saved without a yes; (2) suggestion buttons now come from your habits, what needs attention (shown in red), the time of day and real names from your data, and change after each answer to the likely next question; (3) amounts are spoken the Indian way (2 lakh 13 hazaar 875 rupees) and long answers are shortened, the rest stays on screen; (4) better hearing: letters said one by one (\"s b i\", \"h d f c\"), common bank name mishearings and number words are fixed; (5) thanks / shukriya ends the talk"]],
   ["0.0.0.00109","15 Oct 2026",["Ask anything in English too: bank advice, transfers, profit by trader and night questions now also understand English (\"which bank should I pay from\", \"who made me the most profit\", \"what happened last night\"), and the Needs your attention list follows your language"]],
   ["0.0.0.00108","15 Oct 2026",["Ask anything, smarter and offline: (1) bank transfers by voice or text (\"Axis se SBI me 30k transfer karo\") become a confirm card with a balance and limit warning; (2) bank advice from your own data: which bank to receive in, pay from, which is safest, which has the highest freeze risk, which to keep open tonight, shown as a small card; (3) \"sabse zyada profit kis se hua\" and lowest profit by trader; (4) time windows such as \"kal raat kitne order aaye\", \"aaj subah\"; (5) number words like \"paanch hazaar\", \"dedh lakh\"; (6) a Needs your attention list when the chat opens (frozen or risky banks, full limits, old pending orders, unassigned banks, dues, negative USDT, night cancels); (7) the quick buttons learn the questions you ask most; (8) a 7 day profit chart under weekly profit answers; (9) \"us bank\" follows the bank you just talked about"]],
   ["0.0.0.00107","12 Oct 2026",["Banks, next level: (1) the app learns your own freeze limit: mark a bank as Frozen (with the date if you like) and it remembers how busy that bank was just before, then shows High risk earlier on every bank; (2) a daily receive comfort limit per bank, with a chip when 60% or more is used and room left shown in the advisor; (3) Suggest banks now picks the safest bank to receive in (lowest freeze risk, inside its receive cap) or spreads the amount across banks by their caps, and never suggests a frozen or paused bank for receiving or paying; (4) tap a freeze risk chip to read why"]],
