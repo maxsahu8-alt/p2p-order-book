@@ -2,6 +2,7 @@ import asyncio,json,time,os
 from playwright.async_api import async_playwright
 src=open(os.path.dirname(os.path.abspath(__file__))+"/ask_plus_test.py").read().split("async def run")[0]
 exec(src)
+recs.append({"id":"P1","kind":"party","name":"Ravi","time":now-20*D})
 async def main():
   ok=True
   def chk(n,c):
@@ -40,6 +41,14 @@ async def main():
     chk("spoken yes saved the transfer",len(mv)==1 and mv[0]["a"]==30000 and mv[0]["f"]=="B2" and mv[0]["t"]=="B3")
     chk("it asked before saving",any("Haan ya nahi" in x for x in said))
     chk("it confirmed after saving",any("record kar diya" in x for x in said))
+    # the assistant asks back for a missing detail, in voice
+    await pg.evaluate("VOICE.stop()");await pg.wait_for_timeout(400)
+    await pg.evaluate("""window.__U=['Ravi ko pay kiya','paanch hazaar','nahi'];window.__S=[];openAiPop();voiceMode()""")
+    await pg.wait_for_timeout(5500)
+    said2=await pg.evaluate("window.__S");print(said2)
+    chk("voice asks the missing amount",any("kitna diya" in x for x in said2))
+    chk("badge text is not spoken",not any("P2P Brain" in x for x in said2))
+    chk("then reads the entry back",any("Karun" in x for x in said2))
     # a spoken no changes nothing
     await pg.evaluate("VOICE.stop()");await pg.wait_for_timeout(400)
     await pg.evaluate("""window.__U=['sbi se axis me paanch hazaar transfer karo','nahi'];window.__S=[];openAiPop();voiceMode()""")
