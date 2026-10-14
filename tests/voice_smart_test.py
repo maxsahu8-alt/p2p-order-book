@@ -22,6 +22,11 @@ async def main():
     long=await pg.evaluate("VOICE.short('x. '.repeat(400))");chk("spoken answer is short",len(long)<=360 and "screen par" in long)
     chips=await pg.evaluate("voiceChips()");print(chips)
     chk("chips: real data, no greetings, max 5",0<len(chips)<=5 and "hello" not in chips and any("Raju" in c or "bank" in c.lower() or "profit" in c for c in chips))
+    chk("stock-minus alert is never a voice button","usdt kitna bacha" not in chips)
+    h=await pg.evaluate("document.querySelector('.vacard')");
+    await pg.evaluate("brSnooze('freeze risk kisme zyada hai',12)")
+    chk("a snoozed alert is gone",await pg.evaluate("!brInsights().some(x=>x.q==='freeze risk kisme zyada hai')"))
+    await pg.evaluate("localStorage.removeItem('p2p_insnz')")
     # full voice round with a spoken yes
     await pg.evaluate("""window.__U=['axis se sbi me tees hazaar transfer karo','haan'];window.__S=[];
       VOICE.listen=async()=>{const q=window.__U.shift();if(q===undefined)throw new Error('end');return q};
@@ -31,6 +36,7 @@ async def main():
     said=await pg.evaluate("window.__S");print(said)
     mv=await pg.evaluate("recs.filter(r=>r.kind==='move').map(m=>({a:m.amt,f:m.from,t:m.to}))")
     print(mv)
+    chk("voice sheet is compact (under a third of the screen)",await pg.evaluate("(()=>{const c=document.querySelector('.vacard');return !c||c.getBoundingClientRect().height<330})()"))
     chk("spoken yes saved the transfer",len(mv)==1 and mv[0]["a"]==30000 and mv[0]["f"]=="B2" and mv[0]["t"]=="B3")
     chk("it asked before saving",any("Haan ya nahi" in x for x in said))
     chk("it confirmed after saving",any("record kar diya" in x for x in said))

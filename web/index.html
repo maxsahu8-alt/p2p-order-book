@@ -1342,6 +1342,16 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 @keyframes vring{0%{transform:scale(.8);opacity:.7}100%{transform:scale(1.5);opacity:0}}@keyframes vwav{0%,100%{height:6px}50%{height:24px}}@keyframes vbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .vaupd2{background:#ffffff14;color:#cbd5e1;font-size:.78rem;padding:9px 14px}
 .vaupd{border:0;border-radius:14px;padding:12px 22px;font:700 .9rem var(--body);background:#23c58f;color:#04130d;cursor:pointer}
+.vabox.open{background:rgba(6,9,15,.22)}
+.vacard{padding:12px 16px calc(14px + env(safe-area-inset-bottom))!important;gap:6px!important;border-radius:22px 22px 0 0!important;box-shadow:0 -10px 40px #00000066}
+.vaorb{width:92px!important;height:92px!important;margin:2px 0 0!important}.vcore{width:62px!important;height:62px!important}.vcore svg{width:26px!important;height:26px!important}.vr1,.vr2{inset:10px!important}.vwave{bottom:-4px!important;height:20px!important}
+.vastate{font-size:.95rem!important}.vasub{font-size:.62rem!important}
+.vaheard{font-size:.95rem!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.vareply{font-size:.88rem!important;max-height:5.6em!important}
+.vachips{flex-wrap:nowrap!important;overflow-x:auto;width:100%;justify-content:flex-start!important;scrollbar-width:none;padding-bottom:2px}.vachips::-webkit-scrollbar{display:none}.vachips button{white-space:nowrap;flex:0 0 auto;padding:7px 11px!important;font-size:.74rem!important}
+.vabox:not([data-st=idle]) .vahint{display:none}
+.vax{top:10px!important;right:12px!important;width:34px!important;height:34px!important}
+.apnz{float:right;border:0;background:none;color:var(--muted);font:600 .66rem var(--body);text-transform:none;letter-spacing:0}
 .vachips button.w{border-color:#f87171aa;color:#fca5a5}.vaheard{font-size:1.05rem!important;color:#fff!important}.vareply{max-height:11em!important;overflow:auto!important}.vahint{line-height:1.5}.vaheard{cursor:pointer}.vaheard small{color:#6b7686;font-size:.72rem}
 .vafix{display:flex;gap:8px;width:100%}.vafix[hidden]{display:none}.vafix input{flex:1;min-width:0;border:1px solid #ffffff22;background:#ffffff10;color:#fff;border-radius:12px;padding:11px 12px;font:500 .9rem var(--body)}.vafix button{border:0;border-radius:12px;padding:0 14px;background:#8b5cf6;color:#fff;font:700 .82rem var(--body);cursor:pointer}
 .vachips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px}.vachips button{border:1px solid #ffffff22;background:#ffffff0d;color:#e5e7eb;border-radius:99px;padding:8px 12px;font:600 .78rem var(--body);cursor:pointer}
@@ -4619,6 +4629,8 @@ function brMaybeCard(out,q){try{if(!/(profit|kamaya|kamai|munafa)/.test(q)||!/(h
   const P=ACC().sellP,days=[];for(let i=6;i>=0;i--){const a=new Date();a.setHours(0,0,0,0);a.setDate(a.getDate()-i);const b=a.getTime()+864e5;const v=orders.filter(o=>o.status==="Completed"&&o.side==="SELL"&&o.time>=a.getTime()&&o.time<b).reduce((s,o)=>s+(P[o.id]||0),0);days.push({l:a.toLocaleDateString("en-IN",{weekday:"short"}).slice(0,2),v})}
   const mx=Math.max(1,...days.map(d=>Math.abs(d.v)));const el=document.createElement("div");el.className="brcard";el.innerHTML=`<div class="brbars">${days.map(d=>`<div class="brbar"><i style="height:${Math.max(3,Math.abs(d.v)/mx*44)}px;background:${d.v<0?"var(--sell)":"var(--buy)"}"></i><span>${d.l}</span><small>${d.v<0?"−":""}${Math.abs(d.v)>=1000?(Math.abs(d.v)/1000).toFixed(1)+"k":Math.round(Math.abs(d.v))}</small></div>`).join("")}</div><button type="button" class="mini ghost" data-go="home" style="margin-top:8px;width:100%">Open Home ›</button>`;out.appendChild(el)}catch(e){}}
 // what needs your attention right now (shown when the chat opens)
+function brSnz(){try{return JSON.parse(localStorage.getItem("p2p_insnz")||"{}")}catch(e){return{}}}
+function brSnooze(q,h){try{const m=brSnz();m[q]=Date.now()+(h||24)*36e5;localStorage.setItem("p2p_insnz",JSON.stringify(m))}catch(e){}}
 function brInsights(){const L=[],now=Date.now();try{const {bal,mv}=balances(),use=limitUse();
   banks.filter(b=>b.status==="frozen").forEach(b=>L.push({t:LA.t(`${b.name} is frozen`,`${b.name} frozen hai`),q:"kaun sa bank safe hai",k:"r"}));
   banks.filter(b=>b.type!=="Cash"&&b.status!=="frozen").forEach(b=>{const I=bankInsight(b,mv,bal[b.id]||0,use);if(I.level==="High")L.push({t:LA.t(`${b.name}: freeze risk is high`,`${b.name}: freeze risk high`),q:"freeze risk kisme zyada hai",k:"r"});if(I.lp>=90)L.push({t:LA.t(`${b.name}: ${I.lm==="ALL"?"total":I.lm} limit almost full`,`${b.name}: ${I.lm==="ALL"?"total":I.lm} limit lagbhag full`),q:`${b.name} ka limit kitna bacha`,k:"a"})});
@@ -4627,7 +4639,7 @@ function brInsights(){const L=[],now=Date.now();try{const {bal,mv}=balances(),us
   const due=parties.map(p=>partyOwed(p.id)-partyPaid(p.id)).filter(v=>v>0.5);if(due.length)L.push({t:LA.t(`${inr(Math.round(due.reduce((a,v)=>a+v,0)))} still to pay to ${due.length} part${due.length>1?"ies":"y"}`,`${due.length} party ko ${inr(Math.round(due.reduce((a,v)=>a+v,0)))} dena baki`),q:"kis kis ko dena baki hai",k:""});
   const st=stockLeft();if((st.USDT||0)<-0.0001)L.push({t:LA.t(`USDT stock is below zero (${fmtQ(+(st.USDT).toFixed(2))})`,`USDT stock minus me hai (${fmtQ(+(st.USDT).toFixed(2))})`),q:"usdt kitna bacha",k:"r"});
   const nw=brWin("kal raat order");if(nw){const c=orders.filter(o=>o.time>=nw.a&&o.time<nw.b&&o.status==="Cancelled").length;if(c)L.push({t:LA.t(`${c} order${c>1?"s":""} cancelled last night`,`kal raat ${c} order cancel hue`),q:"kal raat kitne order aaye",k:"a"})}}catch(e){console.error(e)}
-  return L.slice(0,5)}
+  const nz=brSnz();return L.filter(x=>!(nz[x.q]>Date.now())).slice(0,5)}
 function brApqBump(q){try{const k=String(q).toLowerCase().trim().slice(0,60);if(!k||k.length<4)return;const m=JSON.parse(localStorage.getItem("p2p_apq")||"{}");m[k]=(m[k]||0)+1;const E=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,40);localStorage.setItem("p2p_apq",JSON.stringify(Object.fromEntries(E)))}catch(e){}}
 function brApqTop(n){try{const m=JSON.parse(localStorage.getItem("p2p_apq")||"{}");return Object.entries(m).filter(x=>x[1]>=2).sort((a,b)=>b[1]-a[1]).slice(0,n).map(x=>x[0])}catch(e){return[]}}
 function laAnswer(q,out){if(brainMeta(q,out))return true;
@@ -4704,14 +4716,14 @@ function apPage(){return Object.keys(PAGE_NAMES).find(k=>{const el=$("#p-"+k);re
 function openAiPop(){const pg=apPage();$("#apChips").innerHTML=[...new Set([...brApqTop(2),...(AP_CHIPS[pg]||AP_CHIPS._)])].slice(0,5).map(q=>`<button type="button" data-apq="${esc(q)}">${esc(q)}</button>`).join("");
   $("#apSub").textContent=isBrain()?(aiOnline()?(aiCfg.prov==="braingemini"?"P2P Brain + Gemini (smart)":"P2P Brain + Claude (smart)"):"P2P Brain · offline"):aiOnline()?PROV[aiCfg.prov].n+" + P2P Brain":"P2P Brain · offline";
   if(!$("#apMsgs").children.length){const d=document.createElement("div");d.className="msg a";d.textContent=LA.t("Hi! Ask about profit, parties, banks, limits, stock or traders, or tell me what happened, like \"500 usdt 93 pe becha Ravi ko\".","Namaste! Profit, party, bank, limit, stock, trader kuch bhi poocho, ya bolo kya hua, jaise \"500 usdt 93 pe becha Ravi ko\".");$("#apMsgs").appendChild(d)}
-  try{const old=$("#apIns");if(old)old.remove();const I=brInsights();if(I.length){const c=document.createElement("div");c.id="apIns";c.className="apins";c.innerHTML=`<b>${LA.t("Needs your attention","Dhyan dene wali baatein")}</b>`+I.map(x=>`<button type="button" class="${x.k}" data-apq="${esc(x.q)}">${esc(x.t)} ›</button>`).join("");$("#apMsgs").appendChild(c)}}catch(e){console.error(e)}
+  try{const old=$("#apIns");if(old)old.remove();const I=brInsights();if(I.length){const c=document.createElement("div");c.id="apIns";c.className="apins";c.innerHTML=`<b>${LA.t("Needs your attention","Dhyan dene wali baatein")}<button type="button" class="apnz" data-nz>${LA.t("Hide for today","Aaj ke liye chhupao")}</button></b>`+I.map(x=>`<button type="button" class="${x.k}" data-apq="${esc(x.q)}">${esc(x.t)} ›</button>`).join("");$("#apMsgs").appendChild(c)}}catch(e){console.error(e)}
   $("#aiPop").hidden=false;requestAnimationFrame(()=>$("#aiPop").classList.add("open"));setTimeout(()=>$("#apIn").focus(),150)}
 function closeAiPop(){const p=$("#aiPop");p.classList.remove("open");setTimeout(()=>p.hidden=true,180)}
 $("#aiFab").onclick=openAiPop;$("#apClose").onclick=closeAiPop;$("#aiPop").addEventListener("click",e=>{if(e.target.id==="aiPop")closeAiPop()});
 $("#apMax").onclick=()=>{closeAiPop();goTo("ai")};
 $("#apForm").onsubmit=e=>{e.preventDefault();const q=$("#apIn").value.trim();if(!q)return;$("#apIn").value="";ask(q)};
 $("#apChips").onclick=e=>{const b=e.target.closest("[data-apq]");if(b)ask(b.dataset.apq)};
-$("#apMsgs").addEventListener("click",e=>{const b=e.target.closest("#apIns [data-apq]");if(b)ask(b.dataset.apq)});
+$("#apMsgs").addEventListener("click",e=>{if(e.target.closest("#apIns [data-nz]")){document.querySelectorAll("#apIns [data-apq]").forEach(x=>brSnooze(x.dataset.apq,24));const c=$("#apIns");if(c)c.remove();return}const b=e.target.closest("#apIns [data-apq]");if(b){brSnooze(b.dataset.apq,12);b.remove();if(!document.querySelector("#apIns [data-apq]")){const c=$("#apIns");if(c)c.remove()}ask(b.dataset.apq)}});
 document.addEventListener("click",e=>{if(e.target.closest("#apMsgs [data-go],#apMsgs [data-sheet]"))closeAiPop()});
 // ================= VOICE ASSISTANT (talk to P2P Brain hands-free)
 const VOICE={native:!!(window.P2PNative&&window.P2PNative.hasVoice),on:false,stage:"",_res:null,_spk:null};
@@ -4751,7 +4763,7 @@ async function voiceMode(){if(VOICE.on)return;VOICE.on=true;
   $("#vaX").onclick=VOICE.stop;o.addEventListener("click",e=>{if(e.target===o)VOICE.stop()});
   $("#vaOrb").onclick=()=>{if(VOICE.stage==="speak"){try{window.P2PNative&&window.P2PNative.stopSpeak&&window.P2PNative.stopSpeak()}catch(e){}try{speechSynthesis.cancel()}catch(e){}if(VOICE._spk)VOICE._spk();return}if(VOICE.stage==="idle")loop()};
   let empty=0,lastHeard="";
-  $("#vaChips").onclick=e=>{const b=e.target.closest("[data-vq]");if(!b)return;VOICE.stop();setTimeout(()=>{openAiPop();ask(b.dataset.vq)},250)};
+  $("#vaChips").onclick=e=>{const b=e.target.closest("[data-vq]");if(!b)return;if(VA_WARN.has(b.dataset.vq))brSnooze(b.dataset.vq,12);VOICE.stop();setTimeout(()=>{openAiPop();ask(b.dataset.vq)},250)};
   $("#vaHeard").onclick=()=>{if(!lastHeard)return;$("#vaFix").hidden=false;$("#vaFixIn").value=lastHeard;$("#vaFixIn").focus()};
   $("#vaFixGo").onclick=async()=>{const m=$("#vaFixIn").value.trim();if(!m)return;const n=await voiceLearn(lastHeard,m);$("#vaFix").hidden=true;toast(n?"Learned · next time I'll hear it right":"Got it");VOICE.stop();setTimeout(()=>{openAiPop();ask(m)},250)};
   const loop=async()=>{while(VOICE.on){vaStage("listen");$("#vaHeard").textContent="";let q="";
@@ -4801,7 +4813,7 @@ let VA_WARN=new Set();
 function voiceChips(){const out=[],add=q=>{q=String(q||"").trim();if(q&&!out.includes(q)&&out.length<5)out.push(q)};VA_WARN=new Set();
   const junk=/^(hello|hi|hey|namaste|ok|okay|thik|theek|bas|bye|haan|nahi|test)\b/i,st=voiceStats();
   voiceTop(8).filter(q=>!junk.test(q)&&q.split(" ").length>=2&&(st.q[q]||0)>=2).slice(0,2).forEach(add);
-  try{brInsights().slice(0,2).forEach(x=>{add(x.q);if(x.k==="r"||x.k==="a")VA_WARN.add(x.q)})}catch(e){}
+  try{brInsights().filter(x=>x.q!=="usdt kitna bacha").slice(0,2).forEach(x=>{add(x.q);if(x.k==="r"||x.k==="a")VA_WARN.add(x.q)})}catch(e){}
   const h=new Date().getHours();if(h>=21||h<5)add("raat ko kaun se bank khule rakhu");else if(h<11)add("kal raat kitne order aaye");
   try{const pd=parties.map(p=>({n:p.name,v:partyOwed(p.id)-partyPaid(p.id)})).filter(x=>x.v>0.5).sort((a,b)=>b.v-a.v)[0];if(pd)add(pd.n+" ko kitna dena hai")}catch(e){}
   ["aaj ka profit","pending orders","kaun sa bank me paisa lu"].forEach(add);return out}
@@ -5979,7 +5991,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=110;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=111;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6046,6 +6058,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00111","15 Oct 2026",["Voice screen is now a small bottom strip (under a third of the screen) so the chat and the page stay visible; suggestion buttons sit in one row you can swipe. The USDT-below-zero alert no longer shows as a voice button, and every alert can be hidden: tapping one hides it for 12 hours, and Hide for today in Needs your attention hides them all"]],
   ["0.0.0.00110","15 Oct 2026",["Voice screen, smarter: (1) say yes or no to confirm: when you speak a command like \"Axis se SBI me 30k transfer karo\" the app reads the entry back and waits for \"haan\" (saves it) or \"nahi\" (cancels), nothing is saved without a yes; (2) suggestion buttons now come from your habits, what needs attention (shown in red), the time of day and real names from your data, and change after each answer to the likely next question; (3) amounts are spoken the Indian way (2 lakh 13 hazaar 875 rupees) and long answers are shortened, the rest stays on screen; (4) better hearing: letters said one by one (\"s b i\", \"h d f c\"), common bank name mishearings and number words are fixed; (5) thanks / shukriya ends the talk"]],
   ["0.0.0.00109","15 Oct 2026",["Ask anything in English too: bank advice, transfers, profit by trader and night questions now also understand English (\"which bank should I pay from\", \"who made me the most profit\", \"what happened last night\"), and the Needs your attention list follows your language"]],
   ["0.0.0.00108","15 Oct 2026",["Ask anything, smarter and offline: (1) bank transfers by voice or text (\"Axis se SBI me 30k transfer karo\") become a confirm card with a balance and limit warning; (2) bank advice from your own data: which bank to receive in, pay from, which is safest, which has the highest freeze risk, which to keep open tonight, shown as a small card; (3) \"sabse zyada profit kis se hua\" and lowest profit by trader; (4) time windows such as \"kal raat kitne order aaye\", \"aaj subah\"; (5) number words like \"paanch hazaar\", \"dedh lakh\"; (6) a Needs your attention list when the chat opens (frozen or risky banks, full limits, old pending orders, unassigned banks, dues, negative USDT, night cancels); (7) the quick buttons learn the questions you ask most; (8) a 7 day profit chart under weekly profit answers; (9) \"us bank\" follows the bank you just talked about"]],
