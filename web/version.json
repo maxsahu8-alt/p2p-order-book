@@ -3,7 +3,7 @@
  "build": 114,
  "display": "0.0.0.00114",
  "files": {
-  "index.html": "ed25bed534b823bb4a42565db2643c65a7167897",
+  "index.html": "c99041aab8207a15417a6699d2286912fa006d3e",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
