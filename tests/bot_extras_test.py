@@ -49,6 +49,11 @@ with sync_playwright() as p:
     # reset
     pg.evaluate("fabReset()");pg.wait_for_timeout(200)
     chk('reset position',abs(f.bounding_box()['x']-328)<6)
+    pg.evaluate("openAiPop()");pg.wait_for_timeout(500)
+    pg.click('.apgrid [data-apq="usdt kitna bacha"]');pg.wait_for_timeout(1500)
+    chk('welcome tile asks the question',pg.locator('#apMsgs .msg.u').count()>=1 and pg.locator('.apwelmsg').is_hidden())
+    chk('chips visible after first question',pg.locator('#apChips').is_visible())
+    chk('messages carry a time',bool(pg.locator('#apMsgs .msg.u').first.get_attribute('data-t')))
     chk('no page errors',not errs)
     print(errs)
     pg.evaluate("localStorage.removeItem('p2p_fabsnap');localStorage.removeItem('p2p_botname')")
