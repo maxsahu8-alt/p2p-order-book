@@ -51,6 +51,21 @@ with sync_playwright() as p:
     pg.mouse.move(x,y);pg.mouse.down();pg.mouse.move(x,y+25,steps=2);pg.wait_for_timeout(250);pg.mouse.move(x,y+50,steps=2);pg.wait_for_timeout(250);pg.mouse.up();pg.wait_for_timeout(600)
     chk('short drag springs back',not pg.evaluate("document.getElementById('aiPop').hidden") and abs(pg.evaluate("document.querySelector('#aiPop .apbox').getBoundingClientRect().top")-top0)<2)
     pg.evaluate("closeAiPop()");pg.wait_for_timeout(500)
+    # --- sheet glides with the keyboard (no snapping)
+    pg.evaluate("openAiPop()");pg.wait_for_timeout(1000)
+    rc=lambda:pg.evaluate("(()=>{const r=document.querySelector('#aiPop .apbox').getBoundingClientRect();return [r.top,r.bottom]})()")
+    pg.set_viewport_size({'width':390,'height':450});seq=[]
+    for i in range(7):
+        seq.append(rc());pg.wait_for_timeout(45)
+    pg.wait_for_timeout(500);end=rc();print([[round(a) for a in x] for x in seq],[round(a) for a in end])
+    chk('keyboard up: edges move gradually',sum(1 for x in seq if end[1]+10<x[1]<795)>=1 and end[1]<=451)
+    chk('keyboard up: uses the space above the keyboard',end[0]<40)
+    pg.set_viewport_size({'width':390,'height':800});seq=[]
+    for i in range(7):
+        seq.append(rc());pg.wait_for_timeout(45)
+    pg.wait_for_timeout(500);end2=rc()
+    chk('keyboard down: edges glide back',sum(1 for x in seq if 452<x[1]<795)>=1 and abs(end2[1]-800)<2)
+    pg.evaluate("closeAiPop()");pg.wait_for_timeout(500)
     # --- bot remembers its place (keyboard-sized resize, reload)
     bx=pg.locator('#aiFab').bounding_box();cx=bx['x']+bx['width']/2;cy=bx['y']+bx['height']/2
     pg.mouse.move(cx,cy);pg.mouse.down();pg.mouse.move(cx-120,cy-90,steps=6);pg.mouse.move(cx-140,cy-110,steps=2);pg.mouse.up();pg.wait_for_timeout(400)
