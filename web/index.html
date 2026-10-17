@@ -3050,7 +3050,8 @@ const LITE_APPS=["PhonePe","Google Pay","Paytm","BHIM","Other"];
 const liteAppOf=t=>/phonepe|phone pe/i.test(t)?"PhonePe":/google ?pay|gpay|g pay/i.test(t)?"Google Pay":/paytm/i.test(t)?"Paytm":/\bbhim\b/i.test(t)?"BHIM":"";
 const ixLiteBank=(amt,app)=>{const L=banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on);if(!L.length)return null;const A=app?L.filter(b=>b.lite.app===app):[];const pool=A.length?A:L;return pool.find(b=>(+b.lite.bal||0)>=(amt||0))||pool[0]||null};
 function payBank(p){const mine=banks.filter(b=>b.type!=="Cash");let b=null;if(p.last4)b=mine.find(x=>x.accNo&&String(x.accNo).replace(/\D/g,"").endsWith(p.last4));
-  if(!b&&p.vpa){const v=String(p.vpa).toLowerCase();b=mine.find(x=>(x.vpas||[]).some(y=>String(y).toLowerCase()===v))||null}
+  if(!b&&p.vpa){const v=String(p.vpa).toLowerCase().trim(),VL=x=>[...(x.vpas||[]),...String(x.upi||"").split(/[\s,;]+/)].map(y=>String(y).toLowerCase().trim()).filter(y=>y.includes("@"));b=mine.find(x=>VL(x).includes(v))||null;
+    if(!b){const m=v.match(/^[xX*•.\s-]{2,}([\w.\-]{2,})@([a-z0-9.\-]+)$/);if(m){const c=mine.filter(x=>VL(x).some(y=>{const q=y.split("@");return q[1]===m[2]&&q[0].endsWith(m[1])}));if(c.length===1)b=c[0]}}}
   if(!b&&p.bank){const k=p.bank.toLowerCase().split(" ")[0];const c=mine.filter(x=>((x.name||"")+" "+(x.bankName||"")).toLowerCase().includes(k));if(c.length===1)b=c[0]}return b||null}
 function payMatches(p){const side=p.dir==="in"?"SELL":p.dir==="out"?"BUY":"";
   return orders.filter(o=>o.status!=="Cancelled"&&o.via!=="ex"&&modeOf(o)!=="Direct"&&(!side||o.side===side)&&Math.abs(orderTotal(o)-p.amount)<=1).sort((a,b)=>(a.status==="Pending"?0:1)-(b.status==="Pending"?0:1)||b.time-a.time).slice(0,6)}
@@ -3224,7 +3225,7 @@ const sheets={
     <label>IFSC code<input id="s-ifsc" value="${esc(b.ifsc||"")}" placeholder="e.g. SBIN0001234" autocomplete="off" style="text-transform:uppercase"></label>
     <label>Account type<select id="s-atype">${["Savings","Current","Other"].map(t=>`<option ${t===(b.accType||"Savings")?"selected":""}>${t}</option>`).join("")}</select></label>
     <label>Branch<input id="s-branch" value="${esc(b.branch||"")}" placeholder="Branch name / city" autocomplete="off"></label>
-    <label>UPI ID<input id="s-upi" value="${esc(b.upi||"")}" placeholder="name@bank" autocomplete="off"></label>
+    <label>UPI ID<input id="s-upi" value="${esc(b.upi||"")}" placeholder="name@bank (several: separate with a comma)" autocomplete="off" autocapitalize="off"><small class="note" style="display:block;margin:2px 0 0">A payment you receive on this UPI ID is matched to this bank. A hidden ID like ••7529@ptsbi works too.</small></label>
     <label>Registered phone<input id="s-phone" inputmode="tel" value="${esc(b.phone||"")}" placeholder="Optional" autocomplete="off"></label>
     <label>Note<input id="s-note" value="${esc(b.note||"")}" placeholder="e.g. daily limit 1 lakh"></label>
     <button class="primary" type="submit">Save</button>${id?'<button class="primary" type="button" id="s-del" style="background:var(--soft);color:var(--sell)">Delete bank</button>':""}</form>`,el=>{
@@ -6295,7 +6296,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=149;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=150;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6362,6 +6363,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00150","18 Oct 2026",["The bank form’s UPI ID field now takes several IDs (comma separated). When you sell, the payment you received is matched to the right bank by its UPI ID or by the account number, and a hidden ID such as ••7529@ptsbi is matched by its last characters and handle (only when exactly one of your banks fits)."]],
   ["0.0.0.00149","18 Oct 2026",["Smart Intake fix: on a PhonePe receipt the app took the last 4 digits of the seller’s UPI ID (••7529@ptsbi) as your paying account. Digits that are part of a UPI ID are now ignored, and the number printed under “Debited from” always wins as the account you paid from."]],
   ["0.0.0.00148","18 Oct 2026",["Rolled back to the build 146 code. The build 147 change to Smart Intake names is removed, so masked names link as before and Forget in Intake memory works as it did in build 146."]],
   ["0.0.0.00146","18 Oct 2026",["Wallet, 9 improvements: (1) lighter cash-flow chart text and grid, (2) Balance by bank is now a collapsed section, (3) the Cash row has no double tags, (4) a short or empty USDT stock shows a red card or a Set opening stock button, (5) empty chart and list cards are compact, (6) bank filter chips (All, Active, Frozen / paused, Cash), (7) hold a bank for quick actions (Edit, Check balance, Pause, UPI Lite, History), (8) the Never checked chip opens Check balance, (9) an eye button hides all Wallet amounts."]],
