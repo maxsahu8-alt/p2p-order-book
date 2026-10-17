@@ -1333,6 +1333,27 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
 #p-wallet .sec-head h2{font-size:1.02rem;letter-spacing:-.01em}
 #p-wallet .aibar{padding:11px 14px;border-radius:16px}
 #p-wallet .aibar small,#p-wallet .aibar span:not(.aiic){line-height:1.3}
+/* Wallet 9 */
+#p-wallet .whero .al{display:inline-flex;align-items:center;gap:6px}
+.hide-amt #p-wallet .bbal,.hide-amt #p-wallet .lims,.hide-amt #wLims b,.hide-amt #wLite,.hide-amt #stockCards .val,.hide-amt #p-wallet .bsub .in,.hide-amt #p-wallet .bsub .out,.hide-amt #wBarLeg,.hide-amt #wCover b,.hide-amt #wNetChg{filter:blur(8px);user-select:none}
+#chFlow svg text,#chBanks svg text{fill:var(--muted)}
+#chFlow svg text{font-size:9.5px}
+#chFlow svg line{opacity:.5}
+#p-wallet .chart:has(> .empty-ch){min-height:0}
+#p-wallet .chart .empty-ch{padding:10px 0 4px;font-size:.78rem}
+#p-wallet .empty{padding:14px;font-size:.82rem}
+#p-wallet .chart-card:has(.empty-ch){padding-bottom:10px}
+details.wcoll>summary{cursor:pointer;list-style:none}details.wcoll>summary::-webkit-details-marker{display:none}
+details.wcoll>summary::after{content:"›";margin-left:auto;color:var(--muted);transition:transform .2s}
+details.wcoll[open]>summary::after{transform:rotate(90deg)}
+details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.72rem;color:var(--muted)}
+#stockCards .mcard.shortc{border-color:color-mix(in srgb,var(--sell) 55%,var(--line));background:color-mix(in srgb,var(--sell) 7%,var(--surface))}
+#bankFilter{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+#bankFilter:empty{display:none}
+.qa{display:grid;gap:8px}
+.qab{width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--raised);color:var(--fg);font:700 .92rem var(--body);cursor:pointer}
+.qab:active{transform:scale(.99)}
+#p-wallet .bank{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 .aifab:active{transform:scale(.92)}@keyframes fabIn{from{opacity:0}}
 .aipop{position:fixed;inset:0;z-index:55;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,14,22,0);transition:background .18s}
 .aipop[hidden]{display:none}.aipop.open{background:rgba(10,14,22,.4)}
@@ -1586,7 +1607,7 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
   <section id="p-wallet" class="ih chat">
     <span class="ih" id="walletDate"></span>
     <section class="hero2 whero">
-      <div class="h2top"><span class="al">Money in banks &amp; cash</span><span class="h2chg" id="wNetChg"></span></div>
+      <div class="h2top"><span class="al">Money in banks &amp; cash <button type="button" class="eye" id="wEye" aria-label="Hide amounts"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></span><span class="h2chg" id="wNetChg"></span></div>
       <div class="atot" id="wTotal">₹0</div>
       <div class="bbar" id="wBar"></div>
       <div class="bleg" id="wBarLeg"></div>
@@ -1601,9 +1622,10 @@ mark{background:color-mix(in srgb,var(--warn) 35%,transparent);color:inherit;bor
     <div class="dcard2" id="wLimCard"><div class="ch-head"><b>Can send right now</b><span id="wLimSub"></span></div><div class="wlims" id="wLims"></div></div>
     <div class="dcard2" id="wCover"></div>
     <button class="aibar" type="button" data-ai="wallet"><span class="aiic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span><span><b>AI money analysis</b><small>Bank balances, limits, expenses and cash flow</small></span><span class="go">›</span></button>
-    <div class="ih chart-card"><div class="ch-head"><b>Balance by bank</b><span id="chBanks-sub"></span></div><div class="ch-legend" id="chBanks-leg"></div><div class="chart" id="chBanks"></div></div>
+    <details class="ih chart-card wcoll"><summary class="ch-head"><b>Balance by bank</b><span id="chBanks-sub">Tap to open</span></summary><div class="ch-legend" id="chBanks-leg"></div><div class="chart" id="chBanks"></div></details>
     <div class="sec-head"><h2>Banks</h2><span><span id="bankCount"></span> <button type="button" class="link" data-sheet="bankmgr" style="margin-left:6px">Manage</button></span></div>
     <div id="bankAdvisor"></div>
+    <div class="filters" id="bankFilter"></div>
     <div class="list" id="bankList"></div>
     <div id="bankHidTog"></div>
     <div class="sec-head"><h2>Crypto left</h2><button class="link" type="button" data-sheet="stock" style="color:var(--primary)">Opening stock</button></div>
@@ -1903,7 +1925,7 @@ function renderHero(){
   $("#hSpark").innerHTML=`<defs><linearGradient id="spg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${sum>=0?"#23c58f":"#f0596b"}" stop-opacity=".35"/><stop offset="1" stop-color="${sum>=0?"#23c58f":"#f0596b"}" stop-opacity="0"/></linearGradient></defs><path d="M${pts.map(p=>p.join(",")).join("L")}L140,46L0,46Z" fill="url(#spg)"/><path d="M${pts.map(p=>p.join(",")).join("L")}" fill="none" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
   const left=parties.reduce((t,p)=>t+Math.max(0,partyOwed(p.id)-partyPaid(p.id)),0);$("#hDirect").textContent=parties.length?inr(Math.round(left)):"Add ›";
   const wk=parties.reduce((t,p)=>t+Math.max(0,(+p.weekly||0)-partyPaidWeek(p.id)),0);$("#hDirectWk").textContent=parties.length?(wk?"Weekly due "+inr(Math.round(wk))+" · ":"")+parties.length+(parties.length===1?" party":" parties")+" · left to pay":"Track weekly payments to parties";
-  document.body.classList.toggle("hide-amt",hideAmt);$("#eyeBtn").classList.toggle("off",hideAmt);
+  document.body.classList.toggle("hide-amt",hideAmt);$("#eyeBtn").classList.toggle("off",hideAmt);try{$("#wEye").classList.toggle("off",hideAmt)}catch(e){}
 }
 let dashP=(()=>{try{return localStorage.getItem("p2p_dashP")||"today"}catch(e){return "today"}})();
 function dashDays(){return dashP==="30"?30:dashP==="7"?7:14}
@@ -3822,7 +3844,7 @@ function bankChips(b,I){const c=[];const rc=I.level==="High"?"r":I.level==="Medi
   if(b.type!=="Cash"&&I.n)c.push(`<span class="bchip ${rc}" data-why="${esc("Freeze risk "+I.level+" ("+I.pts+" points): "+(I.why.join("; ")||"few payments in, looks calm"))}"><i></i>Freeze risk ${I.level}</span>`);
   if(I.cap&&I.cpct>=60)c.push(`<span class="bchip ${I.cpct>=100?"r":I.cpct>=80?"a":""}">Receive cap ${Math.round(I.cpct)}% used</span>`);
   if(I.lp>=90)c.push(`<span class="bchip r">${I.lm==="ALL"?"Total":I.lm} limit almost full</span>`);else if(I.lp>=70)c.push(`<span class="bchip a">${I.lm==="ALL"?"Total":I.lm} limit ${Math.round(I.lp)}% used</span>`);
-  if(b.type!=="Cash"&&I.n){const d=I.chk?Math.floor((Date.now()-I.chk.time)/DAY):null;c.push(`<span class="bchip ${d==null||d>=7?"a":""}">${d==null?"Never checked":d===0?"Checked today":"Checked "+d+"d ago"}</span>`)}
+  if(b.type!=="Cash"&&I.n){const d=I.chk?Math.floor((Date.now()-I.chk.time)/DAY):null;c.push(`<span class="bchip ${d==null||d>=7?"a":""}" data-rec="${esc(b.id)}" style="cursor:pointer">${d==null?"Never checked":d===0?"Checked today":"Checked "+d+"d ago"}</span>`)}
   return c.join("")}
 function renderBankAdvisor(mv,bal,use){const el=$("#bankAdvisor");if(!el)return;
   const live=banks.filter(b=>b.type!=="Cash"&&b.status!=="frozen"&&b.status!=="paused");if(!live.length){el.innerHTML="";return}
@@ -3849,14 +3871,18 @@ function renderWallet(){
   $("#bankCount").textContent=banks.length?banks.length+" accounts":"";
   const use=limitUse();
   try{renderBankAdvisor(mv,bal,use)}catch(e){console.error(e)}
-  const hidN=banks.filter(b=>b.hidden).length,shown=banks.filter(b=>!b.hidden||window.__showHid);
-  setTimeout(()=>{document.querySelectorAll("#bankList [data-why]").forEach(c=>c.onclick=e=>{e.stopPropagation();toast(c.dataset.why)})},0);
+  const hidN=banks.filter(b=>b.hidden).length;let shown=banks.filter(b=>!b.hidden||window.__showHid);
+  {const F={all:"All",active:"Active",issue:"Frozen / paused",cash:"Cash"},isAct=b=>b.type!=="Cash"&&!b.status,isIss=b=>b.status==="frozen"||b.status==="paused",isC=b=>b.type==="Cash";
+    const cnt={all:shown.length,active:shown.filter(isAct).length,issue:shown.filter(isIss).length,cash:shown.filter(isC).length};const cur=window.__bkF&&cnt[window.__bkF]?window.__bkF:"all";window.__bkF=cur;
+    $("#bankFilter").innerHTML=shown.length>=3?Object.keys(F).filter(k=>k==="all"||cnt[k]).map(k=>`<button class="chip" type="button" aria-pressed="${cur===k}" data-bf="${k}">${F[k]} ${cnt[k]}</button>`).join("")+'<span class="note" style="margin:0 0 0 auto;align-self:center;font-size:.66rem">Hold a bank for quick actions</span>':"";
+    if(cur==="active")shown=shown.filter(isAct);else if(cur==="issue")shown=shown.filter(isIss);else if(cur==="cash")shown=shown.filter(isC)}
+  setTimeout(()=>{document.querySelectorAll("#bankList [data-why]").forEach(c=>c.onclick=e=>{e.stopPropagation();toast(c.dataset.why)});document.querySelectorAll("#bankList [data-rec]").forEach(c=>c.onclick=e=>{e.stopPropagation();sheets.bankrec(c.dataset.rec)})},0);
   $("#bankHidTog").innerHTML=hidN?`<button type="button" class="link" id="bkHid" style="padding:10px 4px">${window.__showHid?"Hide":"Show"} ${hidN} hidden bank${hidN>1?"s":""} ›</button>`:"";const bh=$("#bkHid");if(bh)bh.onclick=()=>{window.__showHid=!window.__showHid;renderWallet()};
   $("#bankList").innerHTML=shown.length?shown.map(b=>{const t=mv.filter(x=>x.bank===b.id&&isToday(x.time));const i=t.filter(x=>x.amt>0).reduce((s,x)=>s+x.amt,0),o=-t.filter(x=>x.amt<0).reduce((s,x)=>s+x.amt,0);
-    return `<button class="bank" type="button" data-sheet="ledger:${b.id}">${bankBadge(b)}<span class="bname">${esc(b.name)}${b.type==="Cash"?' <span class="mtag">Cash</span>':""}${bankTag(b,mv)}${b.lite&&b.lite.on?` <span class="mtag litetag" title="UPI Lite balance">Lite ${inr(b.lite.bal||0)}</span>`:""}</span><span class="bbal ${bal[b.id]<0?"neg":""}">${inr(bal[b.id])}</span>${limBar(b,use)}<span class="bsub">${b.accNo||b.upi?`<span class="bacc">${b.accNo?"A/c ••"+esc(b.accNo.slice(-4)):""}${b.accNo&&b.upi?" · ":""}${b.upi?esc(b.upi):""}</span>`:""}<span class="btod">Today <span class="in">+${inr(i)}</span> · <span class="out">−${inr(o)}</span>${(()=>{const q=t.length;const pe=mv.filter(x=>x.bank===b.id&&x.pend).length;return (q?" · "+q+" txn":"")+(pe?" · "+pe+" pending":"")})()}</span></span>${(()=>{try{if(b.type==="Cash")return"";const I=bankInsight(b,mv,bal[b.id]||0,use);return `<span class="binf">${bankSpark(I.line)}${bankChips(b,I)}</span>`}catch(e){return""}})()}</button>`}).join("")
+    return `<button class="bank" type="button" data-sheet="ledger:${b.id}">${bankBadge(b)}<span class="bname">${esc(b.name)}${b.type==="Cash"?(/^cash$/i.test((b.name||"").trim())?"":' <span class="mtag">Cash</span>'):bankTag(b,mv)}${b.lite&&b.lite.on?` <span class="mtag litetag" title="UPI Lite balance">Lite ${inr(b.lite.bal||0)}</span>`:""}</span><span class="bbal ${bal[b.id]<0?"neg":""}">${inr(bal[b.id])}</span>${limBar(b,use)}<span class="bsub">${b.accNo||b.upi?`<span class="bacc">${b.accNo?"A/c ••"+esc(b.accNo.slice(-4)):""}${b.accNo&&b.upi?" · ":""}${b.upi?esc(b.upi):""}</span>`:""}<span class="btod">Today <span class="in">+${inr(i)}</span> · <span class="out">−${inr(o)}</span>${(()=>{const q=t.length;const pe=mv.filter(x=>x.bank===b.id&&x.pend).length;return (q?" · "+q+" txn":"")+(pe?" · "+pe+" pending":"")})()}</span></span>${(()=>{try{if(b.type==="Cash")return"";const I=bankInsight(b,mv,bal[b.id]||0,use);return `<span class="binf">${bankSpark(I.line)}${bankChips(b,I)}</span>`}catch(e){return""}})()}</button>`}).join("")
     :'<div class="empty"><strong>No banks yet</strong>Tap “Add bank” to add each account with its current balance. Add one with type Cash for cash in hand.</div>';
   const st=stockLeft();
-  $("#stockCards").innerHTML=Object.entries(st).filter(([c,q])=>c==="USDT"||Math.abs(q)>1e-9).map(([c,q])=>`<div class="mcard" data-sheet="coinledger:${esc(c)}" style="cursor:pointer"><div class="lbl">${esc(c)} left</div><div class="val" style="${q<0?"color:var(--sell)":""}">${fmtQ(+q.toFixed(6))}</div><div class="sm">${q<0?"Sold more than bought":"Wallet history ›"}</div></div>`).join("");
+  $("#stockCards").innerHTML=Object.entries(st).filter(([c,q])=>c==="USDT"||Math.abs(q)>1e-9).map(([c,q])=>`<div class="mcard${q<0?" shortc":""}" data-sheet="coinledger:${esc(c)}" style="cursor:pointer"><div class="lbl">${esc(c)} left</div><div class="val" style="${q<0?"color:var(--sell)":""}">${fmtQ(+q.toFixed(6))}</div><div class="sm">${q<0?`<b style="color:var(--sell)">Short by ${fmtQ(+Math.abs(q).toFixed(4))}</b> · <button type="button" class="link" data-sheet="stock" style="color:var(--primary)">Fix opening stock</button>`:(Math.abs(q)<1e-9&&!((settings.stock||{})[c])?`<button type="button" class="link" data-sheet="stock" style="color:var(--primary)">Set opening stock ›</button>`:"Wallet history ›")}</div></div>`).join("");
   const un=orders.filter(o=>o.status!=="Cancelled"&&!noBank(o)&&Math.abs(orderTotal(o)-allocated(o))>0.5).sort((a,b)=>b.time-a.time);
   $("#unCount").textContent=un.length?inr(un.reduce((t,o)=>t+orderTotal(o)-allocated(o),0))+" · "+un.length:"";
   const unN=window.__unAll?40:5;
@@ -5165,6 +5191,24 @@ document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(!
 $("#htabs").onclick=e=>{const b=e.target.closest("[data-h]");if(!b)return;homeTab=b.dataset.h;document.querySelectorAll("#htabs [data-h]").forEach(x=>x.classList.toggle("on",x===b));renderHome()};
 $("#hTotal").onclick=()=>{if(!hideAmt)sheetNetWorth()};
 $("#eyeBtn").onclick=()=>{hideAmt=!hideAmt;try{localStorage.setItem("p2p_hide",hideAmt?"1":"0")}catch(e){}renderHero()};
+$("#wEye").onclick=$("#eyeBtn").onclick;
+(function(){const L=document.getElementById("bankList"),F=document.getElementById("bankFilter");let t=null,sx=0,sy=0,fired=false;
+  F.addEventListener("click",e=>{const c=e.target.closest("[data-bf]");if(!c)return;window.__bkF=c.dataset.bf;renderWallet()});
+  const cancel=()=>{clearTimeout(t);t=null};
+  L.addEventListener("pointerdown",e=>{const r=e.target.closest(".bank");if(!r||e.target.closest("[data-rec],[data-why]"))return;fired=false;sx=e.clientX;sy=e.clientY;cancel();t=setTimeout(()=>{fired=true;t=null;try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}bankQuick(r.dataset.sheet.split(":")[1])},520)});
+  L.addEventListener("pointermove",e=>{if(t&&(Math.abs(e.clientX-sx)>8||Math.abs(e.clientY-sy)>8))cancel()});
+  ["pointerup","pointercancel","pointerleave"].forEach(n=>L.addEventListener(n,cancel));
+  L.addEventListener("click",e=>{if(fired){e.stopPropagation();e.preventDefault();fired=false}},true);
+  L.addEventListener("contextmenu",e=>{if(e.target.closest(".bank"))e.preventDefault()})})();
+function bankQuick(id){const b=banks.find(x=>x.id===id);if(!b)return;const lite=b.lite&&b.lite.on;
+  openSheet(`<h3>${esc(b.name)}</h3><div class="qa">
+    <button type="button" class="qab" data-q="edit">Edit bank</button>
+    ${b.type!=="Cash"?`<button type="button" class="qab" data-q="rec">Check balance</button><button type="button" class="qab" data-q="${b.status==="paused"?"resume":"pause"}">${b.status==="paused"?"Resume this bank":"Pause this bank"}</button>`:""}
+    ${lite?`<button type="button" class="qab" data-q="lite">UPI Lite: load / withdraw</button>`:""}
+    <button type="button" class="qab" data-q="led">Open history</button></div>`,el=>{
+    el.onclick=async e=>{const q=(e.target.closest("[data-q]")||{}).dataset;if(!q)return;const k=q.q;
+      if(k==="edit")sheets.bank(id);else if(k==="rec")sheets.bankrec(id);else if(k==="lite")sheets.lite(id);else if(k==="led")sheets.ledger(id);
+      else if(k==="pause"||k==="resume"){try{await patchRec(id,{status:k==="pause"?"paused":""});toast(k==="pause"?"Paused":"Resumed");closeSheet()}catch(err){toast("Couldn't save")}}}})}
 let sqT;$("#hq").addEventListener("input",e=>{clearTimeout(sqT);sqT=setTimeout(()=>{searchQ=e.target.value.trim();renderList()},250)});
 $("#searchBtn").onclick=()=>openUS();
 // page title in the header + active top-menu pill
@@ -6251,7 +6295,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=145;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=148;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6318,6 +6362,8 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00148","18 Oct 2026",["Rolled back to the build 146 code. The build 147 change to Smart Intake names is removed, so masked names link as before and Forget in Intake memory works as it did in build 146."]],
+  ["0.0.0.00146","18 Oct 2026",["Wallet, 9 improvements: (1) lighter cash-flow chart text and grid, (2) Balance by bank is now a collapsed section, (3) the Cash row has no double tags, (4) a short or empty USDT stock shows a red card or a Set opening stock button, (5) empty chart and list cards are compact, (6) bank filter chips (All, Active, Frozen / paused, Cash), (7) hold a bank for quick actions (Edit, Check balance, Pause, UPI Lite, History), (8) the Never checked chip opens Check balance, (9) an eye button hides all Wallet amounts."]],
   ["0.0.0.00145","17 Oct 2026",["Wallet, second polish: each bank row now shows the account line (A/c and UPI ID) and today’s in/out on separate lines, the 7-day line is hidden when a bank has nothing else to show, “Can send right now” has a proper title and subtitle, the crypto stock cards use the full width, and the section headings have more space."]],
   ["0.0.0.00144","17 Oct 2026",["Wallet is cleaner and more professional: the Bank advisor is now two compact tiles (Pay next from, Receive next in) with the long freeze-risk note folded under an info line, the action row has a divider and a coloured Add bank icon, and each bank row has better spacing, with the 7-day line aligned to the right."]],
   ["0.0.0.00143","17 Oct 2026",["UPI Lite auto top-up now triggers on every drop below your limit: after a payment, after a withdraw, and when you save the bank with a Lite balance already below the limit. It adds the amount you set from the bank (never more than the bank has, never above ₹5,000)."]],
