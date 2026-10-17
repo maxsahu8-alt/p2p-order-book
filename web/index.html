@@ -3008,7 +3008,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   P.dir=/debited from|paid to|money sent|sent to|transferred to|you paid/i.test(flat)?"out":/received|credited (?:to|in|by|with)|credit alert/i.test(flat)?"in":"";
   P.method=/\bIMPS\b/i.test(flat)?"IMPS":/\bNEFT\b|\bRTGS\b/i.test(flat)?"NEFT":"UPI";
   const flatB=flat.replace(/powered by.*$/i," ").replace(/\S+@\S+/g," ");const B=PAY_BANKS.find(([,re])=>re.test(flatB));P.bank=B?B[0]:"";
-  const l4=flat.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*\d*?(\d{4})\b/i)||flat.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);P.last4=l4?l4[1]:"";
+  const flatV=flat.replace(/\S*\d\S*@[A-Za-z]\S*/g," ");const l4=flatV.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*\d*?(\d{4})\b/i)||flatV.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);P.last4=l4?l4[1]:"";
   P.time=payTime(flat)||payTime(flat.replace(/['’‘`´]\s?(\d{2})\b/g," 20$1"));
   {const ta=ixTimeAlts(flat);P.timeAlts=ta.amb&&ta.alts.includes(P.time)?ta.alts:(P.time?[P.time]:ta.alts);if(!P.time&&ta.alts.length)P.time=ta.alts[0]}
   const nameOf=v=>{v=v.replace(/\(.*?\)/g," ").replace(/\S+@\S+/g," ");PAY_BANKS.forEach(([,re])=>{v=v.replace(new RegExp(re.source,"ig")," ")});v=v.replace(/\b(?:a\/c|acct?|account|no\.?|ref|upi|vpa|bank|ltd|limited)\b/ig," ").replace(/[xX*•]{2,}\d*/g," ").replace(/[^A-Za-z .'\-]/g," ").replace(/\s+/g," ").trim();v=ixNameClean(v)||"";return v.length>=2?v.slice(0,40):""};
@@ -3027,7 +3027,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
       let rest=(m[1]||"").trim(),nx=(lines[i+1]||"").trim(),l4="",lab="";
       const inl=rest.match(/^(.*?)\s*[xX*•.]{2,}\s*(\d{3,4})\s*$/);
       if(inl){lab=inl[1];l4=inl[2]}else if(MK.test(nx)){lab=rest;l4=nx.replace(/\D/g,"")}else if(!rest&&lines[i+2]&&MK.test((lines[i+2]||"").trim())){lab=nx;l4=lines[i+2].replace(/\D/g,"")}
-      if(l4){lab=lab.replace(/[^A-Za-z0-9 .&'\-]/g," ").replace(/\s+/g," ").trim();P.fromLabel=lab.slice(0,40);P.fromLast4=l4.slice(-4);if(!P.last4)P.last4=l4.slice(-4);
+      if(l4){lab=lab.replace(/[^A-Za-z0-9 .&'\-]/g," ").replace(/\s+/g," ").trim();P.fromLabel=lab.slice(0,40);P.fromLast4=l4.slice(-4);if(!P.last4||/^(?:debited from|paid from)\b/i.test(lines[i]))P.last4=l4.slice(-4);
         const w=(lab.toLowerCase().match(/[a-z]{3,}/g)||[]);if(P.sender&&w.some(x=>P.sender.toLowerCase().includes(x)))P.sender="";break}}}
   // SMS style (one line): "... credited to RAVI KUMAR VPA ..." / "... received from AMIT SHARMA ..."
   const nm="([A-Za-z][A-Za-z .'\\-]{2,40}?)(?=\\s+(?:VPA|UPI|IMPS|NEFT|on|ref|via|a\\/c|\\()|[.,;(]|\\s*$)";
@@ -6295,7 +6295,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=148;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=149;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6362,6 +6362,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00149","18 Oct 2026",["Smart Intake fix: on a PhonePe receipt the app took the last 4 digits of the seller’s UPI ID (••7529@ptsbi) as your paying account. Digits that are part of a UPI ID are now ignored, and the number printed under “Debited from” always wins as the account you paid from."]],
   ["0.0.0.00148","18 Oct 2026",["Rolled back to the build 146 code. The build 147 change to Smart Intake names is removed, so masked names link as before and Forget in Intake memory works as it did in build 146."]],
   ["0.0.0.00146","18 Oct 2026",["Wallet, 9 improvements: (1) lighter cash-flow chart text and grid, (2) Balance by bank is now a collapsed section, (3) the Cash row has no double tags, (4) a short or empty USDT stock shows a red card or a Set opening stock button, (5) empty chart and list cards are compact, (6) bank filter chips (All, Active, Frozen / paused, Cash), (7) hold a bank for quick actions (Edit, Check balance, Pause, UPI Lite, History), (8) the Never checked chip opens Check balance, (9) an eye button hides all Wallet amounts."]],
   ["0.0.0.00145","17 Oct 2026",["Wallet, second polish: each bank row now shows the account line (A/c and UPI ID) and today’s in/out on separate lines, the 7-day line is hidden when a bank has nothing else to show, “Can send right now” has a proper title and subtitle, the crypto stock cards use the full width, and the section headings have more space."]],
