@@ -2073,7 +2073,7 @@ function movementsRaw(){
   orders.forEach(o=>{if(o.status==="Cancelled"||noBank(o))return;(o.splits||[]).forEach(x=>m.push({bank:x.bank,amt:(o.side==="SELL"?1:-1)*(+x.amt||0),cp:o.cp||"",time:o.time,label:`${o.side} ${fmtQ(o.qty)} ${o.coin}${o.cp?" · "+o.cp:""} · ${x.method||methodOf(o.pay)}`,kind:o.side,method:x.method||methodOf(o.pay),pend:o.status==="Pending"||o.status==="Appeal"}))});
   exps.forEach(x=>{if(x.bank)m.push({bank:x.bank,amt:-(+x.amt||0),time:x.time,label:"Expense · "+x.cat+(x.note?" · "+x.note:""),kind:"EXP"})});
   ppays.forEach(x=>{const pn=(parties.find(p=>p.id===x.party)||{}).name||"party";(x.splits||[]).forEach(sp=>m.push({bank:sp.bank,amt:-(+sp.amt||0),time:x.time,label:"Paid "+pn+" · "+(sp.method||"IMPS"),kind:"PP",method:sp.method||"IMPS"}))});
-  recs.forEach(x=>{if(x.kind==="litemove"&&x.bank&&+x.amt>0)m.push({bank:x.bank,amt:-(+x.amt),time:x.time,label:"Loaded to UPI Lite",kind:"TR",method:"UPI"})});
+  recs.forEach(x=>{if(x.kind==="litemove"&&x.bank&&+x.amt>0&&x.dir!=="spend")m.push(x.dir==="out"?{bank:x.bank,amt:+x.amt,time:x.time,label:"Withdrawn from UPI Lite",kind:"TR"}:{bank:x.bank,amt:-(+x.amt),time:x.time,label:"Loaded to UPI Lite",kind:"TR",method:"UPI"})});
   moves.forEach(x=>{m.push({bank:x.from,amt:-((+x.amt||0)+(+x.cost||0)),time:x.time,label:"Transfer to "+bankName(x.to)+" · "+(x.method||"IMPS")+(+x.cost?" · charges ₹"+x.cost:""),kind:"TR",method:x.method||"IMPS"});m.push({bank:x.to,amt:+x.amt||0,time:x.time,label:"Transfer from "+bankName(x.from),kind:"TR"})});
   return m;
 }
@@ -2119,7 +2119,7 @@ function coinLedger(c){
 const r2=v=>Math.round((+v||0)*100)/100;
 const doneT=o=>o.doneAt||o.time||0;
 function ACC(){if(accCache)return accCache;
-  const {bal,mv}=balances();let bank=0,cash=0;allBanks.forEach(b=>{const v=bal[b.id]||0;if(b.type==="Cash")cash+=v;else bank+=v});
+  const {bal,mv}=balances();let bank=0,cash=0;allBanks.forEach(b=>{const v=bal[b.id]||0;if(b.type==="Cash")cash+=v;else bank+=v+(b.lite&&b.lite.on?Math.max(0,+b.lite.bal||0):0)});
   const known=new Set(allBanks.map(b=>b.id));const orphan=mv.filter(x=>!known.has(x.bank));
   const stock=stockLeft();
   // moving average cost per coin
@@ -3129,7 +3129,7 @@ const sheets={
       <label>UPI Lite<select id="s-lite"><option value="" ${!(b.lite&&b.lite.on)?"selected":""}>Not used</option><option value="1" ${b.lite&&b.lite.on?"selected":""}>Active on this bank</option></select></label>
       <label>Lite balance now (₹)<input id="s-litebal" type="number" inputmode="decimal" step="any" min="0" value="${(b.lite&&b.lite.bal)||""}" placeholder="Max 5,000"></label>
     </div>
-    ${id&&b.lite&&b.lite.on?`<button type="button" class="mini" data-sheet="lite:${id}">Load money to UPI Lite</button>`:""}<p class="note" style="margin:-6px 0 0">UPI Lite is a small wallet inside your bank app: up to ₹5,000 balance, ₹1,000 per payment, no PIN. To move money from the bank into Lite, use “Load money”: it reduces the bank balance and raises the Lite balance.</p>
+    ${id&&b.lite&&b.lite.on?`<button type="button" class="mini" data-sheet="lite:${id}">Load / withdraw UPI Lite</button>`:""}<p class="note" style="margin:-6px 0 0">UPI Lite is a small wallet inside your bank app: up to ₹5,000 balance, ₹1,000 per payment, no PIN. To move money from the bank into Lite, use Load, Withdraw or Spent. Load takes money out of the bank, Withdraw puts it back in the same bank, Spent lowers the Lite balance only. Lite is counted in your net worth.</p>
     <label>Daily receive comfort limit (₹)<input id="s-rcap" type="number" inputmode="decimal" step="any" value="${b.rcvCap||""}" placeholder="Most you like to receive here in 24 hours (optional)"></label>
     <label id="s-fatw" ${b.status==="frozen"?"":"hidden"}>When did it freeze? (optional)<input id="s-fat" type="datetime-local" value="${b.frozenAt?new Date(b.frozenAt-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16):""}"></label>
     <p class="note" style="margin:-6px 0 0">When you mark a bank frozen, the app remembers how busy it was just before and warns you earlier next time. Leave limits empty for no limit. UPI is counted over the last 24 hours: each payment frees up 24 hours after it was sent. IMPS, NEFT and Total reset at midnight.</p>
@@ -3206,22 +3206,37 @@ const sheets={
             // moving across the pinned line would not show; a moved bank takes the pinned state of the one it swapped with
             const pj=!!L[j].pinned;for(let k=0;k<o.length;k++){const patch={};if(o[k].pos!==k*10)patch.pos=k*10;if(o[k].id===L[i].id&&!!o[k].pinned!==pj)patch.pinned=pj;if(Object.keys(patch).length)await patchRec(o[k].id,patch)}}
           sheets.bankmgr()}catch(err){toast("Couldn't save")}}})},
-  lite(id){const b=banks.find(x=>x.id===id);if(!b||!(b.lite&&b.lite.on)){toast("Turn on UPI Lite for this bank first");return}
-    const cur=+b.lite.bal||0,room=Math.max(0,5e3-cur),{bal}=balances();
-    openSheet(`<h3>Load UPI Lite</h3><p class="note" style="margin:-6px 0 12px">${esc(b.name)} · Lite now <b>${inr(cur)}</b> · room for <b>${inr(room)}</b> more (max ₹5,000). The amount is taken out of this bank's balance (${inr(bal[id]||0)}).</p>
+  lite(id,mode0){const b=banks.find(x=>x.id===id);if(!b||!(b.lite&&b.lite.on)){toast("Turn on UPI Lite for this bank first");return}
+    let mode=mode0||"in";const {bal}=balances();
+    openSheet(`<h3>UPI Lite · ${esc(b.name)}</h3><div class="calc" style="margin-bottom:10px"><span>Lite balance</span><b class="num" id="l-bal"></b></div>
+    <div class="seg" id="l-mode" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px"><button type="button" data-m="in">Load</button><button type="button" data-m="out">Withdraw</button><button type="button" data-m="spend">Spent</button></div>
+    <p class="note" id="l-note" style="margin:0 0 10px"></p>
     <form id="sf" style="grid-template-columns:1fr"><label>Amount (₹)<input id="s-amt" type="number" inputmode="decimal" step="any" required placeholder="e.g. 1000"></label>
-    <div class="chips" id="s-q">${[500,1000,2000,room].filter((v,i,a)=>v>0&&v<=room&&a.indexOf(v)===i).map(v=>`<button type="button" class="chip" data-v="${v}">${v===room?"Fill to max · ":""}${inr(v)}</button>`).join("")}</div>
-    <button class="primary" type="submit">Load to Lite</button></form>`,el=>{
+    <div class="chips" id="s-q"></div><button class="primary" type="submit" id="l-go">Save</button></form>`,el=>{
+      const cur=()=>+b.lite.bal||0,room=()=>Math.max(0,5e3-cur());
+      const draw=()=>{const c=cur(),r=room();el.querySelector("#l-bal").textContent=inr(c);
+        el.querySelectorAll("#l-mode button").forEach(x=>x.classList.toggle("on",x.dataset.m===mode));
+        const max=mode==="in"?r:mode==="out"?c:Math.min(c,1000);
+        el.querySelector("#l-note").innerHTML=mode==="in"?`Money goes from <b>${esc(b.name)}</b> (${inr(bal[id]||0)}) into Lite. Room for <b>${inr(r)}</b> more (Lite holds max ₹5,000).`:mode==="out"?`Money goes back to <b>${esc(b.name)}</b>, the same bank you loaded it from. You can take out up to <b>${inr(c)}</b>.`:`Used Lite to pay someone. Lite balance goes down; the bank is not touched. One Lite payment is up to ₹1,000.`;
+        el.querySelector("#l-go").textContent=mode==="in"?"Load to Lite":mode==="out"?"Withdraw to bank":"Save payment";
+        el.querySelector("#s-q").innerHTML=[100,500,1000,2000,max].filter((v,i,a)=>v>0&&v<=max&&a.indexOf(v)===i).map(v=>`<button type="button" class="chip" data-v="${v}">${v===max&&mode!=="spend"?(mode==="in"?"Fill to max · ":"All · "):""}${inr(v)}</button>`).join("")};
+      draw();
+      el.querySelector("#l-mode").onclick=e=>{const x=e.target.closest("[data-m]");if(!x)return;mode=x.dataset.m;draw()};
       el.querySelector("#s-q").onclick=e=>{const c=e.target.closest("[data-v]");if(c)el.querySelector("#s-amt").value=c.dataset.v};
       el.querySelector("#sf").onsubmit=async e=>{e.preventDefault();const amt=+$("#s-amt").value;if(!(amt>0)){toast("Enter an amount");return}
-        if(amt>room+0.5){toast(room>0?`UPI Lite can take only ${inr(room)} more`:"UPI Lite is already full (₹5,000)");return}
-        try{await putRec({id:newId("l_"),kind:"litemove",bank:id,amt,time:Date.now()});await patchRec(id,{lite:{...b.lite,bal:Math.min(5e3,cur+amt),t:Date.now()}});toast("Loaded "+inr(amt)+" to UPI Lite");closeSheet()}catch(err){toast("Couldn't save")}}})},
+        const c=cur();
+        if(mode==="in"&&amt>room()+0.5){toast(room()>0?`UPI Lite can take only ${inr(room())} more`:"UPI Lite is already full (₹5,000)");return}
+        if(mode!=="in"&&amt>c+0.5){toast(`Lite has only ${inr(c)}`);return}
+        if(mode==="spend"&&amt>1000){toast("One UPI Lite payment is up to ₹1,000");return}
+        try{await putRec({id:newId("l_"),kind:"litemove",bank:id,amt,dir:mode,time:Date.now()});
+          const nb=mode==="in"?Math.min(5e3,c+amt):Math.max(0,c-amt);b.lite={...b.lite,bal:nb,t:Date.now()};await patchRec(id,{lite:b.lite});
+          toast(mode==="in"?"Loaded "+inr(amt)+" to UPI Lite":mode==="out"?inr(amt)+" back in "+b.name:"Lite payment saved");closeSheet()}catch(err){toast("Couldn't save")}}})},
   ledger(id,all){const b=banks.find(x=>x.id===id);if(!b)return;const {bal,mv}=balances();const full=mv.filter(x=>x.bank===id).sort((a,c)=>c.time-a.time),list=all?full:full.slice(0,60);const S=bankStats(b,mv,bal[id]);const lc=S.checks[0];
     const dt=t=>new Date(t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
     openSheet(`<h3>${esc(b.name)} <span class="cpb ${S.tone==="bad"?"":"idle"}" style="${S.tone==="bad"?"background:var(--sell);color:#fff":""}">${esc(S.status)}</span></h3><div class="calc" style="margin-bottom:12px"><span>Balance now</span><b class="num">${inr(bal[id])}</b></div>
     <div class="kpis" style="margin-bottom:10px"><div class="kpi"><span class="kl">In today</span><b class="pos">${inr(S.inn)}</b></div><div class="kpi"><span class="kl">Out today</span><b class="neg">${inr(S.out)}</b></div></div>
     <div class="bstats"><div><span>Today's volume</span><b>${inr(S.volume)}</b></div><div><span>Txns today / total</span><b>${S.todayN} / ${S.total}</b></div><div><span>Pending</span><b>${S.pendN?S.pendN+" · "+inr(S.pendIn+S.pendOut):"None"}</b></div><div><span>Last txn</span><b>${S.last?dt(S.last):"—"}</b></div></div>
-    ${(()=>{if(b.type==="Cash")return"";const I=bankInsight(b,mv,bal[id]||0,limitUse());return `<div class="binf" style="margin:2px 0 8px">${bankSpark(I.line)}${bankChips(b,I)}</div><p class="note" style="margin:0 0 8px">Freeze risk (estimate): <b>${I.level}</b> · ${I.ppl} people and ${inr(Math.round(I.flow))} received in the last 24 hours${I.why.length?" — "+esc(I.why.join("; ")):""}. The line shows the balance of the last 7 days.</p>`})()}${b.lite&&b.lite.on?`<div class="litebox"><span><b>UPI Lite</b><small>${inr(b.lite.bal||0)} of ₹5,000 · room ${inr(Math.max(0,5e3-(b.lite.bal||0)))}</small></span><button type="button" class="mini" data-sheet="lite:${b.id}">Load money</button></div>`:""}<p class="note" style="margin:6px 0 10px">${lc?`Last check ${dt(lc.time)}: real ${inr(lc.real)} · ${Math.abs(lc.diff)<1?"matched ✓":"difference "+(lc.diff>0?"+":"−")+inr(Math.abs(lc.diff))}`:"Not checked against the real bank balance yet."}</p>
+    ${(()=>{if(b.type==="Cash")return"";const I=bankInsight(b,mv,bal[id]||0,limitUse());return `<div class="binf" style="margin:2px 0 8px">${bankSpark(I.line)}${bankChips(b,I)}</div><p class="note" style="margin:0 0 8px">Freeze risk (estimate): <b>${I.level}</b> · ${I.ppl} people and ${inr(Math.round(I.flow))} received in the last 24 hours${I.why.length?" — "+esc(I.why.join("; ")):""}. The line shows the balance of the last 7 days.</p>`})()}${b.lite&&b.lite.on?`<div class="litebox"><span><b>UPI Lite</b><small>${inr(b.lite.bal||0)} of ₹5,000 · room ${inr(Math.max(0,5e3-(b.lite.bal||0)))}</small></span><button type="button" class="mini" data-sheet="lite:${b.id}">Load · Withdraw</button></div>`:""}<p class="note" style="margin:6px 0 10px">${lc?`Last check ${dt(lc.time)}: real ${inr(lc.real)} · ${Math.abs(lc.diff)<1?"matched ✓":"difference "+(lc.diff>0?"+":"−")+inr(Math.abs(lc.diff))}`:"Not checked against the real bank balance yet."}</p>
     ${limBar(b,limitUse()).replace('class="lims"','class="lims" style="margin-bottom:12px"')}
     <div class="ledger">${list.length?list.map(x=>`<div class="lg"><span>${esc(x.label)}${x.pend?' <span class="mtag">Pending</span>':""}</span><span class="a ${x.amt>=0?"in":"out"}">${x.amt>=0?"+":"−"}${inr(Math.abs(x.amt))}</span><div class="o-meta">${dt(x.time)}</div></div>`).join("")+(!all&&full.length>60?`<button type="button" class="link" id="l-all" style="padding:10px;width:100%">Show all ${full.length} ›</button>`:""):'<p class="note">No transactions yet. Opening balance '+inr(b.opening||0)+'.</p>'}</div>
     <div class="row2" style="margin-top:14px"><button class="mini" type="button" id="l-rec">Check balance</button><button class="mini ghost" type="button" id="l-stmt">Match statement</button><button class="mini ghost" type="button" id="l-share">Share details</button><button class="mini ghost" type="button" id="l-edit">Edit / limits</button></div>`,el=>{el.querySelector("#l-edit").onclick=()=>sheets.bank(id);el.querySelector("#l-share").onclick=()=>sheets.share(id);el.querySelector("#l-stmt").onclick=()=>sheets.stmt(id);el.querySelector("#l-rec").onclick=()=>sheets.bankrec(id);const la=el.querySelector("#l-all");if(la)la.onclick=()=>sheets.ledger(id,true)})},
@@ -6135,7 +6150,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=136;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=137;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6202,6 +6217,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00137","17 Oct 2026",["UPI Lite, complete: Load, Withdraw (goes back to the same bank you loaded from) and Spent (a Lite payment of up to ₹1,000, lowers only the Lite balance). Lite money is now counted in net worth, so loading does not make your net worth drop."]],
   ["0.0.0.00136","17 Oct 2026",["UPI Lite: new “Load money” button (in the bank screen and in Edit bank). It takes the amount out of the bank balance, adds it to the Lite balance, and stops you going above ₹5,000. The load shows in the bank history."]],
   ["0.0.0.00135","17 Oct 2026",["Banks: UPI Lite added. In Add/Edit bank you can mark UPI Lite as active and note its balance (max ₹5,000). The bank row in Wallet shows a purple Lite tag with the balance."]],
   ["0.0.0.00134","17 Oct 2026",["The live USDT price chip at the top of Home keeps its size and now shows a small Tether logo next to the price, filling the empty space. The price briefly flashes green or red when it moves."]],
