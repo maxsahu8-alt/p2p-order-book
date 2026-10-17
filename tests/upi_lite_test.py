@@ -49,6 +49,9 @@ async def main():
     chk('bank balance fell only by what really went into Lite (10000-1000-3850)',bal==5150)
     err2=await pg.evaluate("(async()=>{const b={id:'ZZ',name:'Empty bank',lite:{on:true,bal:0}};try{await liteApply(b,'in',999999,'t');return 'noerr'}catch(e){return String(e.message||e)}})()")
     chk("cannot load more than the bank has (Low balance error)",'Low balance' in err2)
+    # auto top-up also after a withdraw that leaves Lite below the limit
+    nb=await pg.evaluate("(async()=>{const b=banks.find(x=>x.id==='B1');b.lite={...b.lite,bal:1000};return await liteApply(b,'out',900,'t')})()")
+    chk("auto top-up after withdraw below limit (100 -> +1000 = 1100)",nb==1100)
     # bot
     async def ask(q):
       return await pg.evaluate("""(q)=>{const o=document.createElement('div');document.body.appendChild(o);const n0=document.querySelectorAll('.acard').length;let ok=false;try{ok=laAnswer(q,o)}catch(e){}
