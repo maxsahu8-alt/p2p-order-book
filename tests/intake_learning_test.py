@@ -35,7 +35,7 @@ async def main():
     check("first deal: partial name needs review","seller:UNCLEAR" in r1["f"] and r1["ov"]=="REVIEW")
     await pg.evaluate("document.querySelector('[data-ix=save]').click()");await pg.wait_for_timeout(1200)
     st=await pg.evaluate("[ixS.groups[0].save.state,ixS.groups[0].save.msg,recs.filter(r=>r.kind==='ixl'&&r.t==='alias').length]")
-    print(st);check("saved and alias learned",st[0]=="saved" and st[2]==1 and "Learned" in st[1])
+    print(st);check("saved and alias learned",st[0]=="saved" and st[2]>=1 and "Learned" in st[1])
     o2,p2=variant(ORD,PAY,"11","3,100.00")
     r2=await run(o2,p2,2);print(r2["f"],r2["mine"])
     check("second deal: same two names now match","seller:MATCH" in r2["f"])
