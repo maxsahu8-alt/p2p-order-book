@@ -2975,10 +2975,11 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   if(/(?:added|add(?:ing)? money|top.?up|load(?:ed)?|transferred)\s+(?:money\s+)?(?:to|in|into)\s+upi\s*lite|upi\s*lite\s+(?:top.?up|load|balance added)/i.test(flat)){P.liteLoad=true;P.liteApp=liteAppOf(flat)}
   P.ok=P.amount>0&&!!P.utr;return P}
 const fileHash=async f=>{try{const b=await f.arrayBuffer();if(window.crypto&&crypto.subtle){const h=await crypto.subtle.digest("SHA-256",b);return[...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,32)}return"f"+impHash(String.fromCharCode(...new Uint8Array(b.slice(0,60000))))}catch(e){return""}};
-async function liteApply(b,mode,amt,note){const cur=+b.lite.bal||0;amt=Math.max(0,Math.min(amt,mode==="in"?5e3-cur:cur));if(!(amt>0))return cur;let nb=mode==="in"?Math.min(5e3,cur+amt):Math.max(0,cur-amt);
+async function liteApply(b,mode,amt,note,force){const cur=+b.lite.bal||0;const bb0=Math.max(0,(balances().bal[b.id])||0);amt=Math.max(0,Math.min(amt,mode==="in"?5e3-cur:cur));if(!(amt>0))return cur;
+  if(mode==="in"&&!force&&amt>bb0+0.5)throw new Error(`Low balance: ${b.name} has only ${inr(Math.round(bb0))}, so ${inr(Math.round(amt))} cannot go into UPI Lite`);let nb=mode==="in"?Math.min(5e3,cur+amt):Math.max(0,cur-amt);
   await putRec({id:newId("l_"),kind:"litemove",bank:b.id,amt,dir:mode,time:Date.now(),...(note?{note}:{})});
   let lite={...b.lite,bal:nb,t:Date.now()};await patchRec(b.id,{lite});b.lite=lite;
-  const au=lite.auto;if(mode==="spend"&&au&&au.on&&+au.below>0&&+au.amt>0&&nb<+au.below){const add=Math.min(+au.amt,5e3-nb);if(add>0){await putRec({id:newId("l_"),kind:"litemove",bank:b.id,amt:add,dir:"in",time:Date.now()+1,note:"auto top-up"});lite={...lite,bal:nb+add};await patchRec(b.id,{lite});b.lite=lite;nb+=add}}
+  const au=lite.auto;if(mode==="spend"&&au&&au.on&&+au.below>0&&+au.amt>0&&nb<+au.below){const add=Math.min(+au.amt,5e3-nb,Math.floor(bb0));if(add>0){await putRec({id:newId("l_"),kind:"litemove",bank:b.id,amt:add,dir:"in",time:Date.now()+1,note:"auto top-up"});lite={...lite,bal:nb+add};await patchRec(b.id,{lite});b.lite=lite;nb+=add}}
   return nb}
 const liteBanks=()=>banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on);
 const LITE_APPS=["PhonePe","Google Pay","Paytm","BHIM","Other"];
@@ -3239,8 +3240,8 @@ const sheets={
       const cur=()=>+b.lite.bal||0,room=()=>Math.max(0,5e3-cur());
       const draw=()=>{const c=cur(),r=room();el.querySelector("#l-bal").textContent=inr(c);
         el.querySelectorAll("#l-mode button").forEach(x=>x.classList.toggle("on",x.dataset.m===mode));
-        const max=mode==="in"?r:mode==="out"?c:Math.min(c,1000);
-        el.querySelector("#l-note").innerHTML=mode==="in"?`Money goes from <b>${esc(b.name)}</b> (${inr(bal[id]||0)}) into Lite. Room for <b>${inr(r)}</b> more (Lite holds max ₹5,000).`:mode==="out"?`Money goes back to <b>${esc(b.name)}</b>, the same bank you loaded it from. You can take out up to <b>${inr(c)}</b>.`:`Used Lite to pay someone. Lite balance goes down; the bank is not touched. One Lite payment is up to ₹1,000.`;
+        const bb=Math.max(0,Math.floor(bal[id]||0)),max=mode==="in"?Math.min(r,bb):mode==="out"?c:Math.min(c,1000);
+        el.querySelector("#l-note").innerHTML=mode==="in"?`Money goes from <b>${esc(b.name)}</b> (${inr(bal[id]||0)}) into Lite. Room for <b>${inr(r)}</b> more (Lite holds max ₹5,000).${bb<=0?` <b style="color:var(--sell)">Low balance: this bank has no money to load.</b>`:bb<r?` <b style="color:var(--sell)">Low balance: you can load only ${inr(bb)} now.</b>`:""}`:mode==="out"?`Money goes back to <b>${esc(b.name)}</b>, the same bank you loaded it from. You can take out up to <b>${inr(c)}</b>.`:`Used Lite to pay someone. Lite balance goes down; the bank is not touched. One Lite payment is up to ₹1,000.`;
         el.querySelector("#l-go").textContent=mode==="in"?"Load to Lite":mode==="out"?"Withdraw to bank":"Save payment";
         el.querySelector("#s-q").innerHTML=[100,500,1000,2000,max].filter((v,i,a)=>v>0&&v<=max&&a.indexOf(v)===i).map(v=>`<button type="button" class="chip" data-v="${v}">${v===max&&mode!=="spend"?(mode==="in"?"Fill to max · ":"All · "):""}${inr(v)}</button>`).join("")};
       draw();
@@ -3248,6 +3249,7 @@ const sheets={
       el.querySelector("#s-q").onclick=e=>{const c=e.target.closest("[data-v]");if(c)el.querySelector("#s-amt").value=c.dataset.v};
       el.querySelector("#sf").onsubmit=async e=>{e.preventDefault();const amt=+$("#s-amt").value;if(!(amt>0)){toast("Enter an amount");return}
         const c=cur();
+        if(mode==="in"&&amt>(bal[id]||0)+0.5){toast(`Low balance: ${b.name} has only ${inr(Math.round(Math.max(0,bal[id]||0)))}`);return}
         if(mode==="in"&&amt>room()+0.5){toast(room()>0?`UPI Lite can take only ${inr(room())} more`:"UPI Lite is already full (₹5,000)");return}
         if(mode!=="in"&&amt>c+0.5){toast(`Lite has only ${inr(c)}`);return}
         if(mode==="spend"&&amt>1000){toast("One UPI Lite payment is up to ₹1,000");return}
@@ -5615,7 +5617,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
     if(!lb)return{state:"failed",msg:"This is a UPI Lite load, but no bank has UPI Lite on. Turn it on in Edit bank first."};
     if(+P.amount>5000-(+lb.lite.bal||0)+0.5)return{state:"failed",msg:"This load is more than the room left in UPI Lite on "+lb.name+". Check the Lite balance first."};
     if(P.utr&&recs.some(r=>r.kind==="litemove"&&r.utr&&normRef(r.utr)===normRef(P.utr)))return{state:"skipped",msg:"This Lite load is already recorded"};
-    await liteApply(lb,"in",+P.amount,P.utr?"receipt "+P.utr:"from receipt");if(P.utr){const r=recs.filter(x=>x.kind==="litemove"&&x.bank===lb.id).sort((a,c)=>c.time-a.time)[0];if(r)await patchRec(r.id,{utr:P.utr})}
+    await liteApply(lb,"in",+P.amount,P.utr?"receipt "+P.utr:"from receipt",true);if(P.utr){const r=recs.filter(x=>x.kind==="litemove"&&x.bank===lb.id).sort((a,c)=>c.time-a.time)[0];if(r)await patchRec(r.id,{utr:P.utr})}
     g.saved=true;try{ixHistUpdate(g)}catch(e){}return{state:"saved",msg:"UPI Lite load recorded on "+lb.name}}catch(e){return{state:"failed",msg:"Couldn't save the Lite load"}}}
   if(g.saved)return{state:"saved",msg:"Already saved"};
   if(g.dups.length&&g.dups.every(d=>d.same))return{state:"skipped",msg:"Already recorded on your matching order"};
@@ -6196,7 +6198,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=140;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=141;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6263,6 +6265,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00141","17 Oct 2026",["UPI Lite: you cannot load more than the bank has. The Load screen shows a red “Low balance” note, only offers amounts the bank can cover, and the bot and auto top-up respect it too (a real receipt is still recorded)."]],
   ["0.0.0.00140","17 Oct 2026",["UPI Lite, all extras: (1) low-balance reminder on Home and from the bot, (2) auto top-up setting (Lite is topped up automatically after a payment drops it below your level), (3) Lite history list, (4) UPI Lite total on the Wallet card, (5) warning for a Lite payment above ₹1,000 in Smart intake, (6) Which bank? suggests Lite for small UPI payments, (7) ask the bot: “Lite me kitna hai”, “SBI Lite me 1000 load karo”, “Lite se 500 nikalo”, (8) a PhonePe “Added to UPI Lite” receipt is recorded as a Lite load in Smart intake."]],
   ["0.0.0.00139","17 Oct 2026",["UPI Lite on more than one bank: each bank can now say which app its Lite is in (PhonePe, Google Pay, Paytm, BHIM). Smart intake reads the app from the receipt and deducts from the matching bank; if nothing matches it uses the Lite bank that has enough balance."]],
   ["0.0.0.00138","17 Oct 2026",["Smart intake now understands payments made with UPI Lite (e.g. PhonePe “Debited from UPI Lite”): the payer is treated as you, the source is your bank that has UPI Lite on, and “Powered by YES BANK” at the bottom is no longer taken for another bank. On save the amount comes off the Lite balance, not the bank balance."]],

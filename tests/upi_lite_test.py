@@ -47,6 +47,8 @@ async def main():
     await pg.wait_for_timeout(800)
     bal=await pg.evaluate("Math.round(balances().bal['B1'])")
     chk('bank balance fell only by what really went into Lite (10000-1000-3850)',bal==5150)
+    err2=await pg.evaluate("(async()=>{const b={id:'ZZ',name:'Empty bank',lite:{on:true,bal:0}};try{await liteApply(b,'in',999999,'t');return 'noerr'}catch(e){return String(e.message||e)}})()")
+    chk("cannot load more than the bank has (Low balance error)",'Low balance' in err2)
     # bot
     async def ask(q):
       return await pg.evaluate("""(q)=>{const o=document.createElement('div');document.body.appendChild(o);const n0=document.querySelectorAll('.acard').length;let ok=false;try{ok=laAnswer(q,o)}catch(e){}
