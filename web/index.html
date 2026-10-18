@@ -2545,6 +2545,14 @@ function ixZipCols(text){try{const L=String(text||"").split(/\n/).map(x=>x.trim(
       if(vals.length===n&&!vals.some(v=>LAB.test(v))){return labs.map((l,q)=>l+" "+vals[q]).join("\n")+"\n"+L.join("\n")}}
     i=j}
   return String(text||"")}catch(e){return String(text||"")}}
+// KuCoin-style order numbers (24 hex) start with the order's creation time in seconds. So a misread start (6 read as B) can be checked, and fixed, against the "Created At" printed on the same screen
+const IX_CONF={"6":"b8g","b":"683","8":"6b03","0":"od8","o":"0","d":"0","1":"li","l":"1i","i":"1l","5":"s","s":"5","2":"z","z":"2","9":"gq","g":"69","3":"8b","a":"4","e":"c","c":"e"};
+function ixIdHeadOk(h,ts){const v=parseInt(h,16);return /^[0-9a-f]{8}$/.test(h)&&Math.abs(v-ts/1000)<=125}
+function ixIdFix(id,ts){try{if(!id||!(ts>0))return id;const s0=String(id).replace(/\s+/g,"");if(!/^[0-9A-Za-z]{24}$/.test(s0))return id;const low=s0.toLowerCase();if(ixIdHeadOk(low.slice(0,8),ts)){const t=low.slice(8).replace(/[oq]/g,"0").replace(/[li]/g,"1").replace(/s/g,"5").replace(/z/g,"2");return/^[0-9a-f]{16}$/.test(t)?low.slice(0,8)+t:s0}
+  let best=null;const H=low.slice(0,8).split("");const go=(i,arr,n)=>{if(best&&best.n<=n)return;if(i===8){const h=arr.join("");if(ixIdHeadOk(h,ts)&&(!best||n<best.n))best={h,n};return}
+    go(i+1,arr,n);if(n<2)for(const c of(IX_CONF[H[i]]||"")){const a2=arr.slice();a2[i]=c;go(i+1,a2,n+1)}};go(0,H,0);
+  if(!best)return id;const t=low.slice(8).replace(/[oq]/g,"0").replace(/[li]/g,"1").replace(/s/g,"5").replace(/z/g,"2");return/^[0-9a-f]{16}$/.test(t)?best.h+t:best.h+low.slice(8)}catch(e){return id}}
+const ixIdDoubt=(id,ts)=>{const s0=String(id||"").replace(/\s+/g,"");if(!s0)return true;if(/^\d{12,}$/.test(s0))return false;if(/^[0-9A-Za-z]{24}$/.test(s0))return ts>0?!ixIdHeadOk(s0.toLowerCase().slice(0,8),ts):false;return s0.length>=18&&s0.length<=30};
 function ixOrdFrom(text,conf){const t=ixZipCols(text),flat=t.replace(/\s+/g," ");const num=s=>{const n=parseFloat(String(s).replace(/,/g,""));return isFinite(n)?n:null};
   const CUR="(?:₹|Rs\\.?|INR|[~£<¥%?=])";
   let id=null;{const wm=t.match(/(?:order\s*(?:no\.?|number|id|#)|订单号?)\s*[:：#]?\s*([0-9A-Za-z]{14,40})(?:[ \t]+[^\s]{1,2})?[ \t]*\n+[ \t]*([0-9A-Za-z]{2,8})[ \t]*(?:\n|$)/i);if(wm&&(/\d/.test(wm[2])||(/^[0-9a-f]{1,8}$/i.test(wm[2])&&wm[1].length>=18&&wm[1].length+wm[2].length<=34))&&!IX_LABELISH.test(wm[2]))id=wm[1]+wm[2]}
@@ -2568,7 +2576,23 @@ function ixOrdFrom(text,conf){const t=ixZipCols(text),flat=t.replace(/\s+/g," ")
     const mr=flat.match(new RegExp(lab+"\\D{0,16}"+CUR+"\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)","i"));
     if(mc){const q=num(mc[1]),pc=mc[3]?num(mc[3]):null;if(q>0&&(!crypto||q<crypto*0.05)){tdsQ=q;if(fiat&&pc)tds=+(fiat*pc/100).toFixed(2);else if(price)tds=+(q*price).toFixed(2)}}
     else if(mr){const v=num(mr[1]);if(v>0&&(!fiat||v<fiat*0.05))tds=v}}
-  return{nick,why,tds,tdsQ,id,status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,whenAlts:whenAlts,conf:conf}}
+  return{nick,why,tds,tdsQ,id:ixIdFix(id,ts),status:st?st[0].toUpperCase()+st.slice(1).toLowerCase():null,buyer,seller,fiat,crypto,coin,price,method:verMeth(flat)||null,when:ixMs(ts),acct:null,platform:(flat.match(IX_EXCH)||[])[0]||null,side:ixOrdSide(flat),cp,whenAlt:whenAlt,whenAlts:whenAlts,conf:conf}}
+// the order number is unclear: cut out just that place, enlarge it and read it again, then trust it only if it fits the creation time
+async function ixZoomCrop(file,box){const bmp=await createImageBitmap(file);const W=bmp.width,H=bmp.height,x0=Math.max(0,Math.floor(box.x)),y0=Math.max(0,Math.floor(box.y)),w=Math.min(W-x0,Math.ceil(box.w)),h=Math.min(H-y0,Math.ceil(box.h));if(w<20||h<10)return null;
+  const k=Math.max(3,Math.min(6,1500/w)),c=document.createElement("canvas");c.width=Math.round(w*k);c.height=Math.round(h*k);const g=c.getContext("2d");g.imageSmoothingEnabled=true;g.imageSmoothingQuality="high";g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(bmp,x0,y0,w,h,0,0,c.width,c.height);
+  const d=g.getImageData(0,0,c.width,c.height),px=d.data;let lo=255,hi=0;for(let i=0;i<px.length;i+=4){const v=(px[i]*299+px[i+1]*587+px[i+2]*114)/1000;px[i]=v;if(v<lo)lo=v;if(v>hi)hi=v}
+  let dark=0,n=0;for(let i=0;i<px.length;i+=64){dark+=px[i];n++}const inv=dark/n<110,sp=Math.max(1,hi-lo);for(let i=0;i<px.length;i+=4){let v=(px[i]-lo)*255/sp;if(inv)v=255-v;v=v<128?Math.max(0,v*.55):Math.min(255,128+(v-128)*1.6);px[i]=px[i+1]=px[i+2]=v;px[i+3]=255}g.putImageData(d,0,0);
+  return await new Promise(r=>c.toBlob(r,"image/png"))}
+async function ixZoomReadBlob(b){if(window.P2POcr&&P2POcr.recognize){try{const n=await ixNativeOcr(b,20000);return n.text||""}catch(e){}}try{const w=await ocrInit();const r=await Promise.race([w.recognize(b),new Promise((_,no)=>setTimeout(()=>no(new Error("t")),30000))]);return(r.data&&r.data.text)||""}catch(e){return""}}
+function ixZoomBox(it,W,H){const L=((it.ocr||{}).lines||[]).filter(x=>x&&x[0]&&x[4]>x[2]&&x[3]>x[1]);if(!L.length)return null;const mx=Math.max(...L.map(x=>Math.max(+x[3],+x[4]))),sc=mx<=1.5?[W,H]:[1,1];
+  const B=L.map(x=>({t:String(x[0]),l:x[1]*sc[0],t0:x[2]*sc[1],r:x[3]*sc[0],b:x[4]*sc[1]}));const lab=B.find(x=>/order\s*(?:no\.?|number|id|#)|订单号?/i.test(x.t));if(!lab)return null;const h=lab.b-lab.t0;
+  const idl=B.filter(x=>x!==lab&&x.t0>=lab.t0-h&&x.t0<=lab.b+h*3.2&&x.l>=lab.r-4&&/^[0-9A-Za-z]{2,40}$/.test(x.t.replace(/\s+/g,""))&&/\d/.test(x.t));const src=idl.length?idl:[lab];
+  const x0=Math.min(lab.r,...src.map(x=>x.l))-h*.6,y0=Math.min(lab.t0,...src.map(x=>x.t0))-h*.5,x1=Math.max(...src.map(x=>x.r))+h*.8,y1=Math.max(lab.b,...src.map(x=>x.b))+h*.7;return{x:x0,y:y0,w:x1-x0,h:y1-y0}}
+async function ixZoomIds(items){for(const it of items||[]){try{const O=it.ord;if(!O||it.zoomTried)continue;const ts=O.when?new Date(String(O.when).replace(" ","T")).getTime():0;if(!ixIdDoubt(O.id,ts))continue;it.zoomTried=true;
+    const bmp=await createImageBitmap(it.file),box=ixZoomBox(it,bmp.width,bmp.height);if(!box)continue;const blob=await ixZoomCrop(it.file,box);if(!blob)continue;const txt=await ixZoomReadBlob(blob);if(!txt)continue;
+    const cands=[...new Set([...(txt.replace(/\s+/g,"").match(/[0-9A-Za-z]{18,30}/g)||[]),...(txt.match(/[0-9A-Za-z]{18,30}/g)||[])])];let pick=null;
+    for(const c of cands){const f=ixIdFix(c,ts);if(/^[0-9a-f]{24}$/.test(String(f).toLowerCase())&&ixIdHeadOk(String(f).toLowerCase().slice(0,8),ts)){pick=String(f).toLowerCase();break}if(!pick&&/^\d{12,24}$/.test(c))pick=c}
+    if(pick&&pick!==O.id){O.idRead=O.id;O.id=pick;O.idZoom=true;it.zoomed=true}else if(pick){it.zoomed=true}}catch(e){}}}
 // ---- OCR: on-phone ML Kit when the app has it, otherwise the tesseract engine; one result per picture, never throws
 const ixOcrCache=new Map();let ixNative=0;
 function ixNativeOcr(blob,ms){return new Promise((ok,no)=>{if(!(window.P2POcr&&P2POcr.recognize))return no(new Error("none"));
@@ -2582,7 +2606,7 @@ function ixRowsText(lines){try{const L=(lines||[]).filter(x=>x&&x[0]&&String(x[0
   return rows.map(r=>r.items.sort((a,b)=>a.l-b.l).map(i=>i.t).join("   ")).join("\n")}catch(e){return""}}
 window.P2POcrResult=(id,text,conf,err,lines,extra)=>{const f=(window.__ocrCb||{})[id];if(f)f(text,conf,err,lines,extra)};
 async function ixOcr(it,skip){if(ixOcrCache.has(it.hash))return ixOcrCache.get(it.hash);let r=null;
-  if(window.P2POcr&&P2POcr.recognize){try{const n=await ixNativeOcr(it.file,45000);const rt=ixRowsText(n.lines),X2=n.extra||{},alt2=X2.l2?ixRowsText(X2.l2):"";r={text:rt&&rt.replace(/\s/g,"").length>=n.text.replace(/\s/g,"").length*0.8?rt:n.text,raw:n.text,alt:(alt2&&alt2.replace(/\s/g,"").length>=20?alt2:(X2.t2||"")),big:X2.t3||"",conf:n.conf==null?90:n.conf,engine:"ML Kit",status:n.text.trim().length>8?"ok":"partial"}}catch(e){}}
+  if(window.P2POcr&&P2POcr.recognize){try{const n=await ixNativeOcr(it.file,45000);const rt=ixRowsText(n.lines),X2=n.extra||{},alt2=X2.l2?ixRowsText(X2.l2):"";r={text:rt&&rt.replace(/\s/g,"").length>=n.text.replace(/\s/g,"").length*0.8?rt:n.text,raw:n.text,alt:(alt2&&alt2.replace(/\s/g,"").length>=20?alt2:(X2.t2||"")),big:X2.t3||"",conf:n.conf==null?90:n.conf,engine:"ML Kit",lines:n.lines||null,status:n.text.trim().length>8?"ok":"partial"}}catch(e){}}
   if(!r){
     // everything the phone reader does for this picture is one job; "skip" (or the 25 s auto-skip with an AI connected) must be able to end it at any point
     const tess=async()=>{const w=await ocrInit();const prepd=await Promise.race([ocrPrep(it.file),new Promise(r2=>setTimeout(()=>r2(it.file),15000))]);
@@ -5918,7 +5942,7 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
       ixS.stage="verify";msg="Verifying…";await ixFinish(ixS.groups,false);
       if(items.length>used.length)toast("Only the first "+used.length+" pictures were read without the phone reader");
     }else{
-      ixS.stage="extract";msg="Identifying and extracting…";items.forEach(it=>ixItem(it));ixReconcile(items);
+      ixS.stage="extract";msg="Identifying and extracting…";items.forEach(it=>ixItem(it));try{await ixZoomIds(items)}catch(e){}ixReconcile(items);
       ixS.stage="match";msg="Matching payments with orders…";ixS.groups=ixGroup(items);
       ixS.stage="verify";msg="Verifying…";
       const needAI=ixAiReady();if(needAI){const gs=ixS.groups;gs.forEach(g=>ixVerify(g));if(gs.some(g=>g.reasonsAI.length))msg="Double-checking unclear parts with AI…"}
@@ -6300,7 +6324,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=153;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=154;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6367,6 +6391,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00154","18 Oct 2026",["Smart Intake order number: a KuCoin-style order number starts with the order’s creation time, so the app now checks the start of the number against the “Created At” on the screen and fixes a misread character (for example 6 read as B). If the number still looks doubtful, the app cuts out just that place, enlarges it three times and reads it again before it trusts it."]],
   ["0.0.0.00153","18 Oct 2026",["UPI Lite payment in Smart Intake now has a bank picker (“UPI Lite bank”). It shows the bank read from the logo, or asks you to pick when the receipt does not name one. The bank you choose is the one the Lite balance is taken from."]],
   ["0.0.0.00152","18 Oct 2026",["UPI Lite spend with Lite on several banks: the AI now reads the small bank logo on the Lite icon (for example SBI) and the payment is taken from that bank. If the receipt does not show a bank, the card warns “Which bank has this UPI Lite?” instead of silently picking one."]],
   ["0.0.0.00151","18 Oct 2026",["Smart Intake: the paying account no longer picks up digits from a UPI ID. The last 4 digits are now read only from account numbers (never from anything with an @), in every place the app derives them, and the AI is told the same."]],
