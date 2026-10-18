@@ -2874,6 +2874,10 @@ function ixVerify(g){const P=(g.pays.find(x=>!x.support)||g.pays[0]||{}).pay,O=(
   const X={pay:g.aiPay||P||{status:null,amount:null,currency:null,sender:null,receiver:null,utr:null,method:null,bank:null,date:null,time:null,acct:null,conf:null},ord:g.aiOrd||O||{id:null,status:null,buyer:null,seller:null,fiat:null,crypto:null,coin:null,price:null,method:null,when:null,acct:null,conf:null},flags:g.aiFlags||[]};
   // clean junk names, then fill in YOUR side: the receipt rarely prints your own name, and the exchange order never prints it
   g.inferred=[];X.pay={...X.pay};X.ord={...X.ord};if(g.partSum&&X.pay)X.pay.amount=g.partSum;
+  // the amount that was finally chosen (often the AI's) must fit the order. If it does not, a misread rupee sign glued on as a digit is the usual cause ("₹5,083.09" read as 75,083): try the phone's own reading, then the figure without its first digit, and take one only if it is exactly the order total
+  try{const tot=X.ord&&X.ord.fiat!=null?X.ord.fiat:(X.ord&&X.ord.crypto&&X.ord.price?X.ord.crypto*X.ord.price:null),v=X.pay&&X.pay.amount;if(!g.partSum&&tot>0&&v>0){const fit=a=>a>0&&Math.abs(a-tot)<=Math.max(1,tot*0.002);
+    if(!fit(v)){const C=[];(g.pays||[]).forEach(q=>{if(q.pay){if(q.pay.amount>0)C.push(q.pay.amount);(q.pay.amountAlts||[]).forEach(z=>C.push(z))}});const str=v.toFixed(2).replace(/\.00$/,"");if(/^[721]/.test(str)&&str.replace(/\.\d+$/,"").length>=4)C.push(+str.slice(1));
+      const hit=C.find(fit);if(hit!=null){X.pay.amountRead=v;X.pay.amount=hit;X.pay.amountFixed=true}}}}catch(e){}
   {const lt=/\bupi\s*lite\b/i,PX=X.pay;if(PX.lite||lt.test(PX.sender||"")||lt.test(PX.bank||"")||lt.test(PX.acct||"")||/^lite\b/i.test(PX.sender||"")){PX.lite=true;if(!PX.sender||/lite/i.test(PX.sender))PX.sender=null;const gs=new Set([PX.liteGuess,...(g.pays||[]).map(x=>x.pay&&x.pay.liteGuess)].filter(Boolean)),fb=g.liteBank?banks.find(b=>b.id===g.liteBank&&b.lite&&b.lite.on):null,hn=fb||ixLiteHint([PX.bank,...(g.pays||[]).map(x=>x.pay&&x.pay.bank),...(g.pays||[]).map(x=>x.pay&&x.pay.fromLabel)].filter(h=>!gs.has(h)),PX.liteApp),lb=hn||ixLiteBank(PX.amount,PX.liteApp);g.liteCur=lb?lb.id:"";g.liteAmbig=!hn&&banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on&&(!PX.liteApp||b.lite.app===PX.liteApp)).length>1;if(lb){PX.bank=lb.bankName||lb.name;const l4=lb.accNo?String(lb.accNo).replace(/\D/g,"").slice(-4):"";if(l4){PX.acct="••"+l4;(g.pays||[]).forEach(x=>{if(x.pay&&!x.support){x.pay.last4=l4;x.pay.bank=PX.bank}})}}}}
   ["sender","receiver"].forEach(k=>{if(X.pay[k]){const c=ixNameClean(X.pay[k]);X.pay[k]=c||null}});["buyer","seller"].forEach(k=>{if(X.ord[k]){const c=ixNameClean(X.ord[k]);X.ord[k]=c||null}});
   ixResolveDates(g,X);
@@ -6326,7 +6330,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=155;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=156;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6393,6 +6397,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00156","18 Oct 2026",["Smart Intake amount: when the payment amount finally chosen (often the AI reading) does not fit the order, the app now also tries the phone’s own reading and the figure without a wrongly read first digit (₹5,083.09 read as 75,083), and takes one only when it is exactly the order total. Before, this fix only ran on the phone reading, so a wrong AI amount stayed and showed as a mismatch."]],
   ["0.0.0.00155","18 Oct 2026",["Smart Intake, Recent intakes list: tapping a row now opens a detail sheet (result, time, order number, risk, why it needs a look, and Open order / Scan again / Remove). A “Clear not saved” button removes the checks you never saved. This list is only a log of what you checked; it never changes your orders."]],
   ["0.0.0.00154","18 Oct 2026",["Smart Intake order number: a KuCoin-style order number starts with the order’s creation time, so the app now checks the start of the number against the “Created At” on the screen and fixes a misread character (for example 6 read as B). If the number still looks doubtful, the app cuts out just that place, enlarges it three times and reads it again before it trusts it."]],
   ["0.0.0.00153","18 Oct 2026",["UPI Lite payment in Smart Intake now has a bank picker (“UPI Lite bank”). It shows the bank read from the logo, or asks you to pick when the receipt does not name one. The bank you choose is the one the Lite balance is taken from."]],
