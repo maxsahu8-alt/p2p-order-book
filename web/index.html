@@ -1355,7 +1355,7 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
 .qab:active{transform:scale(.99)}
 #p-wallet .bank{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 .ixr[data-ixh]{cursor:pointer;-webkit-tap-highlight-color:transparent}.ixr[data-ixh]:active{transform:scale(.985);background:var(--soft)}
-.qh{padding:16px;gap:16px}.qh .qhi{width:58px;height:58px;border-radius:17px;box-shadow:0 6px 14px -6px color-mix(in srgb,currentColor 0%,rgba(0,0,0,.35))}.qh .qhi svg{width:32px;height:32px;stroke-width:1.7}.qh b{font-size:1rem}
+.qh{min-height:0;gap:0;justify-content:space-between}.qh .qhi{position:static;width:48px;height:48px;border-radius:14px;margin-bottom:16px}.qh .qhi svg{width:26px;height:26px;stroke-width:1.75}.qh .qht{display:block;width:100%;min-width:0}.qh b{font-size:1rem}
 .aifab:active{transform:scale(.92)}@keyframes fabIn{from{opacity:0}}
 .aipop{position:fixed;inset:0;z-index:55;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,14,22,0);transition:background .18s}
 .aipop[hidden]{display:none}.aipop.open{background:rgba(10,14,22,.4)}
@@ -6398,7 +6398,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
-  ["0.0.0.00157","18 Oct 2026",["Add sheet: new, bigger icons for New order (a coin with swap arrows) and Smart intake (a scan frame with a spark). The icon tiles are 58 px instead of 40 px and the cards are a little roomier."]],
+  ["0.0.0.00157","18 Oct 2026",["Add sheet: new icons for New order (a coin with swap arrows) and Smart intake (a scan frame with a spark), a little bigger (48 px instead of 40 px). The icon now sits in the card instead of floating over it, so it can never cover the title."]],
   ["0.0.0.00156","18 Oct 2026",["Smart Intake amount: when the payment amount finally chosen (often the AI reading) does not fit the order, the app now also tries the phone’s own reading and the figure without a wrongly read first digit (₹5,083.09 read as 75,083), and takes one only when it is exactly the order total. Before, this fix only ran on the phone reading, so a wrong AI amount stayed and showed as a mismatch."]],
   ["0.0.0.00155","18 Oct 2026",["Smart Intake, Recent intakes list: tapping a row now opens a detail sheet (result, time, order number, risk, why it needs a look, and Open order / Scan again / Remove). A “Clear not saved” button removes the checks you never saved. This list is only a log of what you checked; it never changes your orders."]],
   ["0.0.0.00154","18 Oct 2026",["Smart Intake order number: a KuCoin-style order number starts with the order’s creation time, so the app now checks the start of the number against the “Created At” on the screen and fixes a misread character (for example 6 read as B). If the number still looks doubtful, the app cuts out just that place, enlarges it three times and reads it again before it trusts it."]],
