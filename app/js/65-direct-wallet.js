@@ -173,7 +173,7 @@ Object.assign(sheets,{
       <div class="uqact"><button type="button" class="mini ghost" id="uq-cid">Copy UPI ID</button><button type="button" class="mini ghost" id="uq-clink">Copy pay link</button><button type="button" class="mini psdl" id="uq-save">Save QR image</button></div>
       <p class="note">Buyer scans with any UPI app. The amount and note are filled in for them.</p>`,async el=>{
       const q=x=>el.querySelector(x);let qr=null;
-      try{await loadQR()}catch(err){q("#uq-qr").innerHTML='<span class="note">QR tool could not load. Check internet.</span>';return}
+      try{await loadQR()}catch(err){const x=q("#uq-qr");if(x)x.innerHTML='<span class="note">QR tool could not load. Check internet.</span>';return}if(!el.isConnected)return;
       const cur=()=>{const sv=q("#uq-sel");const id=sv&&sv.value!=="o"?ids[+sv.value].v:q("#uq-id").value.trim();return{id,name:q("#uq-name").value.trim(),amt:+q("#uq-amt").value||0,note:q("#uq-note").value.trim()}};
       const link=c=>"upi://pay?"+[["pa",c.id],["pn",c.name],c.amt?["am",c.amt.toFixed(2)]:null,["cu","INR"],c.note?["tn",c.note]:null].filter(x=>x&&x[1]).map(([k,v])=>k+"="+encodeURIComponent(v)).join("&");
       const ok=id=>/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(id);
@@ -272,7 +272,7 @@ Object.assign(sheets,{
       <div class="pcprev"><img id="pc-img" alt="Payment card preview"></div>
       <div class="pcact"><button type="button" class="mini ghost" id="pc-copy"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy text</button><button type="button" class="mini ghost" id="pc-save"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Save</button><button type="button" class="mini psdl" id="pc-share"><svg viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg>Share</button></div></div>`,async el=>{
       const q=x=>el.querySelector(x);
-      try{await loadQR()}catch(err){}
+      try{await loadQR()}catch(err){}if(!el.isConnected)return;
       const list=()=>mode==="mine"?mine:pAcc(parties.find(p=>p.id===party)||{});
       const cur=()=>{const L=list();const x=L[mode==="mine"?src:acc]||L[0]||{};return{...x,amt:+q("#pc-amt").value||0,note:q("#pc-note").value.trim(),mode,pname:mode==="party"?(parties.find(p=>p.id===party)||{}).name:""}};
       const pick=()=>{el.querySelectorAll("#pc-mode button").forEach(b=>b.classList.toggle("on",b.dataset.m===mode));

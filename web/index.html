@@ -3706,7 +3706,7 @@ Object.assign(sheets,{
       <div class="uqact"><button type="button" class="mini ghost" id="uq-cid">Copy UPI ID</button><button type="button" class="mini ghost" id="uq-clink">Copy pay link</button><button type="button" class="mini psdl" id="uq-save">Save QR image</button></div>
       <p class="note">Buyer scans with any UPI app. The amount and note are filled in for them.</p>`,async el=>{
       const q=x=>el.querySelector(x);let qr=null;
-      try{await loadQR()}catch(err){q("#uq-qr").innerHTML='<span class="note">QR tool could not load. Check internet.</span>';return}
+      try{await loadQR()}catch(err){const x=q("#uq-qr");if(x)x.innerHTML='<span class="note">QR tool could not load. Check internet.</span>';return}if(!el.isConnected)return;
       const cur=()=>{const sv=q("#uq-sel");const id=sv&&sv.value!=="o"?ids[+sv.value].v:q("#uq-id").value.trim();return{id,name:q("#uq-name").value.trim(),amt:+q("#uq-amt").value||0,note:q("#uq-note").value.trim()}};
       const link=c=>"upi://pay?"+[["pa",c.id],["pn",c.name],c.amt?["am",c.amt.toFixed(2)]:null,["cu","INR"],c.note?["tn",c.note]:null].filter(x=>x&&x[1]).map(([k,v])=>k+"="+encodeURIComponent(v)).join("&");
       const ok=id=>/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(id);
@@ -3805,7 +3805,7 @@ Object.assign(sheets,{
       <div class="pcprev"><img id="pc-img" alt="Payment card preview"></div>
       <div class="pcact"><button type="button" class="mini ghost" id="pc-copy"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy text</button><button type="button" class="mini ghost" id="pc-save"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Save</button><button type="button" class="mini psdl" id="pc-share"><svg viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg>Share</button></div></div>`,async el=>{
       const q=x=>el.querySelector(x);
-      try{await loadQR()}catch(err){}
+      try{await loadQR()}catch(err){}if(!el.isConnected)return;
       const list=()=>mode==="mine"?mine:pAcc(parties.find(p=>p.id===party)||{});
       const cur=()=>{const L=list();const x=L[mode==="mine"?src:acc]||L[0]||{};return{...x,amt:+q("#pc-amt").value||0,note:q("#pc-note").value.trim(),mode,pname:mode==="party"?(parties.find(p=>p.id===party)||{}).name:""}};
       const pick=()=>{el.querySelectorAll("#pc-mode button").forEach(b=>b.classList.toggle("on",b.dataset.m===mode));
@@ -6581,7 +6581,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=163;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=164;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6648,6 +6648,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00164","22 Oct 2026",["Fix: closing the UPI QR maker or Payment card sheet before its tool had loaded could cause an error. Now it just closes quietly."]],
   ["0.0.0.00163","22 Oct 2026",["App is now built from separate modules (nothing changes for you). New: About > Features and licence. Switch optional parts on or off (Counterparties, Lite, Direct, AI, Market…), and unlock parts with a licence code. Owner tools make keys and codes on your phone."]],
   ["0.0.0.00162","22 Oct 2026",["Counterparties, 12 more things: Repeat last order (in the order form and on their profile); special rate that fills in by itself; follow-up reminders; a suggestion to block someone after 3 cancelled orders; per-person limits (per order and per day); Smart Intake now warns about blocked / slow-paying people and limits; dated notes log; photos and documents on a profile; top-3 concentration and a Top clients screen (volume, profit, orders); khata balance on the profile; Gold / Silver / Bronze rings by volume."]],
   ["0.0.0.00161","22 Oct 2026",["Counterparties, 10 new things: trust score and profit on every row; labels (Fast payer, Slow payer, Third-party pays…) plus your own; phone, WhatsApp and Telegram buttons; known UPI IDs and payers (a repeat payer you already completed is no longer flagged as a mismatch); duplicate review banner; tabs for Idle (no order for 30 days); sort by Best customers; average completion time; warning for an unusually large amount or a big first deal; CSV export for everyone and for one person; share a statement on WhatsApp."]],
