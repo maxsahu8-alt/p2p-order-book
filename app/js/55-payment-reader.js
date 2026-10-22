@@ -25,6 +25,10 @@ function ixTimeAlts(t){try{t=String(t||"").replace(/['’‘`´]\s?(\d{2})\b/g,"
   if(m=t.match(/(?<![\d\/])(\d{1,2})\/(\d{1,2})(?![\d\/])[\s,]+(\d{1,2}:\d{2})/)){const a=+m[1],b=+m[2],c=m[3];let y=new Date().getFullYear();
     const one=(d,mo)=>{let v=mk(d,mo,y,c);if(v>now+864e5)v=mk(d,mo,y-1,c);return v};const L=[one(a,b),a!==b?one(b,a):0].filter(Boolean);return{alts:[...new Set(L)],amb:L.length>1}}
   return{alts:[],amb:false}}catch(e){return{alts:[],amb:false}}}
+// PhonePe transaction ids carry the payment time: T + yymmddHHMMSS + digits (T2610222342058895458329 = 22 Oct 2026, 23:42:05).
+// Used to double-check the time the reader found (a dark screenshot can lose the first digit of "11:42" and give 1:42).
+function payIdTime(t){try{const m=String(t||"").match(/\bT(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\d{6,}\b/);if(!m)return 0;const y=2000+ +m[1],mo=+m[2],d=+m[3],h=+m[4],mi=+m[5];
+  if(!(mo>=1&&mo<=12&&d>=1&&d<=31&&h<=23&&mi<=59))return 0;const dt=new Date(y,mo-1,d,h,mi);if(dt.getMonth()!==mo-1)return 0;const ms=dt.getTime(),now=Date.now();if(ms>now+15*6e4||now-ms>400*864e5)return 0;return ms}catch(e){return 0}}
 function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);const flat=lines.join(" ");
   const P={amount:0,utr:"",sender:"",receiver:"",bank:"",last4:"",time:0,status:"",dir:"",method:"UPI",ok:false};if(!flat)return P;
   // amount: first ₹ / Rs / INR figure (OCR often turns ₹ into ~ £ < ?), skipping balance / fee lines
@@ -55,6 +59,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   const flatV=flat.replace(/\S*\d\S*\s?@\s?[A-Za-z]\S*/g," ");const l4=flatV.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*\d*?(\d{4})\b/i)||flatV.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);P.last4=l4?l4[1]:"";
   P.time=payTime(flat)||payTime(flat.replace(/['’‘`´]\s?(\d{2})\b/g," 20$1"));
   {const ta=ixTimeAlts(flat);P.timeAlts=ta.amb&&ta.alts.includes(P.time)?ta.alts:(P.time?[P.time]:ta.alts);if(!P.time&&ta.alts.length)P.time=ta.alts[0]}
+  P.idTime=payIdTime(flat);if(P.idTime&&(!P.time||(new Date(P.time).toDateString()===new Date(P.idTime).toDateString()&&Math.abs(P.time-P.idTime)>10*6e4))){P.timeRead=P.time||0;P.time=P.idTime;P.timeAlts=[P.idTime]}
   const nameOf=v=>{v=v.replace(/\(.*?\)/g," ").replace(/\S+@\S+/g," ");PAY_BANKS.forEach(([,re])=>{v=v.replace(new RegExp(re.source,"ig")," ")});v=v.replace(/\b(?:a\/c|acct?|account|no\.?|ref|upi|vpa|bank|ltd|limited)\b/ig," ").replace(/[xX*•]{2,}\d*/g," ").replace(/[^A-Za-z .'\-]/g," ").replace(/\s+/g," ").trim();v=ixNameClean(v)||"";return v.length>=2?v.slice(0,40):""};
   const grab=re=>{for(let i=0;i<lines.length;i++){const m=lines[i].match(re);if(!m)continue;let v=(m[1]||"").trim();if(!v&&lines[i+1])v=lines[i+1];const n=nameOf(v);if(n)return n}return ""};
   P.receiver=grab(/^(?:banking name|beneficiary(?: name)?)\b\s*[:\-]?\s*(.*)$/i)||grab(/^(?:paid to|money sent to|sent to|transferred to|credited to|beneficiary(?: name)?|banking name|to)\b\s*[:\-]?\s*(.*)$/i);
