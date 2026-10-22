@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=166;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=167;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00167","23 Oct 2026",["Updates: the check now shows what it is doing (Contacting GitHub, Downloading…), never runs longer than 2 minutes, tries a second GitHub address if the first does not answer, and says clearly if it fails. The Check button no longer stays on \"Checking…\" forever."]],
   ["0.0.0.00166","23 Oct 2026",["Smart Intake, BUY orders: the exchange page shows only the other person (Counterparty), but the app also put that name as the Buyer, so your own payment looked like a name mismatch (e.g. DEEPAK SAHU vs AMIT MISHRA). Now, when the payment went out of one of your own banks (matched by the last 4 digits), the name your bank prints is treated as you and the Buyer is you. Payments from someone else's account, or to the wrong seller, are still flagged."]],
   ["0.0.0.00165","22 Oct 2026",["Smart Intake: an amount like 19,407.46 followed by the letters AM (avatar) was read as the time 07:46 AM, so a correct payment looked like it was made before the order. Fixed. When the screenshot says \"02:11 pm on 22 Oct 2026\" that time is now used."]],
   ["0.0.0.00164","22 Oct 2026",["Fix: closing the UPI QR maker or Payment card sheet before its tool had loaded could cause an error. Now it just closes quietly."]],
@@ -259,7 +260,7 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
       <div class="abbtn"><button type="button" class="mini ghost" id="ab-bk">Backup now</button><button type="button" class="mini ghost" data-sheet="imphist">Import history</button><button type="button" class="mini ghost" data-sheet="features">Features and licence</button></div></div>
     <p class="note abf">Made for P2P merchants${pref("owner")?" · "+esc(pref("owner")):""}<br>${APP_NAME} v${APP_VER}</p></div>`,el=>{const q=s=>el.querySelector(s);
     if(q("#ab-apply"))q("#ab-apply").onclick=e=>appApply(pv,e.currentTarget);
-    if(q("#ab-chk"))q("#ab-chk").onclick=e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Checking…";try{window.P2PNative.checkUpdate()}catch(err){b.disabled=false;b.textContent="Check for updates"}};
+    if(q("#ab-chk"))q("#ab-chk").onclick=e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Checking…";setTimeout(()=>{if(b.isConnected&&b.disabled){b.disabled=false;b.textContent="Check for updates";toast("No answer yet. Close the app fully, open it again and try on wifi.")}},150000);try{window.P2PNative.checkUpdate()}catch(err){b.disabled=false;b.textContent="Check for updates"}};
     q("#ab-fb").onclick=()=>sheets.feedback();q("#ab-bk").onclick=()=>{closeSheet();$("#bkExport").click()};
     if(q("#ab-now"))q("#ab-now").onclick=async e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Starting…";
       try{await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:TRIG,text:"Instant run requested from the app's About page."},{cache:false});b.textContent="Started ✓";toast("Update started. Preview in about 10–20 minutes.")}

@@ -12,4 +12,4 @@ open("/tmp/_chk.js","w").write(js)
 subprocess.check_call(["node","--check","/tmp/_chk.js"])
 print("syntax ok")
 PY
-python3 tools/make_web.py "$OUT"
+python3 tools/make_web.py "$OUT" --repo maxsahu8-alt/p2p-order-book --notes "${APK_NOTES:-}"

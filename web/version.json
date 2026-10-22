@@ -1,17 +1,17 @@
 {
- "web": "0.0166",
- "build": 166,
- "display": "0.0.0.00166",
+ "web": "0.0167",
+ "build": 167,
+ "display": "0.0.0.00167",
  "files": {
-  "index.html": "56e050dcee5193eab91a96bae7bad4a3a2869143",
+  "index.html": "c40e9a5d450465eac993e7bdac9d1bbe433d9341",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
  },
  "apk": {
-  "code": 24,
-  "name": "0.0.0.00102",
-  "url": "",
-  "notes": ""
+  "code": 25,
+  "name": "0.0.0.00103",
+  "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
+  "notes": "Safer update check: shows progress, 2-minute limit, second GitHub address, clear errors."
  }
 }

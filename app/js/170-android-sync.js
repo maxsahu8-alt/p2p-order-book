@@ -29,6 +29,7 @@ if(APK){const N=window.P2PNative;document.body.classList.add("apk");
     if(!$("#sheetBg").hidden){closeSheet();return true}if(!$("#drawer").hidden){$("#drawer").hidden=true;return true}const ap=$("#aiPop");if(ap&&!ap.hidden){closeAiPop();return true}
     const us=$("#us");if(us&&!us.hidden&&typeof closeUS==="function"){closeUS();return true}if($("#p-home").hidden){goPage("home");return true}return false};
   window.P2PCheckResult=msg=>{toast(msg);const b=document.getElementById("ab-chk");if(b){b.disabled=false;b.textContent="Check for updates"}};
+  window.P2PCheckProgress=msg=>{const b=document.getElementById("ab-chk");if(b&&b.disabled)b.textContent=msg};
 }
 // ---- Database phone sync (APK only): keeps a copy of every record on your always-on phone
 const DBS_K="p2p_dbs";let dbsCfg={url:"",token:"",on:false,last:0,err:""};try{Object.assign(dbsCfg,JSON.parse(localStorage.getItem(DBS_K)||"{}"))}catch(e){}
