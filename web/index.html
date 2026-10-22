@@ -639,36 +639,52 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .cpwarn.star{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
 .cpwarn.info{color:var(--muted);background:var(--soft)}
 #formTitle.editing{color:var(--warn)}
-.cpnote{margin:-8px 0 12px;line-height:1.45}
-.cpsearch{position:relative;margin-bottom:10px}
+.cpnote{margin:-8px 0 14px;line-height:1.45}
+.cpstat{display:grid;grid-template-columns:.8fr 1.25fr 1.05fr;border:1px solid var(--line);border-radius:16px;background:var(--surface);margin-bottom:12px}
+.cpstat>div{padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.cpstat>div+div{border-left:1px solid var(--line)}
+.cpstat small{font:600 .66rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.cpstat b{font:700 1.08rem var(--display);white-space:nowrap}
+.cpsearch{position:relative;margin-bottom:12px}
 .cpsearch svg{position:absolute;left:13px;top:50%;width:18px;height:18px;transform:translateY(-50%);fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;pointer-events:none}
 .cpsearch input{padding-left:40px;border-radius:12px}
-.cpfs{display:flex;gap:5px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
-.cpfs::-webkit-scrollbar{display:none}
-.cpf{flex:1 1 auto;justify-content:center;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:99px;padding:6px 8px;font:600 .76rem var(--body);cursor:pointer;white-space:nowrap}
-.cpf i{font-style:normal;font-size:.7rem;font-weight:700;background:var(--raised);color:var(--muted);border-radius:99px;padding:1px 6px;min-width:16px;text-align:center}
-.cpf.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-.cpf.on i{background:color-mix(in srgb,var(--bg) 18%,transparent);color:var(--bg)}
+.cpfs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);margin-bottom:10px}
+.cpf{display:flex;justify-content:center;align-items:center;gap:5px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--muted);padding:10px 2px;font:600 .8rem var(--body);cursor:pointer;white-space:nowrap}
+.cpf i{font-style:normal;font-size:.7rem;font-weight:600;color:var(--muted);opacity:.8}
+.cpf.on{color:var(--fg);border-bottom-color:var(--fg)}
+.cpf.on i{color:var(--fg);opacity:1}
+.cpmeta{display:flex;justify-content:space-between;align-items:center;margin:0 2px 8px;font:500 .76rem var(--body);color:var(--muted)}
+.cpsort{display:inline-flex;align-items:center;gap:5px;border:0;background:none;color:var(--muted);font:600 .76rem var(--body);padding:4px 0;cursor:pointer}
+.cpsort svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .cplist{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
-.cprow{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 12px;border-top:1px solid var(--line);align-items:center}
+.cprow{border-top:1px solid var(--line)}
 .cprow:first-child{border-top:0}
-.cpmain{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;min-width:0;border:0;background:none;color:var(--fg);font:inherit;text-align:left;padding:0;cursor:pointer}
-.cpav{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--raised);color:var(--muted);font:700 .8rem var(--body);letter-spacing:.02em}
-.cprow.star .cpav{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
-.cprow.block .cpav{background:color-mix(in srgb,var(--sell) 16%,transparent);color:var(--sell)}
-.cpbody{display:flex;flex-direction:column;gap:2px;min-width:0}
-.cpn{font:700 .95rem var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.cptop{display:grid;grid-template-columns:1fr auto;align-items:center}
+.cpmain{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;min-width:0;border:0;background:none;color:var(--fg);font:inherit;text-align:left;padding:12px 0 12px 14px;cursor:pointer}
+.cpav{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:700 .8rem var(--body);letter-spacing:.02em}
+.cpbody{display:flex;flex-direction:column;gap:3px;min-width:0}
+.cpnl{display:flex;align-items:center;gap:7px;min-width:0}
+.cpn{font:700 .95rem var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;min-width:0}
+.cpp{font:700 .6rem var(--body);font-style:normal;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border-radius:5px;flex:0 0 auto}
+.cpp.star{color:var(--buy);background:color-mix(in srgb,var(--buy) 14%,transparent)}
+.cpp.block{color:var(--sell);background:color-mix(in srgb,var(--sell) 14%,transparent)}
+.cpp.risk{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
 .cpm{font:500 .76rem var(--body);color:var(--muted)}
-.cpc{font:600 .72rem var(--body);color:var(--muted)}
-.cpc.hi{color:var(--sell)}
-.cpgo{display:none}
-.cpgo svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.tagbtns{display:flex;gap:6px}
-.tagbtns button{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:50%;padding:0;cursor:pointer}
-.tagbtns button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.tagbtns button.on.star{background:var(--warn);color:#111;border-color:var(--warn)}
-.tagbtns button.on.star svg{fill:currentColor}
-.tagbtns button.on.block{background:var(--sell);color:#fff;border-color:var(--sell)}
+.cpm .hi{color:var(--sell);font-weight:600}
+.cpr{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.cpr b{font:700 .92rem var(--display);white-space:nowrap}
+.cpr small{font:500 .68rem var(--body);color:var(--muted)}
+.cpmore{width:40px;height:56px;display:grid;place-items:center;border:0;background:none;color:var(--muted);cursor:pointer;padding:0}
+.cpmore svg{width:20px;height:20px;fill:currentColor}
+.cprow.open .cpmore{color:var(--fg)}
+.cpact{display:none;gap:8px;padding:0 14px 12px}
+.cprow.open .cpact{display:flex}
+.tagbtns button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);background:var(--raised);color:var(--fg);border-radius:10px;padding:9px 10px;font:600 .8rem var(--body);cursor:pointer}
+.tagbtns button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tagbtns button.star svg{stroke:var(--warn)}
+.tagbtns button.block svg{stroke:var(--sell)}
+.tagbtns button.on.star{background:color-mix(in srgb,var(--buy) 14%,transparent);border-color:color-mix(in srgb,var(--buy) 40%,transparent)}
+.tagbtns button.on.block{background:color-mix(in srgb,var(--sell) 14%,transparent);border-color:color-mix(in srgb,var(--sell) 40%,transparent)}
 .rep{display:flex;flex-direction:column;gap:12px}
 .rep pre{white-space:pre-wrap;background:var(--soft);border-radius:12px;padding:12px;font:500 .82rem/1.55 var(--mono);margin:0;user-select:text;-webkit-user-select:text}
 .night{background:linear-gradient(135deg,#1b1f3b,#16181a);border:1px solid #2c3160;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px;color:#e8eaff}
@@ -6041,20 +6057,29 @@ function cpCheck(){const n=$("#f-cp").value.trim(),w=$("#cpWarn");if(!n){w.hidde
 $("#f-cp").addEventListener("input",cpCheck);
 function cpDatalist(){const m=cpStats();$("#cpList").innerHTML=parties.map(p=>`<option value="${esc(p.name)}">`).join("")+Object.values(m).filter(x=>!parties.some(p=>p.name.toLowerCase()===x.name.toLowerCase())).sort((a,b)=>b.last-a.last).slice(0,60).map(x=>`<option value="${esc(x.name)}">`).join("")}
 async function setCpTag(name,tag,note){const id=cpKey(name);const cur=cpTag(name);if(cur&&cur.tag===tag&&note===undefined){await delRec(id);return}await putRec({id,kind:"cptag",name,tag,note:note!==undefined?note:(cur&&cur.note)||"",time:Date.now()})}
-sheets.cps=function(){let q="",fl="all";
-  const IC={star:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.6 6.9 19.3l1-5.7-4.1-4 5.7-.8z"/></svg>',block:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M6.2 6.2l11.6 11.6"/></svg>',go:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>'};
+sheets.cps=function(){let q="",fl="all",sort="pri",openN="";
+  const IC={star:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.6 6.9 19.3l1-5.7-4.1-4 5.7-.8z"/></svg>',block:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M6.2 6.2l11.6 11.6"/></svg>',more:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18.5" cy="12" r="1.5"/></svg>',sort:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M8 19l-3-3M8 19l3-3M16 19V5M16 5l-3 3M16 5l3 3"/></svg>'};
+  const SORTS={pri:"Flagged first",vol:"Volume",n:"Orders",last:"Recent"};
   const ini=n=>{const w=String(n).trim().split(/\s+/).filter(Boolean);return((w[0]||"?")[0]+(w.length>1?w[w.length-1][0]:"")).toUpperCase()};
+  const hue=n=>{let h=0;for(const c of String(n))h=(h*31+c.charCodeAt(0))%360;return h};
   const risky=x=>x.n>=3&&x.c/x.n>=0.3;
   const draw=el=>{const m=cpStats();const all=Object.values(m);
-    const cnt={all:all.length,star:0,block:0,risk:0};all.forEach(x=>{const t=cpTag(x.name);if(t&&t.tag==="star")cnt.star++;if(t&&t.tag==="block")cnt.block++;if(risky(x))cnt.risk++});
+    const cnt={all:all.length,star:0,block:0,risk:0};let vol=0,N=0,C=0;
+    all.forEach(x=>{const t=cpTag(x.name);if(t&&t.tag==="star")cnt.star++;if(t&&t.tag==="block")cnt.block++;if(risky(x))cnt.risk++;vol+=x.vol;N+=x.n;C+=x.c});
+    el.querySelector("#cps").innerHTML=`<div><small>People</small><b>${cnt.all}</b></div><div><small>Completed</small><b>${inr(Math.round(vol))}</b></div><div><small>Cancel rate</small><b>${N?Math.round(C/N*100):0}%</b></div>`;
     el.querySelector("#cpf").innerHTML=[["all","All"],["star","Trusted"],["block","Blocked"],["risk","Risky"]].map(([k,l])=>`<button type="button" class="cpf${fl===k?" on":""}" data-f="${k}">${l}<i>${cnt[k]}</i></button>`).join("");
-    const list=Object.values(m).filter(x=>{if(q&&!x.name.toLowerCase().includes(q))return false;const t=cpTag(x.name);if(fl==="star")return t&&t.tag==="star";if(fl==="block")return t&&t.tag==="block";if(fl==="risk")return risky(x);return true}).sort((a,b)=>{const ta=cpTag(a.name),tb=cpTag(b.name);const w=t=>t?(t.tag==="block"?0:1):2;return w(ta)-w(tb)||b.n-a.n}).slice(0,80);
-    el.querySelector("#cpl").innerHTML=list.length?list.map(x=>{const t=cpTag(x.name);const tg=t?t.tag:"";const rate=x.n?Math.round(x.c/x.n*100):0;
-      return `<div class="cprow ${tg}"><button type="button" class="cpmain" data-tr="${esc(x.name)}"><span class="cpav">${esc(ini(x.name))}</span><span class="cpbody"><b class="cpn">${esc(x.name)}</b><small class="cpm">${x.n} ${x.n===1?"order":"orders"} · ${inr(Math.round(x.vol))} done${x.ap?` · ${x.ap} appeal`:""}</small>${x.c?`<small class="cpc${rate>=30?" hi":""}">${x.c} cancelled · ${rate}%</small>`:""}${t&&t.note?`<small class="cpm">${esc(t.note)}</small>`:""}</span><span class="cpgo">${IC.go}</span></button><span class="tagbtns" data-n="${esc(x.name)}"><button type="button" class="star ${tg==="star"?"on":""}" data-t="star" aria-label="Mark trusted" aria-pressed="${tg==="star"}">${IC.star}</button><button type="button" class="block ${tg==="block"?"on":""}" data-t="block" aria-label="Block" aria-pressed="${tg==="block"}">${IC.block}</button></span></div>`}).join(""):`<div class="empty">${q||fl!=="all"?"No one matches this filter.":"No counterparties yet. They appear here from your orders."}</div>`};
-  openSheet(`<h3>Counterparties</h3><p class="note cpnote">Mark people you trust or want to avoid. You get a warning when a blocked or often-cancelling name is used in a new order.</p><div class="cpsearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><input id="cpq" placeholder="Search name" autocomplete="off"></div><div class="cpfs" id="cpf"></div><div class="list cplist" id="cpl"></div><div class="row2" style="margin-top:12px"><button class="mini ghost" type="button" data-close>Close</button></div>`,el=>{
+    const w=t=>t?(t.tag==="block"?0:1):2;
+    const list=all.filter(x=>{if(q&&!x.name.toLowerCase().includes(q))return false;const t=cpTag(x.name);if(fl==="star")return t&&t.tag==="star";if(fl==="block")return t&&t.tag==="block";if(fl==="risk")return risky(x);return true}).sort((a,b)=>sort==="vol"?b.vol-a.vol:sort==="n"?b.n-a.n:sort==="last"?b.last-a.last:(w(cpTag(a.name))-w(cpTag(b.name))||b.n-a.n)).slice(0,80);
+    el.querySelector("#cpmeta").innerHTML=`<span>${list.length} ${list.length===1?"person":"people"}</span><button type="button" class="cpsort" data-sort>${IC.sort}${SORTS[sort]}</button>`;
+    el.querySelector("#cpl").innerHTML=list.length?list.map(x=>{const t=cpTag(x.name);const tg=t?t.tag:"";const rate=x.n?Math.round(x.c/x.n*100):0;const h=hue(x.name);
+      const pill=tg==="block"?'<em class="cpp block">Blocked</em>':tg==="star"?'<em class="cpp star">Trusted</em>':risky(x)?'<em class="cpp risk">Risky</em>':"";
+      const op=openN===x.name;
+      return `<div class="cprow ${tg}${op?" open":""}"><div class="cptop"><button type="button" class="cpmain" data-tr="${esc(x.name)}"><span class="cpav" style="background:hsl(${h} 55% 50%/.16);color:hsl(${h} 58% 55%)">${esc(ini(x.name))}</span><span class="cpbody"><span class="cpnl"><b class="cpn">${esc(x.name)}</b>${pill}</span><small class="cpm">${x.n} ${x.n===1?"order":"orders"}${x.c?` · <span class="${rate>=30?"hi":""}">${x.c} cancelled</span>`:""}${x.ap?` · ${x.ap} appeal`:""}</small>${t&&t.note?`<small class="cpm">${esc(t.note)}</small>`:""}</span><span class="cpr"><b>${inr(Math.round(x.vol))}</b><small>completed</small></span></button><button type="button" class="cpmore" data-more="${esc(x.name)}" aria-label="Actions" aria-expanded="${op}">${IC.more}</button></div><div class="cpact tagbtns" data-n="${esc(x.name)}"><button type="button" class="star ${tg==="star"?"on":""}" data-t="star">${IC.star}${tg==="star"?"Remove trusted":"Mark trusted"}</button><button type="button" class="block ${tg==="block"?"on":""}" data-t="block">${IC.block}${tg==="block"?"Unblock":"Block"}</button></div></div>`}).join(""):`<div class="empty">${q||fl!=="all"?"No one matches this filter.":"No counterparties yet. They appear here from your orders."}</div>`};
+  openSheet(`<h3>Counterparties</h3><p class="note cpnote">Warnings appear when you create an order with a blocked or often-cancelling name.</p><div class="cpstat" id="cps"></div><div class="cpsearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><input id="cpq" placeholder="Search name" autocomplete="off"></div><div class="cpfs" id="cpf"></div><div class="cpmeta" id="cpmeta"></div><div class="list cplist" id="cpl"></div><div class="row2" style="margin-top:12px"><button class="mini ghost" type="button" data-close>Close</button></div>`,el=>{
     draw(el);el.querySelector("#cpq").oninput=e=>{q=e.target.value.trim().toLowerCase();draw(el)};
     el.querySelector("#cpf").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;fl=b.dataset.f;draw(el)});
-    el.querySelector("#cpl").addEventListener("click",async e=>{const tr=e.target.closest("[data-tr]");if(tr){sheets.trader(tr.dataset.tr);return}const b=e.target.closest("[data-t]");if(!b)return;const n=b.parentElement.dataset.n;try{await setCpTag(n,b.dataset.t);draw(el)}catch(err){toast("Couldn't save")}})})};
+    el.querySelector("#cpmeta").addEventListener("click",e=>{if(!e.target.closest("[data-sort]"))return;const k=Object.keys(SORTS);sort=k[(k.indexOf(sort)+1)%k.length];draw(el)});
+    el.querySelector("#cpl").addEventListener("click",async e=>{const mo=e.target.closest("[data-more]");if(mo){openN=openN===mo.dataset.more?"":mo.dataset.more;draw(el);return}const tr=e.target.closest("[data-tr]");if(tr){sheets.trader(tr.dataset.tr);return}const b=e.target.closest("[data-t]");if(!b)return;const n=b.parentElement.dataset.n;try{await setCpTag(n,b.dataset.t);openN="";draw(el)}catch(err){toast("Couldn't save")}})})};
 ACT.tag_counterparty={d:a=>`${a.tag==="block"?"Block":"Mark trusted"}: ${a.name}${a.note?" · "+a.note:""}`,run:async a=>{if(!a.name||!["star","block"].includes(a.tag))throw new Error("needs name and tag");await putRec({id:cpKey(a.name),kind:"cptag",name:String(a.name).slice(0,60),tag:a.tag,note:String(a.note||"").slice(0,120),time:Date.now()})}};
 
 // ---------- reports ----------
@@ -6363,7 +6388,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=159;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=160;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6430,6 +6455,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00160","22 Oct 2026",["Counterparties redesigned again, banking style: summary strip (people, completed, cancel rate), underline tabs (All / Trusted / Blocked / Risky), sort (flagged / volume / orders / recent), amount on the right, status tags (Trusted / Blocked / Risky) and a three-dot menu for Mark trusted / Block."]],
   ["0.0.0.00159","22 Oct 2026",["Counterparties redesigned: initials avatar, filters (All / Trusted / Blocked / Risky), search icon, round Trusted and Block buttons, tap a person to open their 360 view, \"1 order\" wording fixed."]],
   ["0.0.0.00158","18 Oct 2026",["Add sheet fix: the icon on the New order and Smart intake cards no longer covers the card title. The icon now sits inside the card (48 px) instead of floating over it. This is the fix that build 157 was missing on phones."]],
   ["0.0.0.00157","18 Oct 2026",["Add sheet: new icons for New order (a coin with swap arrows) and Smart intake (a scan frame with a spark), a little bigger (48 px instead of 40 px). The icon now sits in the card instead of floating over it, so it can never cover the title."]],
