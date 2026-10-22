@@ -648,8 +648,9 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .cpsearch{position:relative;margin-bottom:12px}
 .cpsearch svg{position:absolute;left:13px;top:50%;width:18px;height:18px;transform:translateY(-50%);fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;pointer-events:none}
 .cpsearch input{padding-left:40px;border-radius:12px}
-.cpfs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);margin-bottom:10px}
-.cpf{display:flex;justify-content:center;align-items:center;gap:5px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--muted);padding:10px 2px;font:600 .8rem var(--body);cursor:pointer;white-space:nowrap}
+.cpfs{display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);margin-bottom:10px}
+.cpfs::-webkit-scrollbar{display:none}
+.cpf{flex:1 0 auto;display:flex;justify-content:center;align-items:center;gap:5px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--muted);padding:10px 7px;font:600 .78rem var(--body);cursor:pointer;white-space:nowrap}
 .cpf i{font-style:normal;font-size:.7rem;font-weight:600;color:var(--muted);opacity:.8}
 .cpf.on{color:var(--fg);border-bottom-color:var(--fg)}
 .cpf.on i{color:var(--fg);opacity:1}
@@ -671,6 +672,19 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .cpp.risk{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
 .cpm{font:500 .76rem var(--body);color:var(--muted)}
 .cpm .hi{color:var(--sell);font-weight:600}
+.cpm .up{color:var(--buy);font-weight:600}
+.cpmr{display:flex;gap:12px}
+.cps{font:600 .68rem var(--body)!important}
+.cps.ok{color:var(--buy)!important}.cps.warn{color:var(--warn)!important}.cps.bad{color:var(--sell)!important}
+.cplb{display:flex;flex-wrap:wrap;gap:4px;margin-top:1px}
+.cplb i{font:600 .64rem var(--body);font-style:normal;color:var(--muted);background:var(--raised);border-radius:5px;padding:2px 6px}
+.cplb i.w{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.cpdup{width:100%;text-align:left;border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border-radius:12px;padding:10px 12px;margin-bottom:12px;font:600 .8rem var(--body);cursor:pointer}
+.lbs{display:flex;flex-wrap:wrap;gap:6px}
+.lbc{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:99px;padding:6px 11px;font:600 .76rem var(--body);cursor:pointer}
+.lbc.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.cpexp{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.cpexp .mini{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
 .cpr{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .cpr b{font:700 .92rem var(--display);white-space:nowrap}
 .cpr small{font:500 .68rem var(--body);color:var(--muted)}
@@ -2404,7 +2418,7 @@ function verParse(raw){let j=null;try{const m=String(raw||"").match(/\{[\s\S]*\}
 // ---- name compare: M match · U unclear · X mismatch · NF not found (handles reordered / masked / initial-only names)
 const verTok=n=>String(n||"").toLowerCase().replace(/[^a-z\s]/g," ").split(/\s+/).filter(t=>t&&!/^(mr|mrs|ms|shri|smt|sri|dr|m)$/.test(t));
 function verLev(a,b){const d=[];for(let i=0;i<=a.length;i++){d[i]=[i];for(let j=1;j<=b.length;j++)d[i][j]=i?0:j}for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
-function verName(a,b){const r=verNameBase(a,b);return r!=="M"&&r!=="NF"&&ixlAlias(a,b)?"M":r}
+function verName(a,b){const r=verNameBase(a,b);return r!=="M"&&r!=="NF"&&(ixlAlias(a,b)||cpPayerKnown(b,a))?"M":r}
 function verNameBase(a,b){const A=verTok(a),B=verTok(b);if(!A.length||!B.length)return"NF";let hit=0,typo=0;const used=new Set();
   A.forEach(t=>{let j=B.findIndex((u,i)=>!used.has(i)&&(u===t||(t.length>=3&&u.length>=3&&(u.startsWith(t)||t.startsWith(u)))||(t.length===1&&u[0]===t)||(u.length===1&&t[0]===u)));
     if(j<0)j=B.findIndex((u,i)=>!used.has(i)&&t.length>=5&&u.length>=5&&verLev(t,u)<=1&&(typo++,true));
@@ -5813,7 +5827,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       if(split.length>1)notes.push("Paid from "+split.length+" banks")}catch(e){}}
     if(g.target){const t=g.target;
       if(P.utr&&t.utr&&normRef(t.utr)===normRef(P.utr))return{state:"skipped",msg:"Already recorded on that order"};
-      const vpaN=(ixSide(g)==="BUY"||t.side==="BUY")?(P.vpa||pp.vpa||""):"";const patch={...(vpaN&&!t.vpa?{vpa:vpaN}:{}),shots:[...new Set([...(t.shots||[]),...shots])],proofs:[...(t.proofs||[]),...proofs],pv,...(P.utr&&!t.utr?{utr:P.utr}:{}),...(((g.tdsSet!=null?g.tdsSet:O.tds)>0)&&t.side==="SELL"&&!t.tds?{tds:g.tdsSet!=null?g.tdsSet:O.tds,...(O.tdsQ>0&&g.tdsSet==null?{tdsQ:O.tdsQ}:{})}:{}),...(!exIdOf(t)&&O.id?{exId:O.id}:{}),...(P.date?{payAt:verWhen(P.date,P.time)||undefined}:{})};
+      const vpaN=(ixSide(g)==="BUY"||t.side==="BUY")?(P.vpa||pp.vpa||""):"";const patch={...(vpaN&&!t.vpa?{vpa:vpaN}:{}),...(t.side==="SELL"&&P.sender&&!t.payer?{payer:String(P.sender).slice(0,60)}:{}),shots:[...new Set([...(t.shots||[]),...shots])],proofs:[...(t.proofs||[]),...proofs],pv,...(P.utr&&!t.utr?{utr:P.utr}:{}),...(((g.tdsSet!=null?g.tdsSet:O.tds)>0)&&t.side==="SELL"&&!t.tds?{tds:g.tdsSet!=null?g.tdsSet:O.tds,...(O.tdsQ>0&&g.tdsSet==null?{tdsQ:O.tdsQ}:{})}:{}),...(!exIdOf(t)&&O.id?{exId:O.id}:{}),...(P.date?{payAt:verWhen(P.date,P.time)||undefined}:{})};
       if(split.length&&allocated(t)<orderTotal(t)-0.5){const have=new Set((t.splits||[]).map(x=>x.bank+"|"+x.amt));patch.splits=[...(t.splits||[]),...split.filter(x=>!have.has(x.bank+"|"+x.amt))]}
       await patchRec(t.id,patch);await auditLog(t,"intake_attach",{result:g.cmp.overall,risk:g.risk.level});g.savedId=t.id;notes.unshift("Added to your existing order")}
     else{const side=ixSide(g);if(!side)return{state:"failed",msg:"Choose whether you bought or sold, then save"};
@@ -5823,7 +5837,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       if(!(qty2>0&&rate2>0)&&ixStatusOf(O.status)==="Cancelled"&&fiat>0){const tr=rate2>0?rate2:ixTypRate();if(tr>0){rate2=rate2>0?rate2:tr;qty2=qty2>0?qty2:+(fiat/rate2).toFixed(2);estNote="Cancelled order. "+(rate?"":"Rate estimated from your recent orders")}}
       if(!(qty2>0&&rate2>0))return{state:"failed",msg:"Order quantity or price couldn't be read. Run Deep AI check or add the order by hand."}
       const cp=side==="SELL"?(O.buyer||P.sender||""):(O.seller||P.receiver||"");
-      const no={id:newId("o"),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:[estNote,O.why?"Reason: "+O.why:""].filter(Boolean).join(" · "),splits:split,proofs,shots,pv,time:ixOrdTime(X,P.date?verWhen(P.date,P.time):0)||Date.now(),src:"ai"};
+      const no={id:newId("o"),...(side==="SELL"&&P.sender?{payer:String(P.sender).slice(0,60)}:{}),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:[estNote,O.why?"Reason: "+O.why:""].filter(Boolean).join(" · "),splits:split,proofs,shots,pv,time:ixOrdTime(X,P.date?verWhen(P.date,P.time):0)||Date.now(),src:"ai"};
       {const td=g.tdsSet!=null?g.tdsSet:O.tds;if(side==="SELL"&&td>0){no.tds=td;if(O.tdsQ>0&&g.tdsSet==null)no.tdsQ=O.tdsQ;no.tdsSrc="order"}}if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
       await putRec(no);await auditLog(no,"create",{by:"intake",result:g.cmp.overall,risk:g.risk.level});g.savedId=no.id}
     try{const nk=(g.order&&g.order.ord&&g.order.ord.nick)||O.nick||"";const real=g.target?g.target.cp:(O.buyer&&ixSide(g)==="SELL"?O.buyer:O.seller)||"";if(nk&&real&&ixlN(nk)!==ixlN(real))await ixLinkNames(nk,real)}catch(e){}
@@ -6044,41 +6058,59 @@ const cpKey=n=>identRes("cp_"+String(n||"").toLowerCase().replace(/[^a-z0-9]/g,"
 let cpTagMap=new Map();
 function cpTag(n){if(!n)return null;return cpTagMap.get(cpKey(n))||null}
 function cpBadge(n){const t=cpTag(n);return t&&t.tag==="star"?'<span class="cpb star" title="Trusted">★</span>':t&&t.tag==="block"?'<span class="cpb block" title="Blocked">⛔</span>':""}
-function cpStats(){const m={};orders.forEach(o=>{const n=(o.cp||"").trim();if(!n)return;const k=cpKey(n);const x=m[k]=m[k]||{name:n,n:0,c:0,ap:0,vol:0,last:0};x.n++;if(o.status==="Cancelled")x.c++;if(o.status==="Appeal")x.ap++;if(o.status==="Completed")x.vol+=orderTotal(o);x.last=Math.max(x.last,o.time)});
+function cpStats(){const m={};const SP=(()=>{try{return ACC().sellP||{}}catch(e){return{}}})();orders.forEach(o=>{const n=(o.cp||"").trim();if(!n)return;const k=cpKey(n);const x=m[k]=m[k]||{name:n,n:0,c:0,ap:0,vol:0,last:0};x.n++;if(o.status==="Cancelled")x.c++;if(o.status==="Appeal")x.ap++;if(o.status==="Completed"){x.vol+=orderTotal(o);if(o.side==="SELL")x.profit=(x.profit||0)+(SP[o.id]||0);if(o.doneAt&&o.doneAt>o.time){x.tm=(x.tm||0)+(o.doneAt-o.time)/6e4;x.tn=(x.tn||0)+1}}x.last=Math.max(x.last,o.time)});
   Object.entries(cpBook()).forEach(([k,h])=>{const x=m[k]=m[k]||{name:h.n,n:0,c:0,ap:0,vol:0,last:0};x.n+=h.o;x.c+=h.c;x.ap+=h.a;x.vol+=h.bv+h.sv;x.last=Math.max(x.last,h.l);x.hist=h.o});
   recs.filter(r=>r.kind==="ident"&&r.realName).forEach(r=>{if(m[r.to])m[r.to].name=r.realName});
   recs.filter(x=>x.kind==="cptag").forEach(t=>{if(!m[t.id])m[t.id]={name:t.name,n:0,c:0,ap:0,vol:0,last:0}});return m}
-function cpCheck(){const n=$("#f-cp").value.trim(),w=$("#cpWarn");if(!n){w.hidden=true;return}const t=cpTag(n),st=cpStats()[cpKey(n)];
-  if(t&&t.tag==="block"){w.className="cpwarn block";w.textContent="⛔ Blocked counterparty"+(t.note?": "+t.note:"")+". Be careful with this deal.";w.hidden=false;return}
-  if(st&&st.n>=3&&st.c/st.n>=0.3){w.className="cpwarn block";w.textContent=`⚠ ${st.c} of ${st.n} orders with ${st.name} were cancelled.`;w.hidden=false;return}
-  if(t&&t.tag==="star"){w.className="cpwarn star";w.textContent="★ Trusted counterparty"+(t.note?": "+t.note:"");w.hidden=false;return}
-  if(st&&st.n){w.className="cpwarn info";w.textContent=`${st.n} past orders · ${inr(Math.round(st.vol))} completed`;w.hidden=false;return}
-  w.hidden=true}
-$("#f-cp").addEventListener("input",cpCheck);
+function cpx(n){const id="cpx_"+cpKey(n);return recs.find(r=>r.id===id)||null}
+async function cpxSet(n,patch){const id="cpx_"+cpKey(n);if(recs.find(r=>r.id===id))await patchRec(id,patch);else await putRec({id,kind:"cpx",name:n,labels:[],phone:"",tg:"",time:Date.now(),...patch})}
+const CP_LABELS=["Fast payer","Slow payer","Regular","Big deals","Night only","Third-party pays","Needs call"];
+const CP_LBL_WARN=["Slow payer","Third-party pays","Needs call"];
+function cpAgo(t){if(!t)return"—";const d=Math.floor((Date.now()-t)/864e5);return d<=0?"today":d===1?"yesterday":d<30?d+"d ago":d<365?Math.floor(d/30)+"mo ago":Math.floor(d/365)+"y ago"}
+const durF=m=>m<1?"<1 min":m<60?Math.round(m)+" min":m<1440?(m/60).toFixed(1)+" h":(m/1440).toFixed(1)+" d";
+function cpPayerKnown(cp,payer){if(!cp||!payer)return false;const k=cpKey(cp);return orders.some(o=>o.payer&&o.status==="Completed"&&o.cp&&cpKey(o.cp)===k&&verNameBase(o.payer,payer)==="M")}
+function cpAmtWarn(n,st){const q=+($("#f-qty").value),r=+($("#f-rate").value);const tot=q>0&&r>0?q*r:0;if(!tot)return"";const big=+pref("cpBig")||50000;const k=cpKey(n);
+  const past=orders.filter(o=>o.cp&&cpKey(o.cp)===k&&o.status==="Completed").map(o=>orderTotal(o));
+  if(!past.length&&!(st&&st.n))return tot>=big?`New counterparty with a large amount (${inr(Math.round(tot))}).`:"";
+  const mx=Math.max(0,...past);if(past.length>=2&&tot>mx*2.5&&tot>=10000)return`${inr(Math.round(tot))} is much bigger than their usual (largest so far ${inr(Math.round(mx))}).`;return""}
+function cpCheck(){const n=$("#f-cp").value.trim(),w=$("#cpWarn");if(!n){w.hidden=true;return}const t=cpTag(n),st=cpStats()[cpKey(n)];const am=cpAmtWarn(n,st);let cls="",tx="";
+  if(t&&t.tag==="block"){cls="block";tx="⛔ Blocked counterparty"+(t.note?": "+t.note:"")+". Be careful with this deal."}
+  else if(st&&st.n>=3&&st.c/st.n>=0.3){cls="block";tx=`⚠ ${st.c} of ${st.n} orders with ${st.name} were cancelled.`}
+  else if(t&&t.tag==="star"){cls="star";tx="★ Trusted counterparty"+(t.note?": "+t.note:"")}
+  else if(st&&st.n){cls="info";tx=`${st.n} past orders · ${inr(Math.round(st.vol))} completed`}
+  const x=cpx(n),lb=(x&&x.labels)||[];if(lb.length&&tx){tx+=" · "+lb.join(", ");if(cls==="info"&&lb.some(l=>CP_LBL_WARN.includes(l)))cls="block"}
+  if(am){cls="block";tx=(tx?tx+" · ":"")+"⚠ "+am}
+  if(!tx){w.hidden=true;return}w.className="cpwarn "+cls;w.textContent=tx;w.hidden=false}
+$("#f-cp").addEventListener("input",cpCheck);["#f-qty","#f-rate"].forEach(q=>$(q).addEventListener("input",cpCheck));
 function cpDatalist(){const m=cpStats();$("#cpList").innerHTML=parties.map(p=>`<option value="${esc(p.name)}">`).join("")+Object.values(m).filter(x=>!parties.some(p=>p.name.toLowerCase()===x.name.toLowerCase())).sort((a,b)=>b.last-a.last).slice(0,60).map(x=>`<option value="${esc(x.name)}">`).join("")}
 async function setCpTag(name,tag,note){const id=cpKey(name);const cur=cpTag(name);if(cur&&cur.tag===tag&&note===undefined){await delRec(id);return}await putRec({id,kind:"cptag",name,tag,note:note!==undefined?note:(cur&&cur.note)||"",time:Date.now()})}
-sheets.cps=function(){let q="",fl="all",sort="pri",openN="";
-  const IC={star:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.6 6.9 19.3l1-5.7-4.1-4 5.7-.8z"/></svg>',block:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M6.2 6.2l11.6 11.6"/></svg>',more:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18.5" cy="12" r="1.5"/></svg>',sort:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M8 19l-3-3M8 19l3-3M16 19V5M16 5l-3 3M16 5l3 3"/></svg>'};
-  const SORTS={pri:"Flagged first",vol:"Volume",n:"Orders",last:"Recent"};
+sheets.cps=function(){let q="",fl="all",sort="pri",openN="";const DUP=(()=>{try{return identSuggest().length}catch(e){return 0}})();
+  const IC={star:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.6 6.9 19.3l1-5.7-4.1-4 5.7-.8z"/></svg>',block:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M6.2 6.2l11.6 11.6"/></svg>',more:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18.5" cy="12" r="1.5"/></svg>',sort:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M8 19l-3-3M8 19l3-3M16 19V5M16 5l-3 3M16 5l3 3"/></svg>',dl:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 19h14"/></svg>'};
+  const SORTS={pri:"Flagged first",vol:"Volume",profit:"Best customers",n:"Orders",last:"Recent"};
   const ini=n=>{const w=String(n).trim().split(/\s+/).filter(Boolean);return((w[0]||"?")[0]+(w.length>1?w[w.length-1][0]:"")).toUpperCase()};
   const hue=n=>{let h=0;for(const c of String(n))h=(h*31+c.charCodeAt(0))%360;return h};
-  const risky=x=>x.n>=3&&x.c/x.n>=0.3;
+  const risky=x=>x.n>=3&&x.c/x.n>=0.3;const idle=x=>x.n>0&&x.last&&Date.now()-x.last>30*864e5;
+  const tagOf=x=>{const t=cpTag(x.name);return t&&(t.tag==="star"||t.tag==="block")?t.tag:""};
+  const lbOf=x=>{const c=cpx(x.name);return(c&&c.labels)||[]};
   const draw=el=>{const m=cpStats();const all=Object.values(m);
-    const cnt={all:all.length,star:0,block:0,risk:0};let vol=0,N=0,C=0;
-    all.forEach(x=>{const t=cpTag(x.name);if(t&&t.tag==="star")cnt.star++;if(t&&t.tag==="block")cnt.block++;if(risky(x))cnt.risk++;vol+=x.vol;N+=x.n;C+=x.c});
+    const cnt={all:all.length,star:0,block:0,risk:0,idle:0};let vol=0,N=0,C=0,PR=0;
+    all.forEach(x=>{const t=tagOf(x);if(t==="star")cnt.star++;if(t==="block")cnt.block++;if(risky(x))cnt.risk++;if(idle(x)&&t!=="block")cnt.idle++;vol+=x.vol;N+=x.n;C+=x.c;PR+=x.profit||0});
     el.querySelector("#cps").innerHTML=`<div><small>People</small><b>${cnt.all}</b></div><div><small>Completed</small><b>${inr(Math.round(vol))}</b></div><div><small>Cancel rate</small><b>${N?Math.round(C/N*100):0}%</b></div>`;
-    el.querySelector("#cpf").innerHTML=[["all","All"],["star","Trusted"],["block","Blocked"],["risk","Risky"]].map(([k,l])=>`<button type="button" class="cpf${fl===k?" on":""}" data-f="${k}">${l}<i>${cnt[k]}</i></button>`).join("");
-    const w=t=>t?(t.tag==="block"?0:1):2;
-    const list=all.filter(x=>{if(q&&!x.name.toLowerCase().includes(q))return false;const t=cpTag(x.name);if(fl==="star")return t&&t.tag==="star";if(fl==="block")return t&&t.tag==="block";if(fl==="risk")return risky(x);return true}).sort((a,b)=>sort==="vol"?b.vol-a.vol:sort==="n"?b.n-a.n:sort==="last"?b.last-a.last:(w(cpTag(a.name))-w(cpTag(b.name))||b.n-a.n)).slice(0,80);
-    el.querySelector("#cpmeta").innerHTML=`<span>${list.length} ${list.length===1?"person":"people"}</span><button type="button" class="cpsort" data-sort>${IC.sort}${SORTS[sort]}</button>`;
-    el.querySelector("#cpl").innerHTML=list.length?list.map(x=>{const t=cpTag(x.name);const tg=t?t.tag:"";const rate=x.n?Math.round(x.c/x.n*100):0;const h=hue(x.name);
+    el.querySelector("#cpf").innerHTML=[["all","All"],["star","Trusted"],["block","Blocked"],["risk","Risky"],["idle","Idle"]].map(([k,l])=>`<button type="button" class="cpf${fl===k?" on":""}" data-f="${k}">${l}<i>${cnt[k]}</i></button>`).join("");
+    const w=x=>{const t=tagOf(x);return t==="block"?0:t==="star"?1:2};
+    const list=all.filter(x=>{if(q&&!(x.name.toLowerCase().includes(q)||lbOf(x).some(l=>l.toLowerCase().includes(q))))return false;const t=tagOf(x);if(fl==="star")return t==="star";if(fl==="block")return t==="block";if(fl==="risk")return risky(x);if(fl==="idle")return idle(x)&&t!=="block";return true}).sort((a,b)=>sort==="vol"?b.vol-a.vol:sort==="profit"?(b.profit||0)-(a.profit||0):sort==="n"?b.n-a.n:sort==="last"?b.last-a.last:(w(a)-w(b)||b.n-a.n)).slice(0,80);
+    el.querySelector("#cpmeta").innerHTML=`<span>${list.length} ${list.length===1?"person":"people"}</span><span class="cpmr"><button type="button" class="cpsort" data-sort>${IC.sort}${SORTS[sort]}</button><button type="button" class="cpsort" data-exp aria-label="Export CSV">${IC.dl}CSV</button></span>`;
+    el.querySelector("#cpl").innerHTML=list.length?list.map(x=>{const tg=tagOf(x);const t=cpTag(x.name);const rate=x.n?Math.round(x.c/x.n*100):0;const h=hue(x.name);const D=traderData(x.name);const lv=!D.closed?"mute":D.score>=75?"ok":D.score>=50?"warn":"bad";const lb=lbOf(x);
       const pill=tg==="block"?'<em class="cpp block">Blocked</em>':tg==="star"?'<em class="cpp star">Trusted</em>':risky(x)?'<em class="cpp risk">Risky</em>':"";
-      const op=openN===x.name;
-      return `<div class="cprow ${tg}${op?" open":""}"><div class="cptop"><button type="button" class="cpmain" data-tr="${esc(x.name)}"><span class="cpav" style="background:hsl(${h} 55% 50%/.16);color:hsl(${h} 58% 55%)">${esc(ini(x.name))}</span><span class="cpbody"><span class="cpnl"><b class="cpn">${esc(x.name)}</b>${pill}</span><small class="cpm">${x.n} ${x.n===1?"order":"orders"}${x.c?` · <span class="${rate>=30?"hi":""}">${x.c} cancelled</span>`:""}${x.ap?` · ${x.ap} appeal`:""}</small>${t&&t.note?`<small class="cpm">${esc(t.note)}</small>`:""}</span><span class="cpr"><b>${inr(Math.round(x.vol))}</b><small>completed</small></span></button><button type="button" class="cpmore" data-more="${esc(x.name)}" aria-label="Actions" aria-expanded="${op}">${IC.more}</button></div><div class="cpact tagbtns" data-n="${esc(x.name)}"><button type="button" class="star ${tg==="star"?"on":""}" data-t="star">${IC.star}${tg==="star"?"Remove trusted":"Mark trusted"}</button><button type="button" class="block ${tg==="block"?"on":""}" data-t="block">${IC.block}${tg==="block"?"Unblock":"Block"}</button></div></div>`}).join(""):`<div class="empty">${q||fl!=="all"?"No one matches this filter.":"No counterparties yet. They appear here from your orders."}</div>`};
-  openSheet(`<h3>Counterparties</h3><p class="note cpnote">Warnings appear when you create an order with a blocked or often-cancelling name.</p><div class="cpstat" id="cps"></div><div class="cpsearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><input id="cpq" placeholder="Search name" autocomplete="off"></div><div class="cpfs" id="cpf"></div><div class="cpmeta" id="cpmeta"></div><div class="list cplist" id="cpl"></div><div class="row2" style="margin-top:12px"><button class="mini ghost" type="button" data-close>Close</button></div>`,el=>{
+      const op=openN===x.name;const pf=x.profit||0;
+      return `<div class="cprow ${tg}${op?" open":""}"><div class="cptop"><button type="button" class="cpmain" data-tr="${esc(x.name)}"><span class="cpav" style="background:hsl(${h} 55% 50%/.16);color:hsl(${h} 58% 55%)">${esc(ini(x.name))}</span><span class="cpbody"><span class="cpnl"><b class="cpn">${esc(x.name)}</b>${pill}</span><small class="cpm">${x.n} ${x.n===1?"order":"orders"}${x.c?` · <span class="${rate>=30?"hi":""}">${x.c} cancelled</span>`:""}${x.ap?` · ${x.ap} appeal`:""} · ${cpAgo(x.last)}</small>${pf||x.tn?`<small class="cpm">${pf?`<span class="${pf>0?"up":"hi"}">${pf>0?"+":"−"}${inr(Math.abs(Math.round(pf)))} profit</span>`:""}${pf&&x.tn?" · ":""}${x.tn?durF(x.tm/x.tn)+" avg":""}</small>`:""}${lb.length?`<span class="cplb">${lb.slice(0,3).map(l=>`<i class="${CP_LBL_WARN.includes(l)?"w":""}">${esc(l)}</i>`).join("")}${lb.length>3?`<i>+${lb.length-3}</i>`:""}</span>`:""}${t&&t.note?`<small class="cpm">${esc(t.note)}</small>`:""}</span><span class="cpr"><b>${inr(Math.round(x.vol))}</b><small class="cps ${lv}">${D.closed?"Score "+D.score:"New"}</small></span></button><button type="button" class="cpmore" data-more="${esc(x.name)}" aria-label="Actions" aria-expanded="${op}">${IC.more}</button></div><div class="cpact tagbtns" data-n="${esc(x.name)}"><button type="button" class="star ${tg==="star"?"on":""}" data-t="star">${IC.star}${tg==="star"?"Remove trusted":"Mark trusted"}</button><button type="button" class="block ${tg==="block"?"on":""}" data-t="block">${IC.block}${tg==="block"?"Unblock":"Block"}</button></div></div>`}).join(""):`<div class="empty">${q||fl!=="all"?"No one matches this filter.":"No counterparties yet. They appear here from your orders."}</div>`};
+  openSheet(`<h3>Counterparties</h3><p class="note cpnote">Warnings appear when you create an order with a blocked or often-cancelling name, a risky label, or an unusually large amount.</p><div class="cpstat" id="cps"></div>${DUP?`<button type="button" class="cpdup" data-dup>⚠ ${DUP} possible duplicate${DUP>1?"s":""} · Review and merge</button>`:""}<div class="cpsearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><input id="cpq" placeholder="Search name or label" autocomplete="off"></div><div class="cpfs" id="cpf"></div><div class="cpmeta" id="cpmeta"></div><div class="list cplist" id="cpl"></div><div class="row2" style="margin-top:12px"><button class="mini ghost" type="button" data-close>Close</button></div>`,el=>{
     draw(el);el.querySelector("#cpq").oninput=e=>{q=e.target.value.trim().toLowerCase();draw(el)};
+    const dp=el.querySelector("[data-dup]");if(dp)dp.onclick=()=>sheets.ident();
     el.querySelector("#cpf").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;fl=b.dataset.f;draw(el)});
-    el.querySelector("#cpmeta").addEventListener("click",e=>{if(!e.target.closest("[data-sort]"))return;const k=Object.keys(SORTS);sort=k[(k.indexOf(sort)+1)%k.length];draw(el)});
+    el.querySelector("#cpmeta").addEventListener("click",e=>{if(e.target.closest("[data-sort]")){const k=Object.keys(SORTS);sort=k[(k.indexOf(sort)+1)%k.length];draw(el);return}
+      if(e.target.closest("[data-exp]")){const qv=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};const rows=Object.values(cpStats()).sort((a,b)=>b.vol-a.vol).map(x=>{const D=traderData(x.name),c=cpx(x.name)||{},t=cpTag(x.name);return[x.name,x.n,D.done.length,x.c,x.ap,Math.round(x.vol),Math.round(x.profit||0),x.n?Math.round(x.c/x.n*100)+"%":"",D.closed?D.score:"",t&&(t.tag==="star"||t.tag==="block")?(t.tag==="star"?"Trusted":"Blocked"):"",(c.labels||[]).join("; "),c.phone||"",x.last?new Date(x.last).toLocaleDateString("en-CA"):""].map(qv).join(",")});
+        saveFile(`Pexai-counterparties-${new Date().toLocaleDateString("en-CA")}.csv`,"﻿"+["Name,Orders,Completed,Cancelled,Appeals,Completed INR,Profit INR,Cancel rate,Trust score,Tag,Labels,Phone,Last order",...rows].join("\n"))}});
     el.querySelector("#cpl").addEventListener("click",async e=>{const mo=e.target.closest("[data-more]");if(mo){openN=openN===mo.dataset.more?"":mo.dataset.more;draw(el);return}const tr=e.target.closest("[data-tr]");if(tr){sheets.trader(tr.dataset.tr);return}const b=e.target.closest("[data-t]");if(!b)return;const n=b.parentElement.dataset.n;try{await setCpTag(n,b.dataset.t);openN="";draw(el)}catch(err){toast("Couldn't save")}})})};
 ACT.tag_counterparty={d:a=>`${a.tag==="block"?"Block":"Mark trusted"}: ${a.name}${a.note?" · "+a.note:""}`,run:async a=>{if(!a.name||!["star","block"].includes(a.tag))throw new Error("needs name and tag");await putRec({id:cpKey(a.name),kind:"cptag",name:String(a.name).slice(0,60),tag:a.tag,note:String(a.note||"").slice(0,120),time:Date.now()})}};
 
@@ -6388,7 +6420,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=160;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=161;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6455,6 +6487,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00161","22 Oct 2026",["Counterparties, 10 new things: trust score and profit on every row; labels (Fast payer, Slow payer, Third-party pays…) plus your own; phone, WhatsApp and Telegram buttons; known UPI IDs and payers (a repeat payer you already completed is no longer flagged as a mismatch); duplicate review banner; tabs for Idle (no order for 30 days); sort by Best customers; average completion time; warning for an unusually large amount or a big first deal; CSV export for everyone and for one person; share a statement on WhatsApp."]],
   ["0.0.0.00160","22 Oct 2026",["Counterparties redesigned again, banking style: summary strip (people, completed, cancel rate), underline tabs (All / Trusted / Blocked / Risky), sort (flagged / volume / orders / recent), amount on the right, status tags (Trusted / Blocked / Risky) and a three-dot menu for Mark trusted / Block."]],
   ["0.0.0.00159","22 Oct 2026",["Counterparties redesigned: initials avatar, filters (All / Trusted / Blocked / Risky), search icon, round Trusted and Block buttons, tap a person to open their 360 view, \"1 order\" wording fixed."]],
   ["0.0.0.00158","18 Oct 2026",["Add sheet fix: the icon on the New order and Smart intake cards no longer covers the card title. The icon now sits inside the card (48 px) instead of floating over it. This is the fix that build 157 was missing on phones."]],
@@ -6676,24 +6709,46 @@ function traderData(name){const k=cpKey(name);const L=orders.filter(o=>o.cp&&cpK
   const hrs=[...Array(24)].fill(0);L.forEach(o=>hrs[new Date(o.time).getHours()]++);if(Hh)Object.entries(Hh.h||{}).forEach(([h,n])=>hrs[+h]+=n);const hb=hrs.indexOf(Math.max(...hrs));
   const tag=cpTag(name);let score=closed?Math.round(100*(0.6*comp+0.2*Math.min(1,closed/10)+0.2*(ap?0:1))):0;
   if(tag&&tag.tag==="star")score=Math.min(100,score+10);if(tag&&tag.tag==="block")score=Math.min(score,10);
-  const ts=[...(L.length?[L[L.length-1].time,L[0].time]:[]),...(Hh?[Hh.f,Hh.l]:[])];return{L,done,canc,ap,closed,comp,vol,buy:side("SELL"),sell:side("BUY"),bk,mt,hb,tag,score,hist:Hh,total:L.length+(Hh?Hh.o:0),first:ts.length?Math.min(...ts):0,last:ts.length?Math.max(...ts):0}}
+  const SPm=(()=>{try{return ACC().sellP||{}}catch(e){return{}}})();const profit=done.filter(o=>o.side==="SELL").reduce((t,o)=>t+(SPm[o.id]||0),0);const tms=done.filter(o=>o.doneAt&&o.doneAt>o.time).map(o=>(o.doneAt-o.time)/6e4);const avgT=tms.length?tms.reduce((a,b)=>a+b,0)/tms.length:0;
+  const ts=[...(L.length?[L[L.length-1].time,L[0].time]:[]),...(Hh?[Hh.f,Hh.l]:[])];return{L,done,profit,avgT,canc,ap,closed,comp,vol,buy:side("SELL"),sell:side("BUY"),bk,mt,hb,tag,score,hist:Hh,total:L.length+(Hh?Hh.o:0),first:ts.length?Math.min(...ts):0,last:ts.length?Math.max(...ts):0}}
+const phNorm=v=>{const d=String(v||"").replace(/\D/g,"");return d.length===10?"91"+d:d};
+const tgNorm=v=>String(v||"").trim().replace(/^https?:\/\/(t\.me|telegram\.me)\//i,"").replace(/^@/,"").replace(/[^\w]/g,"");
+function cpxHtml(name,D){const x=cpx(name)||{},lb=x.labels||[],all=[...CP_LABELS,...lb.filter(l=>!CP_LABELS.includes(l))];
+  const upi={},pay={};D.L.forEach(o=>{if(o.vpa)upi[o.vpa]=(upi[o.vpa]||0)+1;if(o.payer)pay[o.payer]=(pay[o.payer]||0)+1});
+  const ph=phNorm(x.phone),tg=tgNorm(x.tg);
+  return`<div class="pcsec">Labels</div><div class="lbs">${all.map(l=>`<button type="button" class="lbc${lb.includes(l)?" on":""}" data-lb="${esc(l)}">${esc(l)}</button>`).join("")}</div><div class="tgf" style="margin-top:8px"><input id="tr-lbin" placeholder="Add your own label" maxlength="24"><button type="button" class="mini ghost" id="tr-lbadd">Add</button></div>
+  <div class="pcsec">Contact</div><div class="tgf" style="flex-wrap:wrap"><input id="tr-ph" style="flex:1 1 100%" inputmode="tel" placeholder="Phone number" value="${esc(x.phone||"")}" maxlength="20"><input id="tr-tg" style="flex:1 1 100%" placeholder="Telegram @username" value="${esc(x.tg||"")}" maxlength="40"></div><div class="cpexp"><button type="button" class="mini ghost" id="tr-cs">Save contact</button>${ph?`<a class="mini ghost" href="tel:+${ph}">Call</a><a class="mini ghost" href="https://wa.me/${ph}" target="_blank" rel="noopener">WhatsApp</a>`:""}${tg?`<a class="mini ghost" href="https://t.me/${tg}" target="_blank" rel="noopener">Telegram</a>`:""}</div>
+  ${Object.keys(upi).length||Object.keys(pay).length?`<div class="pcsec">Known accounts</div><div class="rml">${Object.entries(upi).map(([v,n])=>`<div class="dqr"><span>Pays to UPI</span><b style="font-weight:600;word-break:break-all">${esc(v)} <em class="note" style="font-style:normal">×${n}</em></b></div>`).join("")}${Object.entries(pay).map(([v,n])=>{const same=verNameBase(v,name)==="M"||ixlAlias(v,name);return`<div class="dqr"><span>Paid by</span><b style="font-weight:600;text-align:right">${esc(v)} <em class="cpp ${same?"star":"risk"}">${same?"Same name":"Third party"}</em> <em class="note" style="font-style:normal">×${n}</em></b></div>`}).join("")}</div>`:""}`}
+function cpOrdersCsv(name){const D=traderData(name);const q=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const rows=[...D.L].sort((a,b)=>a.time-b.time).map(o=>{const d=new Date(o.time);return[d.toLocaleDateString("en-CA"),d.toLocaleTimeString("en-GB"),o.side,o.coin,o.qty,o.rate,orderTotal(o).toFixed(2),o.status,o.platform,o.pay,o.cp,o.payer||"",o.vpa||"",o.utr||""].map(q).join(",")});
+  return"\ufeff"+["Date,Time,Side,Coin,Quantity,Rate,Total INR,Status,Platform,Payment,Counterparty,Paid by,UPI,UTR",...rows].join("\n")}
+function cpStatement(name){const D=traderData(name);const L=[...D.L].sort((a,b)=>a.time-b.time);
+  return[`Statement: ${name}`,`${D.total} orders · ${D.canc} cancelled · completed ${inr(Math.round(D.vol))}`,"",...L.slice(-15).map(o=>`${new Date(o.time).toLocaleDateString("en-IN",{day:"numeric",month:"short"})} · ${o.side==="BUY"?"Bought":"Sold"} ${fmtQ(o.qty)} ${o.coin} @ ₹${fmtR(o.rate)} = ${inr(Math.round(orderTotal(o)))} · ${o.status}`)].join("\n")}
+function cpxBind(el,name,D){const q=s=>el.querySelector(s);
+  const setLb=async list=>{try{await cpxSet(name,{labels:list});sheets.trader(name)}catch(e){toast("Couldn't save")}};
+  el.querySelectorAll("[data-lb]").forEach(b=>b.onclick=()=>{const cur=new Set((cpx(name)||{}).labels||[]);cur.has(b.dataset.lb)?cur.delete(b.dataset.lb):cur.add(b.dataset.lb);setLb([...cur])});
+  q("#tr-lbadd").onclick=()=>{const v=q("#tr-lbin").value.trim().slice(0,24);if(!v)return;setLb([...new Set([...((cpx(name)||{}).labels||[]),v])])};
+  q("#tr-cs").onclick=async()=>{try{await cpxSet(name,{phone:q("#tr-ph").value.trim(),tg:q("#tr-tg").value.trim()});toast("Contact saved");sheets.trader(name)}catch(e){toast("Couldn't save")}};
+  q("#tr-csv").onclick=()=>saveFile(`Pexai-${cpKey(name).replace(/^cp_/,"")||"client"}-${new Date().toLocaleDateString("en-CA")}.csv`,cpOrdersCsv(name));
+  q("#tr-wa").onclick=()=>{const t=cpStatement(name);if(navigator.share)navigator.share({text:t}).catch(()=>{});else window.open("https://wa.me/?text="+encodeURIComponent(t),"_blank")}}
 sheets.trader=function(name){if(!name)return;const D=traderData(name);const lv=!D.closed?"mute":D.score>=75?"ok":D.score>=50?"warn":"bad";const coin=pref("coin")||"USDT";
   const myB=avgBuyRate(orders,coin),myS=(()=>{let q=0,v=0;orders.forEach(o=>{if(o.side==="SELL"&&o.status==="Completed"&&o.coin===coin){q+=+o.qty;v+=o.qty*o.rate}});return q?v/q:0})();
   const isB=D.tag&&D.tag.tag==="block",isS=D.tag&&D.tag.tag==="star";
   openSheet(`<div class="insw"><div class="pvh"><span class="pva">${esc(name.slice(0,2).toUpperCase())}</span><div class="pvn"><b>${esc(name)} ${cpBadge(name)}</b><small>${D.total?`Since ${new Date(D.first).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})} · last ${dfmt(D.last)}`:"No orders yet"}</small></div><span class="pvs ${lv}">${!D.closed?"New":lv==="ok"?"Good":lv==="warn"?"Careful":"Risky"}</span></div>
     ${akaNames(name).length?`<p class="note" style="margin:6px 0">Also known as: ${akaNames(name).map(esc).join(", ")}</p>`:""}
     <div class="tgh">${ring(D.score,100,lvlCol(lv==="mute"?"warn":lv),D.closed?D.score:"—","trust score")}<div class="tgk"><div><span>Volume</span><b>${inr(Math.round(D.vol))}</b></div><div><span>Completion</span><b>${D.closed?Math.round(D.comp*100)+"%":"—"}</b></div></div></div>
-    <div class="msgr">${[["Orders",D.total,""],["Cancelled",D.canc,D.canc?"neg":""],["Appeals",D.ap,D.ap?"neg":""],["Bought from you",D.buy.n?fmtQ(+D.buy.q.toFixed(2))+" "+coin:"—",""],["Sold to you",D.sell.n?fmtQ(+D.sell.q.toFixed(2))+" "+coin:"—",""],["Usual time",D.total?hLab(D.hb):"—",""]].map(([l,v,c])=>`<div><span>${l}</span><b class="${c}">${v}</b></div>`).join("")}</div>
+    <div class="msgr">${[["Orders",D.total,""],["Cancelled",D.canc,D.canc?"neg":""],["Appeals",D.ap,D.ap?"neg":""],["Bought from you",D.buy.n?fmtQ(+D.buy.q.toFixed(2))+" "+coin:"—",""],["Sold to you",D.sell.n?fmtQ(+D.sell.q.toFixed(2))+" "+coin:"—",""],["Usual time",D.total?hLab(D.hb):"—",""],["Avg time",D.avgT?durF(D.avgT):"—",""],["Profit",D.profit?inr(Math.round(D.profit)):"—",D.profit<0?"neg":""],["Last order",D.last?cpAgo(D.last):"—",""]].map(([l,v,c])=>`<div><span>${l}</span><b class="${c}">${v}</b></div>`).join("")}</div>
     ${D.buy.n||D.sell.n?`<div class="pcsec">Rates with this trader</div>${insList([D.buy.n&&myS?[D.buy.avg>=myS?"ok":"warn",`You sold to them at <b>₹${D.buy.avg.toFixed(2)}</b> avg · your overall sell ₹${myS.toFixed(2)}.`]:null,D.sell.n&&myB?[D.sell.avg<=myB?"ok":"warn",`You bought from them at <b>₹${D.sell.avg.toFixed(2)}</b> avg · your overall buy ₹${myB.toFixed(2)}.`]:null])}`:""}
     ${Object.keys(D.bk).length?`<div class="pcsec">Money moved through</div><div class="rml">${Object.entries(D.bk).sort((a,b)=>b[1]-a[1]).map(([b,v])=>`<div class="dqr"><span>${esc(bankName(b))}</span><b>${inr(Math.round(v))}</b></div>`).join("")}<div class="dqr"><span>Methods</span><span class="note" style="margin:0">${Object.entries(D.mt).map(([m,n])=>m+" ×"+n).join(" · ")}</span></div></div>`:""}
-    <div class="pcsec">Note</div><div class="tgf"><input id="tr-note" placeholder="e.g. Pays from wife's account" value="${esc(D.tag&&D.tag.note||"")}" maxlength="120"><button type="button" class="mini ghost" id="tr-ns">Save</button></div>
+    ${cpxHtml(name,D)}<div class="pcsec">Note</div><div class="tgf"><input id="tr-note" placeholder="e.g. Pays from wife's account" value="${esc(D.tag&&D.tag.note||"")}" maxlength="120"><button type="button" class="mini ghost" id="tr-ns">Save</button></div>
     <div class="pcsec">Orders <span>${D.L.length}</span></div>${D.hist?`<p class="note trh">📚 + ${D.hist.o} older orders from imported history (${new Date(D.hist.f).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})} – ${new Date(D.hist.l).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}): ${D.hist.d} completed, ${D.hist.c} cancelled. Counted in the numbers above.</p>`:""}<div class="tl">${D.L.slice(0,25).map(o=>`<div class="tli ${o.status==="Cancelled"?"tdue":"pay"}" data-oid="${o.id}" style="cursor:pointer"><span class="tld"></span><div class="tlb"><div class="tlr"><b>${o.side==="BUY"?"Bought":"Sold"} ${fmtQ(o.qty)} ${esc(o.coin)} @ ₹${fmtR(o.rate)}</b><span class="amt">${inr(Math.round(orderTotal(o)))}</span></div><small>${tfmt(o.time)} · ${esc(o.status)}</small></div></div>`).join("")||(D.hist?"":'<p class="note">No orders.</p>')}</div>
-    <div class="pvfoot"><button type="button" class="mini ghost ${isS?"on":""}" id="tr-star">${isS?"★ Trusted":"☆ Trust"}</button><button type="button" class="mini ghost" id="tr-block" style="${isB?"color:var(--sell)":""}">${isB?"⛔ Blocked":"⛔ Block"}</button><button type="button" class="mini ghost" id="tr-back">Back</button></div></div>`,el=>{
+    <div class="cpexp"><button type="button" class="mini ghost" id="tr-csv">Orders CSV</button><button type="button" class="mini ghost" id="tr-wa">Share statement</button></div><div class="pvfoot"><button type="button" class="mini ghost ${isS?"on":""}" id="tr-star">${isS?"★ Trusted":"☆ Trust"}</button><button type="button" class="mini ghost" id="tr-block" style="${isB?"color:var(--sell)":""}">${isB?"⛔ Blocked":"⛔ Block"}</button><button type="button" class="mini ghost" id="tr-back">Back</button></div></div>`,el=>{
     el.querySelector("#tr-star").onclick=async()=>{try{await setCpTag(name,"star");sheets.trader(name)}catch(e){toast("Couldn't save")}};
     el.querySelector("#tr-block").onclick=async()=>{try{await setCpTag(name,"block");sheets.trader(name)}catch(e){toast("Couldn't save")}};
     el.querySelector("#tr-back").onclick=()=>sheets.cps();
     el.querySelector("#tr-ns").onclick=async()=>{const n=el.querySelector("#tr-note").value.trim();const t=cpTag(name);try{await putRec({id:cpKey(name),kind:"cptag",name,tag:t?t.tag:"note",note:n,time:Date.now()});toast("Note saved")}catch(e){toast("Couldn't save")}};
     el.querySelectorAll("[data-oid]").forEach(r=>r.onclick=()=>orderSheet(r.dataset.oid));
+    cpxBind(el,name,D);
   })};
 
 // ---- 2. Cash flow forecast

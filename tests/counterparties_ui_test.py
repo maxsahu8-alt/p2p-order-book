@@ -28,7 +28,7 @@ with sync_playwright() as p:
     pg.click("#cpmeta [data-sort]");pg.wait_for_timeout(100)
     chk("sort cycles to Volume",pg.evaluate("/Volume/.test(document.querySelector('#cpmeta').textContent)"))
     chk("volume sort puts biggest first",pg.evaluate("/Parvej|Dheepak/.test(document.querySelector('#cpl .cpn').textContent)"))
-    pg.click("#cpmeta [data-sort]");pg.click("#cpmeta [data-sort]");pg.click("#cpmeta [data-sort]");pg.wait_for_timeout(100)
+    [pg.click("#cpmeta [data-sort]") for _ in range(4)];pg.wait_for_timeout(100)
     chk("sort cycles back to Flagged first",pg.evaluate("/Flagged/.test(document.querySelector('#cpmeta').textContent)"))
     pg.click("#cpf [data-f=risk]");pg.wait_for_timeout(150)
     chk("Risky filter shows 1 row",pg.evaluate("document.querySelectorAll('#cpl .cprow').length")==1)
