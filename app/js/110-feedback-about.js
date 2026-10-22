@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=164;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=165;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00165","22 Oct 2026",["Smart Intake: an amount like 19,407.46 followed by the letters AM (avatar) was read as the time 07:46 AM, so a correct payment looked like it was made before the order. Fixed. When the screenshot says \"02:11 pm on 22 Oct 2026\" that time is now used."]],
   ["0.0.0.00164","22 Oct 2026",["Fix: closing the UPI QR maker or Payment card sheet before its tool had loaded could cause an error. Now it just closes quietly."]],
   ["0.0.0.00163","22 Oct 2026",["App is now built from separate modules (nothing changes for you). New: About > Features and licence. Switch optional parts on or off (Counterparties, Lite, Direct, AI, Market…), and unlock parts with a licence code. Owner tools make keys and codes on your phone."]],
   ["0.0.0.00162","22 Oct 2026",["Counterparties, 12 more things: Repeat last order (in the order form and on their profile); special rate that fills in by itself; follow-up reminders; a suggestion to block someone after 3 cancelled orders; per-person limits (per order and per day); Smart Intake now warns about blocked / slow-paying people and limits; dated notes log; photos and documents on a profile; top-3 concentration and a Top clients screen (volume, profit, orders); khata balance on the profile; Gold / Silver / Bronze rings by volume."]],

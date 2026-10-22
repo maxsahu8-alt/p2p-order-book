@@ -7,7 +7,7 @@ def chk(n,c):
     global f
     print(("PASS " if c else "FAIL ")+n); f+=0 if c else 1
 with sync_playwright() as p:
-    b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':900});errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
+    b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':900});errs=[];pg.on('pageerror',lambda e:errs.append(str(e)+' @'+(e.stack or '')[:300]))
     pg.add_init_script("localStorage.setItem('p2p_orders_v1',%s)"%json.dumps(json.dumps([{"id":"S","kind":"setting"}])))
     pg.goto('file://'+APP);pg.wait_for_timeout(1000)
     pg.evaluate("setPref('myUpi','shiv@okhdfc');setPref('owner','Shiv')")

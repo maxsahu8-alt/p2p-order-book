@@ -1,16 +1,16 @@
 // ================= PAYMENT SCREENSHOT READER — reads UPI / bank screenshots and SMS on the phone, you confirm
 const PAY_BANKS=[["SBI",/state bank(?: of(?: india)?)?|\bsbi\b/i],["HDFC Bank",/hdfc(?: bank)?/i],["ICICI Bank",/icici(?: bank)?/i],["Axis Bank",/axis(?: bank)?/i],["Kotak Bank",/kotak(?: mahindra)?(?: bank)?/i],["Yes Bank",/yes bank/i],["PNB",/punjab national(?: bank)?|\bpnb\b/i],["Bank of Baroda",/bank of baroda|\bbob\b/i],["Canara Bank",/canara(?: bank)?/i],["Union Bank",/union bank(?: of india)?/i],["IDFC First",/idfc(?: first)?(?: bank)?/i],["IndusInd Bank",/indusind(?: bank)?/i],["Federal Bank",/federal bank/i],["Paytm Payments Bank",/paytm payments bank/i],["Airtel Payments Bank",/airtel payments bank/i],["Jio Payments Bank",/jio payments bank/i],["India Post Payments Bank",/india post payments bank|\bippb\b/i],["Central Bank",/central bank(?: of india)?/i],["Bank of India",/bank of india/i],["Indian Bank",/indian bank/i],["UCO Bank",/uco bank/i],["IDBI Bank",/idbi(?: bank)?/i],["RBL Bank",/rbl(?: bank)?/i],["AU Small Finance",/au small finance(?: bank)?/i],["Bandhan Bank",/bandhan(?: bank)?/i]];
 const PAY_MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
-function payTime(t){t=String(t||"").replace(/\b0(?=ct\b)/gi,"O").replace(/\bn0v\b/gi,"Nov").replace(/\b2[Oo](\d\d)\b/g,"20$1").replace(/(\d{1,2})\.(\d{2})(\s*[ap]\.?m\b)/gi,"$1:$2$3"); // OCR slips: 0CT, 2O26, 11.47 AM
-  const yy=v=>{v=+v;return v<100?2000+v:v};let mi=0;
+function payTime(t){t=String(t||"").replace(/\b0(?=ct\b)/gi,"O").replace(/\bn0v\b/gi,"Nov").replace(/\b2[Oo](\d\d)\b/g,"20$1").replace(/(?<![\d,.])(\d{1,2})\.(\d{2})(\s*[ap]\.?m\b)/gi,"$1:$2$3"); // OCR slips: 0CT, 2O26, 11.47 AM
+  const yy=v=>{v=+v;return v<100?2000+v:v};let mi=0,tight=true;
   const tm=x=>{const m=String(x||"").match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?/i);if(!m)return null;let H=+m[1];const A=(m[3]||"").toLowerCase();if(A==="pm"&&H<12)H+=12;if(A==="am"&&H===12)H=0;return H>23?null:[H,+m[2]]};
   const MN="(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)";let m,d,mo,y,r=null;
-  if(m=t.match(new RegExp("(\\d{1,2})(?:st|nd|rd|th)?[\\s\\-\\/.,]+"+MN+"[a-z]*\\.?[\\s\\-\\/.,]+(\\d{2,4})(?![\\d:])(.{0,32})","i"))){d=+m[1];mo=PAY_MON[m[2].toLowerCase()];y=yy(m[3]);r=tm(m[4]);mi=m.index}
+  if(m=t.match(new RegExp("(\\d{1,2})(?:st|nd|rd|th)?[\\s\\-\\/.,]+"+MN+"[a-z]*\\.?[\\s\\-\\/.,]+(\\d{2,4})(?![\\d:])(.{0,32})","i"))){d=+m[1];mo=PAY_MON[m[2].toLowerCase()];y=yy(m[3]);r=tm(m[4]);tight=/^[\s,T@\-]*(?:at\s+)?\d{1,2}:\d{2}/i.test(m[4]);mi=m.index}
   else if(m=t.match(new RegExp(MN+"[a-z]*\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})(.{0,32})","i"))){mo=PAY_MON[m[1].toLowerCase()];d=+m[2];y=+m[3];r=tm(m[4])}
   else if(m=t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(.{0,32})/)){d=+m[1];mo=+m[2]-1;y=yy(m[3]);r=tm(m[4])}
   else if(m=t.match(new RegExp("(\\d{1,2})(?:st|nd|rd|th)?[\\s\\-\\/.,]+"+MN+"[a-z]*\\.?,?\\s+(\\d{1,2}:\\d{2}(?::\\d{2})?\\s*(?:am|pm)?)","i"))){d=+m[1];mo=PAY_MON[m[2].toLowerCase()];y=new Date().getFullYear();r=tm(m[3]);if(new Date(y,mo,d).getTime()>Date.now()+864e5)y--}
   else return 0;
-  if(!r&&mi>0){const pre=t.slice(Math.max(0,mi-20),mi).match(/(\d{1,2}:\d{2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:on|,|-)?\s*$/i);if(pre)r=tm(pre[1])}
+  if((!r||!tight)&&mi>0){const pre=t.slice(Math.max(0,mi-20),mi).match(/(\d{1,2}:\d{2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:on|,|-)?\s*$/i);if(pre)r=tm(pre[1])}
   if(!(mo>=0&&mo<=11&&d>=1&&d<=31&&y>=2015&&y<=2100))return 0;const dt=new Date(y,mo,d,r?r[0]:0,r?r[1]:0);return isNaN(dt)?0:dt.getTime()}
 // ---- v78: dates. A numeric date can be read two ways (day/month or month/day), so every reading is kept and the screenshots decide.
 // order of readings: [day/month, month/day]. Dates with a month name, or year first, have one reading.
