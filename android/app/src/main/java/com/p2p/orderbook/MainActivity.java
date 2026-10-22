@@ -652,22 +652,55 @@ public class MainActivity extends Activity {
     }
 
     // ---------------------------------------------------------------- updates
-    static byte[] httpGet(String u) throws Exception {
+    // one download: 8 s to connect, 15 s of silence allowed, and never longer than `deadline` (ms since epoch)
+    static byte[] httpGet(String u, long deadline) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(u).openConnection();
-        c.setConnectTimeout(8000); c.setReadTimeout(30000);
+        c.setConnectTimeout(8000); c.setReadTimeout(15000);
         c.setRequestProperty("Cache-Control", "no-cache");
         c.setInstanceFollowRedirects(true);
         int code = c.getResponseCode();
         if (code != 200) throw new Exception("HTTP " + code);
-        return readAll(c.getInputStream());
+        InputStream in = c.getInputStream();
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        byte[] buf = new byte[32768]; int n;
+        while ((n = in.read(buf)) > 0) {
+            b.write(buf, 0, n);
+            if (System.currentTimeMillis() > deadline) { in.close(); throw new Exception("too slow"); }
+        }
+        in.close();
+        return b.toByteArray();
     }
 
-    synchronized void checkUpdates(boolean manual) {
+    // the same file from the first address that works: raw.githubusercontent.com, then github.com/.../raw/
+    String[] updateBases() {
+        String base = BuildConfig.UPDATE_BASE;
+        String raw = "https://raw.githubusercontent.com/";
+        if (base != null && base.startsWith(raw)) {
+            String[] p = base.substring(raw.length()).split("/", 3); // user, repo, main/web/
+            if (p.length == 3) return new String[]{base, "https://github.com/" + p[0] + "/" + p[1] + "/raw/" + p[2]};
+        }
+        return new String[]{base};
+    }
+
+    byte[] getUpdateFile(String rel, String query, long deadline) throws Exception {
+        Exception last = null;
+        for (String b : updateBases()) {
+            try { return httpGet(b + rel + query, deadline); }
+            catch (Exception e) { last = e; if (System.currentTimeMillis() > deadline) break; }
+        }
+        throw last != null ? last : new Exception("no address");
+    }
+
+    synchronized boolean beginCheck() { if (checking) return false; checking = true; return true; }
+
+    void checkUpdates(boolean manual) {
         String base = BuildConfig.UPDATE_BASE;
         if (base == null || base.isEmpty()) { if (manual) js("P2PCheckResult", "Updates are not set up in this build"); return; }
-        checking = true;
+        if (!beginCheck()) { if (manual) js("P2PCheckResult", "A check is already running. Wait a minute and try again."); return; }
+        final long deadline = System.currentTimeMillis() + 120000; // a check never runs longer than 2 minutes
         try {
-            JSONObject v = new JSONObject(new String(httpGet(base + "version.json?t=" + System.currentTimeMillis()), StandardCharsets.UTF_8));
+            if (manual) js("P2PCheckProgress", "Contacting GitHub…");
+            JSONObject v = new JSONObject(new String(getUpdateFile("version.json", "?t=" + System.currentTimeMillis(), deadline), StandardCharsets.UTF_8));
             prefs.edit().putLong("lastCheck", System.currentTimeMillis()).apply();
             String remote = v.optString("web", "0");
             String installed = prefs.getString("webVer", "0");
@@ -683,7 +716,8 @@ public class MainActivity extends Activity {
                     String f = it.next();
                     String want = files.getString(f);
                     if (want.equals(have.optString(f)) && new File(dir("app"), f).exists()) continue;
-                    byte[] b = httpGet(base + f + "?v=" + remote);
+                    if (manual) js("P2PCheckProgress", "Downloading " + f + "…");
+                    byte[] b = getUpdateFile(f, "?v=" + remote, deadline);
                     if (!want.isEmpty() && !want.equals(sha1(b))) throw new Exception("download check failed: " + f);
                     if (f.equals("index.html")) {
                         String t = new String(b, StandardCharsets.UTF_8);
