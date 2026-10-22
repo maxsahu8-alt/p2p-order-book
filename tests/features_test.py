@@ -51,7 +51,7 @@ with sync_playwright() as p:
     pg.evaluate("sheets.features()");pg.wait_for_timeout(300)
     chk("switch list has every part",pg.evaluate("document.querySelectorAll('[data-fk]').length")==pg.evaluate("FEATURES.length"))
     pg.evaluate("document.querySelector('[data-fk=ai]').click()")
-    pg.click("#fs-save");pg.wait_for_timeout(5000)
+    pg.click("#fs-save");pg.wait_for_function("window.__featOff&&window.__featOff.indexOf('ai')>=0",timeout=30000);pg.wait_for_timeout(500)
     chk("switching a part off and restarting turns it off",pg.evaluate("feat('ai')")==False and pg.evaluate("feat('counterparties')")==True)
     chk("no page errors (switch screen)",not errs);b.close()
     # ---------- licence codes
