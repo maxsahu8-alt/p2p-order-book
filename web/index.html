@@ -639,12 +639,35 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .cpwarn.star{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
 .cpwarn.info{color:var(--muted);background:var(--soft)}
 #formTitle.editing{color:var(--warn)}
-.cprow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:12px 14px;border-top:1px solid var(--line);align-items:center}
+.cpnote{margin:-8px 0 12px;line-height:1.45}
+.cpsearch{position:relative;margin-bottom:10px}
+.cpsearch svg{position:absolute;left:13px;top:50%;width:18px;height:18px;transform:translateY(-50%);fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;pointer-events:none}
+.cpsearch input{padding-left:40px;border-radius:12px}
+.cpfs{display:flex;gap:5px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
+.cpfs::-webkit-scrollbar{display:none}
+.cpf{flex:1 1 auto;justify-content:center;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:99px;padding:6px 8px;font:600 .76rem var(--body);cursor:pointer;white-space:nowrap}
+.cpf i{font-style:normal;font-size:.7rem;font-weight:700;background:var(--raised);color:var(--muted);border-radius:99px;padding:1px 6px;min-width:16px;text-align:center}
+.cpf.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.cpf.on i{background:color-mix(in srgb,var(--bg) 18%,transparent);color:var(--bg)}
+.cplist{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+.cprow{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 12px;border-top:1px solid var(--line);align-items:center}
 .cprow:first-child{border-top:0}
-.cprow .o-meta{grid-column:1/-1;white-space:normal}
+.cpmain{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;min-width:0;border:0;background:none;color:var(--fg);font:inherit;text-align:left;padding:0;cursor:pointer}
+.cpav{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--raised);color:var(--muted);font:700 .8rem var(--body);letter-spacing:.02em}
+.cprow.star .cpav{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.cprow.block .cpav{background:color-mix(in srgb,var(--sell) 16%,transparent);color:var(--sell)}
+.cpbody{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cpn{font:700 .95rem var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.cpm{font:500 .76rem var(--body);color:var(--muted)}
+.cpc{font:600 .72rem var(--body);color:var(--muted)}
+.cpc.hi{color:var(--sell)}
+.cpgo{display:none}
+.cpgo svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tagbtns{display:flex;gap:6px}
-.tagbtns button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:99px;padding:5px 10px;font:600 .74rem var(--body);cursor:pointer}
+.tagbtns button{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:50%;padding:0;cursor:pointer}
+.tagbtns button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tagbtns button.on.star{background:var(--warn);color:#111;border-color:var(--warn)}
+.tagbtns button.on.star svg{fill:currentColor}
 .tagbtns button.on.block{background:var(--sell);color:#fff;border-color:var(--sell)}
 .rep{display:flex;flex-direction:column;gap:12px}
 .rep pre{white-space:pre-wrap;background:var(--soft);border-radius:12px;padding:12px;font:500 .82rem/1.55 var(--mono);margin:0;user-select:text;-webkit-user-select:text}
@@ -6018,10 +6041,19 @@ function cpCheck(){const n=$("#f-cp").value.trim(),w=$("#cpWarn");if(!n){w.hidde
 $("#f-cp").addEventListener("input",cpCheck);
 function cpDatalist(){const m=cpStats();$("#cpList").innerHTML=parties.map(p=>`<option value="${esc(p.name)}">`).join("")+Object.values(m).filter(x=>!parties.some(p=>p.name.toLowerCase()===x.name.toLowerCase())).sort((a,b)=>b.last-a.last).slice(0,60).map(x=>`<option value="${esc(x.name)}">`).join("")}
 async function setCpTag(name,tag,note){const id=cpKey(name);const cur=cpTag(name);if(cur&&cur.tag===tag&&note===undefined){await delRec(id);return}await putRec({id,kind:"cptag",name,tag,note:note!==undefined?note:(cur&&cur.note)||"",time:Date.now()})}
-sheets.cps=function(){let q="";const draw=el=>{const m=cpStats();const list=Object.entries(m).filter(([k,x])=>!q||x.name.toLowerCase().includes(q)).sort((a,b)=>{const ta=cpTag(a[1].name),tb=cpTag(b[1].name);const w=t=>t?(t.tag==="block"?0:1):2;return w(ta)-w(tb)||b[1].n-a[1].n}).slice(0,80);
-    el.querySelector("#cpl").innerHTML=list.length?list.map(([k,x])=>{const t=cpTag(x.name);const rate=x.n?Math.round(x.c/x.n*100):0;return `<div class="cprow"><span data-tr="${esc(x.name)}" style="cursor:pointer"><b>${esc(x.name)}</b>${cpBadge(x.name)} <em class="trgo">360 ›</em></span><span class="tagbtns" data-n="${esc(x.name)}"><button type="button" class="star ${t&&t.tag==="star"?"on":""}" data-t="star">★</button><button type="button" class="block ${t&&t.tag==="block"?"on":""}" data-t="block">⛔</button></span><div class="o-meta">${x.n} orders · ${inr(Math.round(x.vol))} done${x.c?` · <span style="color:${rate>=30?"var(--sell)":"inherit"}">${x.c} cancelled (${rate}%)</span>`:""}${x.ap?` · ${x.ap} appeal`:""}${t&&t.note?" · "+esc(t.note):""}</div></div>`}).join(""):'<div class="empty">No counterparties yet. They appear here from your orders.</div>'};
-  openSheet(`<h3>Counterparties</h3><p class="note" style="margin:-8px 0 10px">★ trusted, ⛔ blocked. You get a warning when a blocked or often-cancelling name is used in a new order.</p><input id="cpq" placeholder="Search name" autocomplete="off" style="margin-bottom:10px"><div class="list" id="cpl"></div><div class="row2" style="margin-top:12px"><button class="mini ghost" type="button" data-close>Close</button></div>`,el=>{
+sheets.cps=function(){let q="",fl="all";
+  const IC={star:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.6 6.9 19.3l1-5.7-4.1-4 5.7-.8z"/></svg>',block:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M6.2 6.2l11.6 11.6"/></svg>',go:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>'};
+  const ini=n=>{const w=String(n).trim().split(/\s+/).filter(Boolean);return((w[0]||"?")[0]+(w.length>1?w[w.length-1][0]:"")).toUpperCase()};
+  const risky=x=>x.n>=3&&x.c/x.n>=0.3;
+  const draw=el=>{const m=cpStats();const all=Object.values(m);
+    const cnt={all:all.length,star:0,block:0,risk:0};all.forEach(x=>{const t=cpTag(x.name);if(t&&t.tag==="star")cnt.star++;if(t&&t.tag==="block")cnt.block++;if(risky(x))cnt.risk++});
+    el.querySelector("#cpf").innerHTML=[["all","All"],["star","Trusted"],["block","Blocked"],["risk","Risky"]].map(([k,l])=>`<button type="button" class="cpf${fl===k?" on":""}" data-f="${k}">${l}<i>${cnt[k]}</i></button>`).join("");
+    const list=Object.values(m).filter(x=>{if(q&&!x.name.toLowerCase().includes(q))return false;const t=cpTag(x.name);if(fl==="star")return t&&t.tag==="star";if(fl==="block")return t&&t.tag==="block";if(fl==="risk")return risky(x);return true}).sort((a,b)=>{const ta=cpTag(a.name),tb=cpTag(b.name);const w=t=>t?(t.tag==="block"?0:1):2;return w(ta)-w(tb)||b.n-a.n}).slice(0,80);
+    el.querySelector("#cpl").innerHTML=list.length?list.map(x=>{const t=cpTag(x.name);const tg=t?t.tag:"";const rate=x.n?Math.round(x.c/x.n*100):0;
+      return `<div class="cprow ${tg}"><button type="button" class="cpmain" data-tr="${esc(x.name)}"><span class="cpav">${esc(ini(x.name))}</span><span class="cpbody"><b class="cpn">${esc(x.name)}</b><small class="cpm">${x.n} ${x.n===1?"order":"orders"} · ${inr(Math.round(x.vol))} done${x.ap?` · ${x.ap} appeal`:""}</small>${x.c?`<small class="cpc${rate>=30?" hi":""}">${x.c} cancelled · ${rate}%</small>`:""}${t&&t.note?`<small class="cpm">${esc(t.note)}</small>`:""}</span><span class="cpgo">${IC.go}</span></button><span class="tagbtns" data-n="${esc(x.name)}"><button type="button" class="star ${tg==="star"?"on":""}" data-t="star" aria-label="Mark trusted" aria-pressed="${tg==="star"}">${IC.star}</button><button type="button" class="block ${tg==="block"?"on":""}" data-t="block" aria-label="Block" aria-pressed="${tg==="block"}">${IC.block}</button></span></div>`}).join(""):`<div class="empty">${q||fl!=="all"?"No one matches this filter.":"No counterparties yet. They appear here from your orders."}</div>`};
+  openSheet(`<h3>Counterparties</h3><p class="note cpnote">Mark people you trust or want to avoid. You get a warning when a blocked or often-cancelling name is used in a new order.</p><div class="cpsearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><input id="cpq" placeholder="Search name" autocomplete="off"></div><div class="cpfs" id="cpf"></div><div class="list cplist" id="cpl"></div><div class="row2" style="margin-top:12px"><button class="mini ghost" type="button" data-close>Close</button></div>`,el=>{
     draw(el);el.querySelector("#cpq").oninput=e=>{q=e.target.value.trim().toLowerCase();draw(el)};
+    el.querySelector("#cpf").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;fl=b.dataset.f;draw(el)});
     el.querySelector("#cpl").addEventListener("click",async e=>{const tr=e.target.closest("[data-tr]");if(tr){sheets.trader(tr.dataset.tr);return}const b=e.target.closest("[data-t]");if(!b)return;const n=b.parentElement.dataset.n;try{await setCpTag(n,b.dataset.t);draw(el)}catch(err){toast("Couldn't save")}})})};
 ACT.tag_counterparty={d:a=>`${a.tag==="block"?"Block":"Mark trusted"}: ${a.name}${a.note?" · "+a.note:""}`,run:async a=>{if(!a.name||!["star","block"].includes(a.tag))throw new Error("needs name and tag");await putRec({id:cpKey(a.name),kind:"cptag",name:String(a.name).slice(0,60),tag:a.tag,note:String(a.note||"").slice(0,120),time:Date.now()})}};
 
@@ -6331,7 +6363,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=158;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=159;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6398,6 +6430,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00159","22 Oct 2026",["Counterparties redesigned: initials avatar, filters (All / Trusted / Blocked / Risky), search icon, round Trusted and Block buttons, tap a person to open their 360 view, \"1 order\" wording fixed."]],
   ["0.0.0.00158","18 Oct 2026",["Add sheet fix: the icon on the New order and Smart intake cards no longer covers the card title. The icon now sits inside the card (48 px) instead of floating over it. This is the fix that build 157 was missing on phones."]],
   ["0.0.0.00157","18 Oct 2026",["Add sheet: new icons for New order (a coin with swap arrows) and Smart intake (a scan frame with a spark), a little bigger (48 px instead of 40 px). The icon now sits in the card instead of floating over it, so it can never cover the title."]],
   ["0.0.0.00156","18 Oct 2026",["Smart Intake amount: when the payment amount finally chosen (often the AI reading) does not fit the order, the app now also tries the phone’s own reading and the figure without a wrongly read first digit (₹5,083.09 read as 75,083), and takes one only when it is exactly the order total. Before, this fix only ran on the phone reading, so a wrong AI amount stayed and showed as a mismatch."]],
