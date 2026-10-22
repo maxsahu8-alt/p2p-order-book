@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=168;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=169;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00169","23 Oct 2026",["Smart Intake: the exchange page does not show the payment method (or the accounts), so those rows said NOT FOUND and pulled the match score down. Now the method is read from the payment itself (UPI, IMPS…) and shown as FROM PAYMENT, and it no longer lowers the score. If the order does state a different method, it is still flagged."]],
   ["0.0.0.00168","23 Oct 2026",["Smart Intake, PhonePe: a dark screenshot could lose the first digit of the clock (11:42 pm read as 1:42 pm), so a correct payment looked like it was made before the order. The PhonePe transaction id (T2610222342…) has the payment time inside it, so the app now double-checks the clock against it and uses the id when they disagree. The card says when it did that."]],
   ["0.0.0.00167","23 Oct 2026",["Updates: the check now shows what it is doing (Contacting GitHub, Downloading…), never runs longer than 2 minutes, tries a second GitHub address if the first does not answer, and says clearly if it fails. The Check button no longer stays on \"Checking…\" forever."]],
   ["0.0.0.00166","23 Oct 2026",["Smart Intake, BUY orders: the exchange page shows only the other person (Counterparty), but the app also put that name as the Buyer, so your own payment looked like a name mismatch (e.g. DEEPAK SAHU vs AMIT MISHRA). Now, when the payment went out of one of your own banks (matched by the last 4 digits), the name your bank prints is treated as you and the Buyer is you. Payments from someone else's account, or to the wrong seller, are still flagged."]],

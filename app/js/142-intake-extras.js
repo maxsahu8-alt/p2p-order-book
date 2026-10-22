@@ -22,7 +22,7 @@ function ixScores(g){const X=g.X,P=X.pay,O=X.ord;
  const oc=g.items.map(x=>x.ocr&&x.ocr.conf).filter(c=>typeof c==="number"),ocr=oc.length?oc.reduce((a,b)=>a+b,0)/oc.length:null;
  const ext=Math.round(ocr==null?frac*100:0.5*ocr+0.5*frac*100);
  let mt=null,rows=[];
- if(g.order){let sw=0,sc=0,amtOk=false;g.cmp.fields.forEach(f=>{const w=IX_W[f.k];if(!w)return;const s=IX_S[f.res]==null?0:IX_S[f.res];sw+=w;sc+=w*s;if(f.k==="amount")amtOk=s===1;rows.push({k:f.k,label:f.label,res:f.res,w,pts:Math.round(w*s*10)/10})});
+ if(g.order){let sw=0,sc=0,amtOk=false;g.cmp.fields.forEach(f=>{const w=IX_W[f.k];if(!w||f.res==="AUTO")return;const s=IX_S[f.res]==null?0:IX_S[f.res];sw+=w;sc+=w*s;if(f.k==="amount")amtOk=s===1;rows.push({k:f.k,label:f.label,res:f.res,w,pts:Math.round(w*s*10)/10})});
   mt=sw?Math.round(sc/sw*100):null;if(mt!=null&&!amtOk)mt=Math.min(mt,40)}
  return{ext,match:mt,rows,frac:Math.round(frac*100),ocr:ocr==null?null:Math.round(ocr)}}
 function ixScoreHtml(g){let s;try{s=ixScores(g)}catch(e){return""}const bar=(l,v,t)=>`<div class="ixsc1" title="${t}"><span>${l}</span><b>${v==null?"—":v+"%"}</b><u><i style="width:${v||0}%"></i></u></div>`;

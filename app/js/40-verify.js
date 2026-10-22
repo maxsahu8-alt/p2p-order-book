@@ -57,7 +57,7 @@ function verCompare(X,ctx){ctx=ctx||{};const P=X.pay,O=X.ord,F=[];const now=ctx.
   {let res=O.id?"FOUND":"NOTFOUND",note="";if(O.id&&linked){note="Found in your orders: "+shortO(linked);if(linked.utr&&P.utr&&normRef(linked.utr)!==normRef(P.utr)){res="MISMATCH";note="That order already has a different UTR ("+linked.utr+")"}}
     add("orderid","Order ID","—",O.id,res,note,true)}
   // method
-  {const a=verMeth(P.method),b=verMeth(O.method);let res="NOTFOUND";if(a&&b)res=a===b||(a!=="UPI"&&b==="BANK")||(b!=="UPI"&&a==="BANK")?"MATCH":"UNCLEAR";add("method","Payment method",P.method,O.method,res,res==="UNCLEAR"?"Methods differ":"")}
+  {const a=verMeth(P.method),b=verMeth(O.method);let res="NOTFOUND";if(a&&b)res=a===b||(a!=="UPI"&&b==="BANK")||(b!=="UPI"&&a==="BANK")?"MATCH":"UNCLEAR";else if(a)res="AUTO"; /* the exchange page never shows the method: take it from the payment itself */ add("method","Payment method",P.method||a,b?O.method:(a?a+" · read from the payment":O.method),res,res==="UNCLEAR"?"Methods differ":res==="AUTO"?"The exchange page does not show it, so it is taken from the payment.":"")}
   // time
   {const pt=verWhen(P.date,P.time),ot=verWhen((O.when||"").slice(0,10),(O.when||"").slice(11,16));let res="NOTFOUND",note="";
     if(pt&&pt>now+10*60e3){res="MISMATCH";note="Payment time is in the future"}
@@ -65,12 +65,12 @@ function verCompare(X,ctx){ctx=ctx||{};const P=X.pay,O=X.ord,F=[];const now=ctx.
     else if(pt||ot){res="UNCLEAR";note=pt?"Order time not visible":"Payment time not visible"}
     add("time","Date & time",P.date?P.date+(P.time?" "+P.time:""):null,O.when,res,note,res==="MISMATCH")}
   // bank / UPI details
-  {const t=s=>(String(s||"").toLowerCase().match(/[a-z0-9@._]{4,}/g)||[]);const a=t(P.bank+" "+P.acct),b=t(O.acct);let res="NOTFOUND";if(P.acct||P.bank){if(b.length)res=a.some(x=>b.includes(x))?"MATCH":"UNCLEAR"}
+  {const t=s=>(String(s||"").toLowerCase().match(/[a-z0-9@._]{4,}/g)||[]);const a=t(P.bank+" "+P.acct),b=t(O.acct);let res="NOTFOUND";if(P.acct||P.bank){if(b.length)res=a.some(x=>b.includes(x))?"MATCH":"UNCLEAR";else res="AUTO"}
     let at=[P.bank,P.acct].filter(Boolean).join(" · ")||null,lab="Bank / UPI details";
     if(P.dir==="out"&&(P.vpa||P.fromLabel||P.fromLast4)){const sd=ctx.side,fl=sd==="SELL"?"From (client)":sd==="BUY"?"From (you)":"From",tl=sd==="SELL"?"To (you)":sd==="BUY"?"To (seller)":"To";
       const fr=[P.fromLabel||P.bank,P.fromLast4?"••"+P.fromLast4:P.acct].filter(Boolean).join(" ");const to=[P.receiver,P.vpa].filter(Boolean).join(" ");
       at=[fr?fl+": "+fr:"",to?tl+": "+to:""].filter(Boolean).join("  →  ")||at;lab="Paid from → paid to"}
-    add("acct",lab,at,O.acct,res,res==="UNCLEAR"?"No common detail found":"")}
+    add("acct",lab,at,O.acct,res,res==="UNCLEAR"?"No common detail found":res==="AUTO"?"The exchange page does not show accounts. This is what the payment shows.":"")}
   // payment status
   add("status","Payment status",P.status,O.status,P.status==="SUCCESS"?"MATCH":P.status==="FAILED"?"MISMATCH":"UNCLEAR",P.status==="FAILED"?"Payment shows as failed":P.status==="PENDING"?"Payment still pending":P.status?"":"Status not visible",true);
   // sanity: fiat vs crypto × price
@@ -93,8 +93,8 @@ function verCompare(X,ctx){ctx=ctx||{};const P=X.pay,O=X.ord,F=[];const now=ctx.
   conf-=0.08*F.filter(f=>f.res==="UNCLEAR").length+0.25*F.filter(f=>f.res==="MISMATCH").length+0.05*fl.length;conf=Math.max(0,Math.min(1,conf));
   return{fields:F,overall,flags:fl,local,confidence:Math.round(conf*100)/100,linked:linked?linked.id:null}}
 const VER_TXT={VERIFIED:["🟢","VERIFIED","Screenshot appears consistent"],REVIEW:["🟡","NEEDS REVIEW","Some details are missing or unclear"],MISMATCH:["🔴","MISMATCH","Potential inconsistency detected"]};
-const VER_ICO={MATCH:"✅",FOUND:"✅",UNCLEAR:"⚠️",MISMATCH:"❌",NOTFOUND:"—"};
-const VER_LBL={MATCH:"MATCH",FOUND:"FOUND",UNCLEAR:"UNCLEAR",MISMATCH:"MISMATCH",NOTFOUND:"NOT FOUND"};
+const VER_ICO={MATCH:"✅",FOUND:"✅",AUTO:"ℹ️",UNCLEAR:"⚠️",MISMATCH:"❌",NOTFOUND:"—"};
+const VER_LBL={MATCH:"MATCH",FOUND:"FOUND",AUTO:"FROM PAYMENT",UNCLEAR:"UNCLEAR",MISMATCH:"MISMATCH",NOTFOUND:"NOT FOUND"};
 // ---- run: provider adapter. Order of use: your Verify server (if set) → the AI you connected in Settings → on-phone reader (payment only)
 function verCfg(){try{return JSON.parse(localStorage.getItem("p2p_verify")||"{}")||{}}catch(e){return{}}}
 const verB64=b=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]||"");r.onerror=no;r.readAsDataURL(b)});

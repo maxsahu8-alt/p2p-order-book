@@ -150,7 +150,7 @@ ${text?"PASTED TEXT:\n"+text.slice(0,12000):""}${ocrText?"\nSCREENSHOT TEXT:"+oc
 $("#i2-go").onclick=()=>{i2Files.length?ixRun():legacyIntake()};
 // ---- Smart Intake: run, show, save
 let ixS={groups:[],items:[],busy:false,run:0,skip:null,aiNote:"",hist:null};
-const ixRes=(f)=>f.res==="UNCLEAR"?(f.k==="method"?"⚠ DIFFERENT METHOD":/name|buyer|seller/i.test(f.k)||f.k==="buyer"||f.k==="seller"?"⚠ PARTIAL MATCH":"⚠ UNCLEAR"):f.res==="MATCH"?"✓ MATCH":f.res==="FOUND"?"✓ FOUND":f.res==="MISMATCH"?"✕ MISMATCH":"— NOT FOUND";
+const ixRes=(f)=>f.res==="AUTO"?"ℹ FROM PAYMENT":f.res==="UNCLEAR"?(f.k==="method"?"⚠ DIFFERENT METHOD":/name|buyer|seller/i.test(f.k)||f.k==="buyer"||f.k==="seller"?"⚠ PARTIAL MATCH":"⚠ UNCLEAR"):f.res==="MATCH"?"✓ MATCH":f.res==="FOUND"?"✓ FOUND":f.res==="MISMATCH"?"✕ MISMATCH":"— NOT FOUND";
 function ixSide(g){if(g.side)return g.side;const O=g.X.ord,P=g.X.pay;const me=[pref("nick"),pref("owner")].filter(Boolean);
   for(const m of me){if(O.seller&&verName(m,O.seller)==="M")return"SELL";if(O.buyer&&verName(m,O.buyer)==="M")return"BUY";if(P.receiver&&verName(m,P.receiver)==="M")return"SELL";if(P.sender&&verName(m,P.sender)==="M")return"BUY"}
   if(O.side==="BUY"||O.side==="SELL")return O.side;
