@@ -631,6 +631,7 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 
 
 .o-actions{gap:4px}
+#formTitle.editing{color:var(--warn)}
 .cpb{font:700 .6rem var(--body);letter-spacing:.05em;text-transform:uppercase;padding:1px 5px;border-radius:4px;margin-left:4px}
 .cpb.star{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
 .cpb.block{color:var(--sell);background:color-mix(in srgb,var(--sell) 14%,transparent)}
@@ -638,7 +639,6 @@ img.full{width:100%;border-radius:12px;border:1px solid var(--line)}
 .cpwarn.block{color:var(--sell);background:color-mix(in srgb,var(--sell) 12%,transparent)}
 .cpwarn.star{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
 .cpwarn.info{color:var(--muted);background:var(--soft)}
-#formTitle.editing{color:var(--warn)}
 .cpnote{margin:-8px 0 14px;line-height:1.45}
 .cpstat{display:grid;grid-template-columns:.8fr 1.25fr 1.05fr;border:1px solid var(--line);border-radius:16px;background:var(--surface);margin-bottom:12px}
 .cpstat>div{padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -1523,6 +1523,10 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
 .payg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.payg label{font-size:.72rem;min-width:0}.payg input,.payg select{font-size:.88rem;padding:9px 10px;min-height:42px}
 .paycard .dirchk{flex-direction:row;align-items:center;gap:10px;font-size:.82rem;color:var(--fg)}.paycard .dirchk input{width:auto;min-height:0;flex:none}
 .paywarn{color:var(--sell);font-size:.78rem;font-weight:600;white-space:pre-line}.paywarn:empty{display:none}.paycard .ah small{text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted)}
+.fstat{display:flex;flex-direction:column;gap:3px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:12px 14px;margin:10px 0 0}
+.fstat b{font:700 1rem var(--display)}.fstat small{font:500 .78rem var(--body);color:var(--muted)}
+.fsr{align-items:center}.fsr>span{display:flex;flex-direction:column;gap:2px;min-width:0}.fsr small{font:500 .74rem var(--body);color:var(--muted);font-weight:500}
+.fotx{width:100%;box-sizing:border-box;font:500 .7rem ui-monospace,Menlo,monospace;word-break:break-all;background:var(--raised);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;resize:none}
 </style>
 
 <div class="wrap">
@@ -1912,6 +1916,40 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
 <div class="ih toast" id="toast"></div>
 
 <script>
+// ================= FEATURES: which parts of the app are switched on =================
+// Every optional part of the app is listed here. To hide or show a part nothing else has to change:
+//   k       short name            n / d   what the person sees      tier   basic · pro · business (plan presets)
+//   go      pages (tabs, menu)    sheets  screens (sheets.xxx)       css    other selectors to hide
+// Anything in the html with data-feat="k" is hidden too, and code that belongs to a part calls feat("k").
+// Basic (always on): orders, banks, wallet and stock, expenses, profit, backup, app lock, settings.
+const FEATURES=[
+ {k:"counterparties",n:"Counterparties",d:"Client list, trust score, labels, limits, notes and warnings",tier:"pro",sheets:["cps","cptop","trader","ident"],css:["#cpRep"]},
+ {k:"intake",n:"Smart Intake",d:"Reads payment and order screenshots and fills in your orders",tier:"pro",go:["intake"],sheets:["ixhist","ixmem","ixdebug","verify"]},
+ {k:"lite",n:"UPI Lite",d:"UPI Lite balance, loads and Lite payments",tier:"pro",sheets:["lite"]},
+ {k:"history",n:"History import",d:"Bring in old order history from files",tier:"pro",go:["import"],sheets:["imphist","gallery"]},
+ {k:"templates",n:"Chat templates",d:"Ready replies for your buyers and sellers",tier:"pro",sheets:["tpl"]},
+ {k:"whatsapp",n:"WhatsApp sharing",d:"Send reminders and statements on WhatsApp",tier:"pro",sheets:["wa","wasend"]},
+ {k:"reports",n:"Reports and statements",d:"Period reports, PDFs and client statements",tier:"pro",sheets:["report","stmt"]},
+ {k:"direct",n:"Direct deals and khata",d:"Direct parties, weekly payments and dues",tier:"business",go:["direct"],sheets:["party","partyView","pstmt","due","pay","pair","payee","khata"]},
+ {k:"insights",n:"Business insights",d:"Best time, best rate, targets, coach, loss finder, bank health",tier:"business",sheets:["besttime","bestrate","target","mscore","nightrep","coach","loss","rules","cashflow","bankrisk","bankhealth","insights","dayclose","glance"]},
+ {k:"ai",n:"AI assistant",d:"Ask anything, voice assistant and P2P Brain",tier:"business",go:["ai"],sheets:["brain","conv"],css:["#aiFab",".aifab"]},
+ {k:"market",n:"Live market and coins",d:"USDT price, P2P ads and coins",tier:"business",go:["coins"],sheets:["market","coinledger"],css:[".mkchip"]},
+ {k:"audit",n:"Audit log",d:"Full history of every change",tier:"business",sheets:["auditlog"]},
+ {k:"sync",n:"Phone database sync",d:"Keep a copy on your always-on phone",tier:"business",sheets:["dbphone"]}
+];
+const FEAT_BY={};FEATURES.forEach(f=>FEAT_BY[f.k]=f);
+// The owner's PUBLIC key (safe to be in the app). Empty = the app is open: every part is on unless switched off on this phone.
+// Once a key is here, optional parts need a licence code made with the matching private key (kept only on the owner's phone).
+let LIC_PUB="";
+const FS={off:[],lic:null,owner:false};
+function featLoad(){try{FS.off=JSON.parse(localStorage.getItem("p2p_feat_off")||"[]")}catch(e){FS.off=[]}
+  try{FS.lic=JSON.parse(localStorage.getItem("p2p_lic_ok")||"null")}catch(e){FS.lic=null}
+  try{FS.owner=!!localStorage.getItem("p2p_lic_priv")}catch(e){FS.owner=false}}
+featLoad();
+function licOk(){const l=FS.lic;if(!l)return null;if(l.exp&&Date.parse(l.exp+"T23:59:59")<Date.now())return null;return l}
+// is this part of the app on?  (unknown names are always on)
+function feat(k){const f=FEAT_BY[k];if(!f)return true;if(FS.off.indexOf(k)>=0)return false;if(!LIC_PUB||FS.owner)return true;
+  const l=licOk();return!!l&&(l.f==="*"||(Array.isArray(l.f)&&l.f.indexOf(k)>=0))}
 const APP_NAME="Pexai";const PX_LOGO='<svg width="40" height="40" viewBox="22 14 64 76" aria-hidden="true"><defs><linearGradient id="pxg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3DDCA6"/><stop offset="1" stop-color="#12A077"/></linearGradient></defs><path d="M37 82V28h19a16.5 16.5 0 0 1 0 33H37" fill="none" stroke="url(#pxg)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M78 24l2.2 5.3 5.3 2.2-5.3 2.2L78 39l-2.2-5.3-5.3-2.2 5.3-2.2z" fill="#F2B441"/></svg>';
 (function(){if(!document.getElementById("pxcss")){const s=document.createElement("style");s.id="pxcss";s.textContent=`.pxw{font-weight:800;letter-spacing:-.02em}.pxw i{font-style:normal;position:relative;display:inline-block;background:linear-gradient(100deg,#1FB887 18%,#B6FBE3 50%,#1FB887 82%);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:pxSh 2.8s ease-in-out infinite}.pxw i::after{content:"";position:absolute;right:-5px;top:-1px;width:5px;height:5px;background:#F2B441;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);-webkit-text-fill-color:initial;animation:pxTw 2.8s ease-in-out infinite}@keyframes pxSh{0%{background-position:100% 0}60%,100%{background-position:0% 0}}@keyframes pxTw{0%,40%{opacity:0;transform:scale(.3) rotate(0)}60%{opacity:1;transform:scale(1.15) rotate(45deg)}80%,100%{opacity:0;transform:scale(.3) rotate(90deg)}}
 @media(prefers-reduced-motion:reduce){.pxw i,.pxw i::after{animation:none!important}.pxw i{background:none;-webkit-text-fill-color:#1FB887}.pxw i::after{display:none}}`;document.head.appendChild(s)}})();
@@ -3039,7 +3077,7 @@ function ixMine(g){try{const X=g.X,P=X.pay,O=X.ord;const side=ixSide(g);if(!side
   return{side,verdict:L.length?w:"na",lines:L,bank:bk,acct}}catch(e){return{side:null,verdict:"na",lines:[],bank:null}}}
 // ---- risk: LOW / MEDIUM / HIGH with the reasons
 function ixCpOf(g){const X=g.X||{},O=X.ord||{},P=X.pay||{};if(g.target&&g.target.cp)return g.target.cp;const sd=ixSide(g);return sd==="SELL"?(O.buyer||P.sender||""):sd==="BUY"?(O.seller||P.receiver||""):(O.buyer||O.seller||"")}
-function ixCpRisk(g,hi,me){try{const cpn=ixCpOf(g);if(!cpn)return;const t=cpTag(cpn);if(t&&t.tag==="block")hi.push("Blocked counterparty: "+cpn);
+function ixCpRisk(g,hi,me){try{if(!feat("counterparties"))return;const cpn=ixCpOf(g);if(!cpn)return;const t=cpTag(cpn);if(t&&t.tag==="block")hi.push("Blocked counterparty: "+cpn);
   const x=cpx(cpn),lw=((x&&x.labels)||[]).filter(l=>CP_LBL_WARN.includes(l));if(lw.length)me.push(lw.join(", ")+": "+cpn);
   const st=cpStats()[cpKey(cpn)];if(st&&st.n>=3&&st.c/st.n>=0.3&&!(t&&t.tag==="block"))me.push(`${st.c} of ${st.n} orders with ${cpn} were cancelled`);
   const am=(g.X.pay&&g.X.pay.amount)||(g.X.ord&&g.X.ord.fiat);const w=am?cpLimitWarn(cpn,+am):"";if(w)me.push(w)}catch(e){}}
@@ -3161,11 +3199,11 @@ async function liteApply(b,mode,amt,note,force){const cur=+b.lite.bal||0;const b
   let lite={...b.lite,bal:nb,t:Date.now()};await patchRec(b.id,{lite});b.lite=lite;
   nb=await liteAutoTop(b,bb0,nb);
   return nb}
-const liteBanks=()=>banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on);
+const liteBanks=()=>feat("lite")?banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on):[];
 const LITE_APPS=["PhonePe","Google Pay","Paytm","BHIM","Other"];
 const liteAppOf=t=>/phonepe|phone pe/i.test(t)?"PhonePe":/google ?pay|gpay|g pay/i.test(t)?"Google Pay":/paytm/i.test(t)?"Paytm":/\bbhim\b/i.test(t)?"BHIM":"";
-const ixLiteHint=(hints,app)=>{try{const L=banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on);for(const h0 of hints||[]){const h=String(h0||"");if(!h||/yes bank|upi\s*lite|^lite$/i.test(h))continue;const B=PAY_BANKS.find(([,re])=>re.test(h)),k=String(B?B[0]:h).toLowerCase().split(" ")[0];if(k.length<3)continue;let c=L.filter(b=>((b.name||"")+" "+(b.bankName||"")).toLowerCase().includes(k));if(c.length>1&&app)c=c.filter(b=>b.lite.app===app);if(c.length===1)return c[0]}}catch(e){}return null};
-const ixLiteBank=(amt,app)=>{const L=banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on);if(!L.length)return null;const A=app?L.filter(b=>b.lite.app===app):[];const pool=A.length?A:L;return pool.find(b=>(+b.lite.bal||0)>=(amt||0))||pool[0]||null};
+const ixLiteHint=(hints,app)=>{try{if(!feat("lite"))return null;const L=banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on);for(const h0 of hints||[]){const h=String(h0||"");if(!h||/yes bank|upi\s*lite|^lite$/i.test(h))continue;const B=PAY_BANKS.find(([,re])=>re.test(h)),k=String(B?B[0]:h).toLowerCase().split(" ")[0];if(k.length<3)continue;let c=L.filter(b=>((b.name||"")+" "+(b.bankName||"")).toLowerCase().includes(k));if(c.length>1&&app)c=c.filter(b=>b.lite.app===app);if(c.length===1)return c[0]}}catch(e){}return null};
+const ixLiteBank=(amt,app)=>{if(!feat("lite"))return null;const L=banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on);if(!L.length)return null;const A=app?L.filter(b=>b.lite.app===app):[];const pool=A.length?A:L;return pool.find(b=>(+b.lite.bal||0)>=(amt||0))||pool[0]||null};
 function ixL4(v){const t=String(v==null?"":v).replace(/\S*\d\S*@[A-Za-z]\S*/g," ");const m=[...t.matchAll(/(\d{4})(?!\d)/g)];return m.length?m[m.length-1][1]:!/@/.test(String(v||""))&&String(v||"").replace(/\D/g,"").length===4?String(v).replace(/\D/g,""):""}
 function payBank(p){const mine=banks.filter(b=>b.type!=="Cash");let b=null;if(p.last4)b=mine.find(x=>x.accNo&&String(x.accNo).replace(/\D/g,"").endsWith(p.last4));
   if(!b&&p.vpa){const v=String(p.vpa).toLowerCase().trim(),VL=x=>[...(x.vpas||[]),...String(x.upi||"").split(/[\s,;]+/)].map(y=>String(y).toLowerCase().trim()).filter(y=>y.includes("@"));b=mine.find(x=>VL(x).includes(v))||null;
@@ -3321,18 +3359,18 @@ const sheets={
       <label>NEFT limit (₹)<input id="s-lneft" type="number" inputmode="decimal" step="any" value="${(b.limits||{}).NEFT||""}" placeholder="e.g. 1000000"></label>
       <label>Total bank limit (₹)<input id="s-lall" type="number" inputmode="decimal" step="any" value="${(b.limits||{}).ALL||""}" placeholder="All methods / day"></label>
     </div>
-    <div class="flabel" style="margin:4px 0 -4px">UPI Lite</div>
-    <div class="limgrid">
+    <div class="flabel" data-feat="lite" style="margin:4px 0 -4px">UPI Lite</div>
+    <div class="limgrid" data-feat="lite">
       <label>UPI Lite<select id="s-lite"><option value="" ${!(b.lite&&b.lite.on)?"selected":""}>Not used</option><option value="1" ${b.lite&&b.lite.on?"selected":""}>Active on this bank</option></select></label>
       <label>Lite is in app<select id="s-liteapp">${["",...LITE_APPS].map(a=>`<option value="${a}" ${((b.lite&&b.lite.app)||"")===a?"selected":""}>${a||"Not sure"}</option>`).join("")}</select></label>
       <label>Lite balance now (₹)<input id="s-litebal" type="number" inputmode="decimal" step="any" min="0" value="${(b.lite&&b.lite.bal)||""}" placeholder="Max 5,000"></label>
     </div>
-    ${id&&b.lite&&b.lite.on?`<button type="button" class="mini" data-sheet="lite:${id}">Load / withdraw UPI Lite</button>`:""}<div class="limgrid">
+    ${id&&b.lite&&b.lite.on?`<button type="button" class="mini" data-sheet="lite:${id}">Load / withdraw UPI Lite</button>`:""}<div class="limgrid" data-feat="lite">
       <label>Auto top-up<select id="s-lauto"><option value="" ${!(b.lite&&b.lite.auto&&b.lite.auto.on)?"selected":""}>Off</option><option value="1" ${b.lite&&b.lite.auto&&b.lite.auto.on?"selected":""}>On in bank app</option></select></label>
       <label>When Lite is below (₹)<input id="s-lbelow" type="number" inputmode="decimal" step="any" min="0" value="${(b.lite&&b.lite.auto&&b.lite.auto.below)||""}" placeholder="e.g. 200"></label>
       <label>Add each time (₹)<input id="s-lamt" type="number" inputmode="decimal" step="any" min="0" value="${(b.lite&&b.lite.auto&&b.lite.auto.amt)||""}" placeholder="e.g. 1000"></label>
     </div>
-    <p class="note" style="margin:-6px 0 0">UPI Lite is a small wallet inside your bank app: up to ₹5,000 balance, ₹1,000 per payment, no PIN. To move money from the bank into Lite, use Load, Withdraw or Spent. Load takes money out of the bank, Withdraw puts it back in the same bank, Spent lowers the Lite balance only. Lite is counted in your net worth.</p>
+    <p class="note" data-feat="lite" style="margin:-6px 0 0">UPI Lite is a small wallet inside your bank app: up to ₹5,000 balance, ₹1,000 per payment, no PIN. To move money from the bank into Lite, use Load, Withdraw or Spent. Load takes money out of the bank, Withdraw puts it back in the same bank, Spent lowers the Lite balance only. Lite is counted in your net worth.</p>
     <label>Daily receive comfort limit (₹)<input id="s-rcap" type="number" inputmode="decimal" step="any" value="${b.rcvCap||""}" placeholder="Most you like to receive here in 24 hours (optional)"></label>
     <label id="s-fatw" ${b.status==="frozen"?"":"hidden"}>When did it freeze? (optional)<input id="s-fat" type="datetime-local" value="${b.frozenAt?new Date(b.frozenAt-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16):""}"></label>
     <p class="note" style="margin:-6px 0 0">When you mark a bank frozen, the app remembers how busy it was just before and warns you earlier next time. Leave limits empty for no limit. UPI is counted over the last 24 hours: each payment frees up 24 hours after it was sent. IMPS, NEFT and Total reset at midnight.</p>
@@ -6058,7 +6096,7 @@ function renderIxHist(){const el=$("#i2-hist");if(!el)return;const L=recs.filter
 // ---------- order edit / repeat ----------
 let editingId=null;
 function lastRate(coin,sd){const o=orders.filter(x=>x.coin===coin&&x.side===sd&&x.status!=="Cancelled").sort((a,b)=>b.time-a.time)[0];return o?o.rate:null}
-function cpSpecial(){const n=$("#f-cp").value.trim(),x=n&&cpx(n);return x&&+x.rate>0?+x.rate:0}
+function cpSpecial(){if(!feat("counterparties"))return 0;const n=$("#f-cp").value.trim(),x=n&&cpx(n);return x&&+x.rate>0?+x.rate:0}
 function rateHintUpd(){const r=lastRate($("#f-coin").value,side);$("#rateHint").textContent=r?`last ${side==="BUY"?"buy":"sell"} ₹${r}`:"";if(!editingId&&!$("#f-rate").value){const v=cpSpecial()||r;if(v){$("#f-rate").value=v;$("#f-rate").dataset.auto="1";upd()}}}
 function fillForm(o,edit){
   editingId=edit?o.id:null;
@@ -6101,7 +6139,7 @@ const CP_LABELS=["Fast payer","Slow payer","Regular","Big deals","Night only","T
 const CP_LBL_WARN=["Slow payer","Third-party pays","Needs call"];
 function cpAgo(t){if(!t)return"—";const d=Math.floor((Date.now()-t)/864e5);return d<=0?"today":d===1?"yesterday":d<30?d+"d ago":d<365?Math.floor(d/30)+"mo ago":Math.floor(d/365)+"y ago"}
 const durF=m=>m<1?"<1 min":m<60?Math.round(m)+" min":m<1440?(m/60).toFixed(1)+" h":(m/1440).toFixed(1)+" d";
-function cpPayerKnown(cp,payer){if(!cp||!payer)return false;const k=cpKey(cp);return orders.some(o=>o.payer&&o.status==="Completed"&&o.cp&&cpKey(o.cp)===k&&verNameBase(o.payer,payer)==="M")}
+function cpPayerKnown(cp,payer){if(!feat("counterparties")||!cp||!payer)return false;const k=cpKey(cp);return orders.some(o=>o.payer&&o.status==="Completed"&&o.cp&&cpKey(o.cp)===k&&verNameBase(o.payer,payer)==="M")}
 const CP_TIERS=[[500000,"Gold","#d4a017"],[100000,"Silver","#9aa3ad"],[25000,"Bronze","#b8733a"]];
 function cpTier(vol){const t=CP_TIERS.find(x=>vol>=x[0]);return t?{n:t[1],c:t[2]}:null}
 function cpLimitWarn(n,tot,exceptId){const x=cpx(n);if(!x||!(tot>0))return"";
@@ -6110,15 +6148,15 @@ function cpLimitWarn(n,tot,exceptId){const x=cpx(n);if(!x||!(tot>0))return"";
     if(day+tot>+x.limDay)return`Today's total with them would be ${inr(Math.round(day+tot))}, above your ${inr(+x.limDay)} daily limit.`}return""}
 async function cpRemind(name,days){const d=new Date();d.setDate(d.getDate()+days);d.setHours(10,0,0,0);await putRec({id:"rm_"+Date.now().toString(36),kind:"remind",text:"Follow up with "+name,at:d.getTime(),done:false,time:Date.now()});toast("Reminder set · "+d.toLocaleDateString("en-IN",{day:"numeric",month:"short"}))}
 function cpRepeat(o){fillForm(o,false);const x=cpx(o.cp);if(x&&+x.rate>0)setTimeout(()=>{if(editingId)return;$("#f-rate").value=x.rate;$("#f-rate").dataset.auto="1";try{upd()}catch(e){}},40)}
-function cpRepUpd(){const b=$("#cpRep");if(!b)return;const n=$("#f-cp").value.trim();const k=n&&cpKey(n);const o=n&&!editingId?orders.filter(z=>z.cp&&cpKey(z.cp)===k&&z.status!=="Cancelled").sort((a,c)=>c.time-a.time)[0]:null;
+function cpRepUpd(){const b=$("#cpRep");if(!b)return;if(!feat("counterparties")){b.hidden=true;return}const n=$("#f-cp").value.trim();const k=n&&cpKey(n);const o=n&&!editingId?orders.filter(z=>z.cp&&cpKey(z.cp)===k&&z.status!=="Cancelled").sort((a,c)=>c.time-a.time)[0]:null;
   if(!o||$("#f-qty").value){b.hidden=true;return}b.hidden=false;b.dataset.oid=o.id;b.textContent=`↻ Repeat last: ${o.side==="BUY"?"Bought":"Sold"} ${fmtQ(o.qty)} ${o.coin}`}
-function cpRateFill(){const n=$("#f-cp").value.trim();if(!n||editingId)return;const sp=cpSpecial(),fr=$("#f-rate");if(sp&&(!fr.value||fr.dataset.auto==="1")&&+fr.value!==sp){fr.value=sp;fr.dataset.auto="1";try{upd()}catch(e){}toast("Special rate ₹"+sp+" filled")}}
+function cpRateFill(){if(!feat("counterparties"))return;const n=$("#f-cp").value.trim();if(!n||editingId)return;const sp=cpSpecial(),fr=$("#f-rate");if(sp&&(!fr.value||fr.dataset.auto==="1")&&+fr.value!==sp){fr.value=sp;fr.dataset.auto="1";try{upd()}catch(e){}toast("Special rate ₹"+sp+" filled")}}
 function cpBigWarn(n,st){const q=+($("#f-qty").value),r=+($("#f-rate").value);const tot=q>0&&r>0?q*r:0;if(!tot)return"";const big=+pref("cpBig")||50000;const k=cpKey(n);
   const past=orders.filter(o=>o.cp&&cpKey(o.cp)===k&&o.status==="Completed").map(o=>orderTotal(o));
   if(!past.length&&!(st&&st.n))return tot>=big?`New counterparty with a large amount (${inr(Math.round(tot))}).`:"";
   const mx=Math.max(0,...past);if(past.length>=2&&tot>mx*2.5&&tot>=10000)return`${inr(Math.round(tot))} is much bigger than their usual (largest so far ${inr(Math.round(mx))}).`;return""}
 function cpAmtWarn(n,st){const q=+($("#f-qty").value),r=+($("#f-rate").value);const tot=q>0&&r>0?q*r:0;return[cpLimitWarn(n,tot,editingId),cpBigWarn(n,st)].filter(Boolean).join(" ")}
-function cpCheck(){const n=$("#f-cp").value.trim(),w=$("#cpWarn");if(!n){w.hidden=true;try{cpRepUpd()}catch(e){}return}try{cpRepUpd()}catch(e){}const t=cpTag(n),st=cpStats()[cpKey(n)];const am=cpAmtWarn(n,st);let cls="",tx="";
+function cpCheck(){const n=$("#f-cp").value.trim(),w=$("#cpWarn");if(!feat("counterparties")){w.hidden=true;return}if(!n){w.hidden=true;try{cpRepUpd()}catch(e){}return}try{cpRepUpd()}catch(e){}const t=cpTag(n),st=cpStats()[cpKey(n)];const am=cpAmtWarn(n,st);let cls="",tx="";
   if(t&&t.tag==="block"){cls="block";tx="⛔ Blocked counterparty"+(t.note?": "+t.note:"")+". Be careful with this deal."}
   else if(st&&st.n>=3&&st.c/st.n>=0.3){cls="block";tx=`⚠ ${st.c} of ${st.n} orders with ${st.name} were cancelled.`}
   else if(t&&t.tag==="star"){cls="star";tx="★ Trusted counterparty"+(t.note?": "+t.note:"")}
@@ -6167,6 +6205,75 @@ sheets.cptop=function(){let met="vol",per="30";
   openSheet(`<h3>Top clients</h3><div class="cpfs"><button type="button" class="cpf" data-met="vol">Volume</button><button type="button" class="cpf" data-met="profit">Profit</button><button type="button" class="cpf" data-met="n">Orders</button></div><div class="cpfs"><button type="button" class="cpf" data-per="30">30 days</button><button type="button" class="cpf" data-per="90">90 days</button><button type="button" class="cpf" data-per="all">All time</button></div><div class="list cplist" id="tp-l"></div><div class="row2" style="margin-top:12px"><button class="mini ghost" type="button" data-tpback>Back</button></div>`,el=>{
     draw(el);el.addEventListener("click",e=>{const m=e.target.closest("[data-met]");if(m){met=m.dataset.met;draw(el);return}const pe=e.target.closest("[data-per]");if(pe){per=pe.dataset.per;draw(el);return}const t=e.target.closest("[data-tr]");if(t){sheets.trader(t.dataset.tr);return}if(e.target.closest("[data-tpback]"))sheets.cps()})})};
 ACT.tag_counterparty={d:a=>`${a.tag==="block"?"Block":"Mark trusted"}: ${a.name}${a.note?" · "+a.note:""}`,run:async a=>{if(!a.name||!["star","block"].includes(a.tag))throw new Error("needs name and tag");await putRec({id:cpKey(a.name),kind:"cptag",name:String(a.name).slice(0,60),tag:a.tag,note:String(a.note||"").slice(0,120),time:Date.now()})}};
+
+
+// ================= Counterparty profile (360 view): score, labels, contact, terms, notes, documents =================
+function traderData(name){const k=cpKey(name);const L=orders.filter(o=>o.cp&&cpKey(o.cp)===k).sort((a,b)=>b.time-a.time);
+  const Hh=cpBook()[k]||null;
+  const done=L.filter(o=>o.status==="Completed"),canc=L.filter(o=>o.status==="Cancelled").length+(Hh?Hh.c:0),ap=L.filter(o=>o.status==="Appeal").length+(Hh?Hh.a:0);
+  const nDone=done.length+(Hh?Hh.d:0);const closed=nDone+canc+ap,comp=closed?nDone/closed:0;const vol=done.reduce((t,o)=>t+orderTotal(o),0)+(Hh?Hh.bv+Hh.sv:0);
+  const side=sd=>{const a=done.filter(o=>o.side===sd);let n=a.length,q=a.reduce((t,o)=>t+(+o.qty),0),v=a.reduce((t,o)=>t+o.qty*o.rate,0);if(Hh){if(sd==="BUY"){n+=Hh.bn;q+=Hh.bq;v+=Hh.bv}else{n+=Hh.sn;q+=Hh.sq;v+=Hh.sv}}return{n,q,avg:q?v/q:0}};
+  const bk={},mt={};L.forEach(o=>(o.splits||[]).forEach(x=>{bk[x.bank]=(bk[x.bank]||0)+(+x.amt||0);const m=x.method||methodOf(o.pay);mt[m]=(mt[m]||0)+1}));
+  const hrs=[...Array(24)].fill(0);L.forEach(o=>hrs[new Date(o.time).getHours()]++);if(Hh)Object.entries(Hh.h||{}).forEach(([h,n])=>hrs[+h]+=n);const hb=hrs.indexOf(Math.max(...hrs));
+  const tag=cpTag(name);let score=closed?Math.round(100*(0.6*comp+0.2*Math.min(1,closed/10)+0.2*(ap?0:1))):0;
+  if(tag&&tag.tag==="star")score=Math.min(100,score+10);if(tag&&tag.tag==="block")score=Math.min(score,10);
+  const SPm=(()=>{try{return ACC().sellP||{}}catch(e){return{}}})();const profit=done.filter(o=>o.side==="SELL").reduce((t,o)=>t+(SPm[o.id]||0),0);const tms=done.filter(o=>o.doneAt&&o.doneAt>o.time).map(o=>(o.doneAt-o.time)/6e4);const avgT=tms.length?tms.reduce((a,b)=>a+b,0)/tms.length:0;
+  const ts=[...(L.length?[L[L.length-1].time,L[0].time]:[]),...(Hh?[Hh.f,Hh.l]:[])];return{L,done,profit,avgT,canc,ap,closed,comp,vol,buy:side("SELL"),sell:side("BUY"),bk,mt,hb,tag,score,hist:Hh,total:L.length+(Hh?Hh.o:0),first:ts.length?Math.min(...ts):0,last:ts.length?Math.max(...ts):0}}
+const phNorm=v=>{const d=String(v||"").replace(/\D/g,"");return d.length===10?"91"+d:d};
+const tgNorm=v=>String(v||"").trim().replace(/^https?:\/\/(t\.me|telegram\.me)\//i,"").replace(/^@/,"").replace(/[^\w]/g,"");
+function cpxHtml(name,D){const x=cpx(name)||{},lb=x.labels||[],all=[...CP_LABELS,...lb.filter(l=>!CP_LABELS.includes(l))];
+  const upi={},pay={};D.L.forEach(o=>{if(o.vpa)upi[o.vpa]=(upi[o.vpa]||0)+1;if(o.payer)pay[o.payer]=(pay[o.payer]||0)+1});
+  const ph=phNorm(x.phone),tg=tgNorm(x.tg);
+  return`<div class="pcsec">Labels</div><div class="lbs">${all.map(l=>`<button type="button" class="lbc${lb.includes(l)?" on":""}" data-lb="${esc(l)}">${esc(l)}</button>`).join("")}</div><div class="tgf" style="margin-top:8px"><input id="tr-lbin" placeholder="Add your own label" maxlength="24"><button type="button" class="mini ghost" id="tr-lbadd">Add</button></div>
+  <div class="pcsec">Contact</div><div class="cpterms"><input id="tr-ph" inputmode="tel" placeholder="Phone number" value="${esc(x.phone||"")}" maxlength="20"><input id="tr-tg" placeholder="Telegram @username" value="${esc(x.tg||"")}" maxlength="40"></div><div class="cpexp"><button type="button" class="mini ghost" id="tr-cs">Save contact</button>${ph?`<a class="mini ghost" href="tel:+${ph}">Call</a><a class="mini ghost" href="https://wa.me/${ph}" target="_blank" rel="noopener">WhatsApp</a>`:""}${tg?`<a class="mini ghost" href="https://t.me/${tg}" target="_blank" rel="noopener">Telegram</a>`:""}</div>
+  ${Object.keys(upi).length||Object.keys(pay).length?`<div class="pcsec">Known accounts</div><div class="rml">${Object.entries(upi).map(([v,n])=>`<div class="dqr"><span>Pays to UPI</span><b style="font-weight:600;word-break:break-all">${esc(v)} <em class="note" style="font-style:normal">×${n}</em></b></div>`).join("")}${Object.entries(pay).map(([v,n])=>{const same=verNameBase(v,name)==="M"||ixlAlias(v,name);return`<div class="dqr"><span>Paid by</span><b style="font-weight:600;text-align:right">${esc(v)} <em class="cpp ${same?"star":"risk"}">${same?"Same name":"Third party"}</em> <em class="note" style="font-style:normal">×${n}</em></b></div>`}).join("")}</div>`:""}`}
+function cpTierLine(name,D){const t=cpTier(D.vol);if(!t)return"";let tv=0;Object.values(cpStats()).forEach(x=>tv+=x.vol);const sh=tv?Math.round(D.vol/tv*100):0;return`<p class="note" style="margin:6px 0"><em class="cpp" style="color:${t.c};background:color-mix(in srgb,${t.c} 16%,transparent)">${t.n} client</em> · ${sh}% of your volume</p>`}
+function cpxHtml2(name,D){const x=cpx(name)||{};const kp=parties.find(p=>cpKey(p.name)===cpKey(name));const log=[...(x.log||[])].sort((a,b)=>b.t-a.t);const docs=x.proofs||[];
+  return`<div class="pcsec">Deal terms</div><div class="cpterms"><label>Special rate (₹)<input id="tr-rate" type="number" inputmode="decimal" step="any" placeholder="e.g. 95" value="${x.rate||""}"></label><label>Max per order (₹)<input id="tr-lo" type="number" inputmode="decimal" step="any" placeholder="No limit" value="${x.limOrd||""}"></label><label>Max per day (₹)<input id="tr-ld" type="number" inputmode="decimal" step="any" placeholder="No limit" value="${x.limDay||""}"></label></div><div class="cpexp"><button type="button" class="mini ghost" id="tr-ts">Save terms</button></div>
+  <div class="pcsec">Follow-up reminder</div><div class="cpexp">${[3,7,14,30].map(d=>`<button type="button" class="mini ghost" data-rmd="${d}">In ${d} days</button>`).join("")}</div>
+  ${kp?`<div class="pcsec">Khata (direct deals)</div><div class="rml"><div class="dqr"><span>Total to pay</span><b>${inr(Math.round(partyOwed(kp.id)))}</b></div><div class="dqr"><span>Paid</span><b>${inr(Math.round(partyPaid(kp.id)))}</b></div><div class="dqr"><span>Left to pay</span><b>${inr(Math.round(partyOwed(kp.id)-partyPaid(kp.id)))}</b></div></div><div class="cpexp"><button type="button" class="mini ghost" data-sheet="partyView:${esc(kp.id)}">Open khata</button></div>`:""}
+  <div class="pcsec">Notes log</div><div class="tgf"><input id="tr-lg" placeholder="e.g. Appeal raised, solved in 2 days" maxlength="140"><button type="button" class="mini ghost" id="tr-lga">Add</button></div><div class="nlog">${log.map(l=>`<div class="nl"><span><b>${dfmt(l.t)}</b> ${esc(l.text)}</span><button type="button" data-lgx="${l.t}" aria-label="Delete entry">×</button></div>`).join("")}</div>
+  <div class="pcsec">Documents</div><div class="cpdocs" id="gl-grid">${docs.map(id=>`<div class="dc">${proofImg(id,"thumb")}<button type="button" class="dx" data-dx="${esc(id)}" aria-label="Remove">×</button></div>`).join("")}<button type="button" class="mini ghost" id="tr-doc">Add photo</button><input type="file" id="tr-docf" accept="image/*" multiple hidden></div>`}
+function cpxBind2(el,name,D){const q=s=>el.querySelector(s);proofBack=()=>sheets.trader(name);
+  q("#tr-ts").onclick=async()=>{const n=v=>{const z=+q(v).value;return z>0?z:""};try{await cpxSet(name,{rate:n("#tr-rate"),limOrd:n("#tr-lo"),limDay:n("#tr-ld")});toast("Terms saved");sheets.trader(name)}catch(e){toast("Couldn't save")}};
+  el.querySelectorAll("[data-rmd]").forEach(b=>b.onclick=async()=>{try{await cpRemind(name,+b.dataset.rmd)}catch(e){toast("Couldn't save")}});
+  q("#tr-lga").onclick=async()=>{const v=q("#tr-lg").value.trim().slice(0,140);if(!v)return;const old=((cpx(name)||{}).log||[]);try{await cpxSet(name,{log:[...old,{t:Date.now(),text:v}].slice(-60)});sheets.trader(name)}catch(e){toast("Couldn't save")}};
+  el.querySelectorAll("[data-lgx]").forEach(b=>twoTap(b,async()=>{const old=((cpx(name)||{}).log||[]);try{await cpxSet(name,{log:old.filter(l=>String(l.t)!==b.dataset.lgx)});sheets.trader(name)}catch(e){toast("Couldn't delete")}}));
+  q("#tr-doc").onclick=()=>{if(!assetsApi){toast("Photo upload isn't available here");return}q("#tr-docf").click()};
+  q("#tr-docf").onchange=async e=>{const fs=[...e.target.files].filter(f=>/^image\//.test(f.type)||/\.(png|jpe?g|webp|heic|heif)$/i.test(f.name||""));if(!fs.length)return;try{const ids=await uploadProofs(fs);await cpxSet(name,{proofs:[...((cpx(name)||{}).proofs||[]),...ids]});toast("Saved");sheets.trader(name)}catch(err){toast("Couldn't upload")}};
+  el.querySelectorAll("[data-dx]").forEach(b=>twoTap(b,async()=>{try{await cpxSet(name,{proofs:((cpx(name)||{}).proofs||[]).filter(i=>i!==b.dataset.dx)});sheets.trader(name)}catch(e){toast("Couldn't remove")}}));
+  const rp=q("#tr-rep");if(rp)rp.onclick=()=>{const o=[...D.L].filter(z=>z.status!=="Cancelled")[0]||D.L[0];if(!o)return;closeSheet();setTimeout(()=>cpRepeat(o),60)}}
+function cpOrdersCsv(name){const D=traderData(name);const q=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const rows=[...D.L].sort((a,b)=>a.time-b.time).map(o=>{const d=new Date(o.time);return[d.toLocaleDateString("en-CA"),d.toLocaleTimeString("en-GB"),o.side,o.coin,o.qty,o.rate,orderTotal(o).toFixed(2),o.status,o.platform,o.pay,o.cp,o.payer||"",o.vpa||"",o.utr||""].map(q).join(",")});
+  return"\ufeff"+["Date,Time,Side,Coin,Quantity,Rate,Total INR,Status,Platform,Payment,Counterparty,Paid by,UPI,UTR",...rows].join("\n")}
+function cpStatement(name){const D=traderData(name);const L=[...D.L].sort((a,b)=>a.time-b.time);
+  return[`Statement: ${name}`,`${D.total} orders · ${D.canc} cancelled · completed ${inr(Math.round(D.vol))}`,"",...L.slice(-15).map(o=>`${new Date(o.time).toLocaleDateString("en-IN",{day:"numeric",month:"short"})} · ${o.side==="BUY"?"Bought":"Sold"} ${fmtQ(o.qty)} ${o.coin} @ ₹${fmtR(o.rate)} = ${inr(Math.round(orderTotal(o)))} · ${o.status}`)].join("\n")}
+function cpxBind(el,name,D){const q=s=>el.querySelector(s);
+  const setLb=async list=>{try{await cpxSet(name,{labels:list});sheets.trader(name)}catch(e){toast("Couldn't save")}};
+  el.querySelectorAll("[data-lb]").forEach(b=>b.onclick=()=>{const cur=new Set((cpx(name)||{}).labels||[]);cur.has(b.dataset.lb)?cur.delete(b.dataset.lb):cur.add(b.dataset.lb);setLb([...cur])});
+  q("#tr-lbadd").onclick=()=>{const v=q("#tr-lbin").value.trim().slice(0,24);if(!v)return;setLb([...new Set([...((cpx(name)||{}).labels||[]),v])])};
+  q("#tr-cs").onclick=async()=>{try{await cpxSet(name,{phone:q("#tr-ph").value.trim(),tg:q("#tr-tg").value.trim()});toast("Contact saved");sheets.trader(name)}catch(e){toast("Couldn't save")}};
+  q("#tr-csv").onclick=()=>saveFile(`Pexai-${cpKey(name).replace(/^cp_/,"")||"client"}-${new Date().toLocaleDateString("en-CA")}.csv`,cpOrdersCsv(name));
+  q("#tr-wa").onclick=()=>{const t=cpStatement(name);if(navigator.share)navigator.share({text:t}).catch(()=>{});else window.open("https://wa.me/?text="+encodeURIComponent(t),"_blank")}}
+sheets.trader=function(name){if(!name)return;const D=traderData(name);const lv=!D.closed?"mute":D.score>=75?"ok":D.score>=50?"warn":"bad";const coin=pref("coin")||"USDT";
+  const myB=avgBuyRate(orders,coin),myS=(()=>{let q=0,v=0;orders.forEach(o=>{if(o.side==="SELL"&&o.status==="Completed"&&o.coin===coin){q+=+o.qty;v+=o.qty*o.rate}});return q?v/q:0})();
+  const isB=D.tag&&D.tag.tag==="block",isS=D.tag&&D.tag.tag==="star";
+  openSheet(`<div class="insw"><div class="pvh"><span class="pva">${esc(name.slice(0,2).toUpperCase())}</span><div class="pvn"><b>${esc(name)} ${cpBadge(name)}</b><small>${D.total?`Since ${new Date(D.first).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})} · last ${dfmt(D.last)}`:"No orders yet"}</small></div><span class="pvs ${lv}">${!D.closed?"New":lv==="ok"?"Good":lv==="warn"?"Careful":"Risky"}</span></div>
+    ${cpTierLine(name,D)}${akaNames(name).length?`<p class="note" style="margin:6px 0">Also known as: ${akaNames(name).map(esc).join(", ")}</p>`:""}
+    <div class="tgh">${ring(D.score,100,lvlCol(lv==="mute"?"warn":lv),D.closed?D.score:"—","trust score")}<div class="tgk"><div><span>Volume</span><b>${inr(Math.round(D.vol))}</b></div><div><span>Completion</span><b>${D.closed?Math.round(D.comp*100)+"%":"—"}</b></div></div></div>
+    <div class="msgr">${[["Orders",D.total,""],["Cancelled",D.canc,D.canc?"neg":""],["Appeals",D.ap,D.ap?"neg":""],["Bought from you",D.buy.n?fmtQ(+D.buy.q.toFixed(2))+" "+coin:"—",""],["Sold to you",D.sell.n?fmtQ(+D.sell.q.toFixed(2))+" "+coin:"—",""],["Usual time",D.total?hLab(D.hb):"—",""],["Avg time",D.avgT?durF(D.avgT):"—",""],["Profit",D.profit?inr(Math.round(D.profit)):"—",D.profit<0?"neg":""],["Last order",D.last?cpAgo(D.last):"—",""]].map(([l,v,c])=>`<div><span>${l}</span><b class="${c}">${v}</b></div>`).join("")}</div>
+    ${D.buy.n||D.sell.n?`<div class="pcsec">Rates with this trader</div>${insList([D.buy.n&&myS?[D.buy.avg>=myS?"ok":"warn",`You sold to them at <b>₹${D.buy.avg.toFixed(2)}</b> avg · your overall sell ₹${myS.toFixed(2)}.`]:null,D.sell.n&&myB?[D.sell.avg<=myB?"ok":"warn",`You bought from them at <b>₹${D.sell.avg.toFixed(2)}</b> avg · your overall buy ₹${myB.toFixed(2)}.`]:null])}`:""}
+    ${Object.keys(D.bk).length?`<div class="pcsec">Money moved through</div><div class="rml">${Object.entries(D.bk).sort((a,b)=>b[1]-a[1]).map(([b,v])=>`<div class="dqr"><span>${esc(bankName(b))}</span><b>${inr(Math.round(v))}</b></div>`).join("")}<div class="dqr"><span>Methods</span><span class="note" style="margin:0">${Object.entries(D.mt).map(([m,n])=>m+" ×"+n).join(" · ")}</span></div></div>`:""}
+    ${cpxHtml(name,D)}${cpxHtml2(name,D)}<div class="pcsec">Note</div><div class="tgf"><input id="tr-note" placeholder="e.g. Pays from wife's account" value="${esc(D.tag&&D.tag.note||"")}" maxlength="120"><button type="button" class="mini ghost" id="tr-ns">Save</button></div>
+    <div class="pcsec">Orders <span>${D.L.length}</span></div>${D.hist?`<p class="note trh">📚 + ${D.hist.o} older orders from imported history (${new Date(D.hist.f).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})} – ${new Date(D.hist.l).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}): ${D.hist.d} completed, ${D.hist.c} cancelled. Counted in the numbers above.</p>`:""}<div class="tl">${D.L.slice(0,25).map(o=>`<div class="tli ${o.status==="Cancelled"?"tdue":"pay"}" data-oid="${o.id}" style="cursor:pointer"><span class="tld"></span><div class="tlb"><div class="tlr"><b>${o.side==="BUY"?"Bought":"Sold"} ${fmtQ(o.qty)} ${esc(o.coin)} @ ₹${fmtR(o.rate)}</b><span class="amt">${inr(Math.round(orderTotal(o)))}</span></div><small>${tfmt(o.time)} · ${esc(o.status)}</small></div></div>`).join("")||(D.hist?"":'<p class="note">No orders.</p>')}</div>
+    <div class="cpexp">${D.L.length?`<button type="button" class="mini ghost" id="tr-rep">Repeat last order</button>`:""}<button type="button" class="mini ghost" id="tr-csv">Orders CSV</button><button type="button" class="mini ghost" id="tr-wa">Share statement</button></div><div class="pvfoot"><button type="button" class="mini ghost ${isS?"on":""}" id="tr-star">${isS?"★ Trusted":"☆ Trust"}</button><button type="button" class="mini ghost" id="tr-block" style="${isB?"color:var(--sell)":""}">${isB?"⛔ Blocked":"⛔ Block"}</button><button type="button" class="mini ghost" id="tr-back">Back</button></div></div>`,el=>{
+    el.querySelector("#tr-star").onclick=async()=>{try{await setCpTag(name,"star");sheets.trader(name)}catch(e){toast("Couldn't save")}};
+    el.querySelector("#tr-block").onclick=async()=>{try{await setCpTag(name,"block");sheets.trader(name)}catch(e){toast("Couldn't save")}};
+    el.querySelector("#tr-back").onclick=()=>sheets.cps();
+    el.querySelector("#tr-ns").onclick=async()=>{const n=el.querySelector("#tr-note").value.trim();const t=cpTag(name);try{await putRec({id:cpKey(name),kind:"cptag",name,tag:t?t.tag:"note",note:n,time:Date.now()});toast("Note saved")}catch(e){toast("Couldn't save")}};
+    el.querySelectorAll("[data-oid]").forEach(r=>r.onclick=()=>orderSheet(r.dataset.oid));
+    cpxBind(el,name,D);cpxBind2(el,name,D);
+  })};
 
 // ---------- reports ----------
 function periodRange(p){const n=new Date();const d0=new Date(n);d0.setHours(0,0,0,0);
@@ -6474,7 +6581,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=162;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=163;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6541,6 +6648,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00163","22 Oct 2026",["App is now built from separate modules (nothing changes for you). New: About > Features and licence. Switch optional parts on or off (Counterparties, Lite, Direct, AI, Market…), and unlock parts with a licence code. Owner tools make keys and codes on your phone."]],
   ["0.0.0.00162","22 Oct 2026",["Counterparties, 12 more things: Repeat last order (in the order form and on their profile); special rate that fills in by itself; follow-up reminders; a suggestion to block someone after 3 cancelled orders; per-person limits (per order and per day); Smart Intake now warns about blocked / slow-paying people and limits; dated notes log; photos and documents on a profile; top-3 concentration and a Top clients screen (volume, profit, orders); khata balance on the profile; Gold / Silver / Bronze rings by volume."]],
   ["0.0.0.00161","22 Oct 2026",["Counterparties, 10 new things: trust score and profit on every row; labels (Fast payer, Slow payer, Third-party pays…) plus your own; phone, WhatsApp and Telegram buttons; known UPI IDs and payers (a repeat payer you already completed is no longer flagged as a mismatch); duplicate review banner; tabs for Idle (no order for 30 days); sort by Best customers; average completion time; warning for an unusually large amount or a big first deal; CSV export for everyone and for one person; share a statement on WhatsApp."]],
   ["0.0.0.00160","22 Oct 2026",["Counterparties redesigned again, banking style: summary strip (people, completed, cancel rate), underline tabs (All / Trusted / Blocked / Risky), sort (flagged / volume / orders / recent), amount on the right, status tags (Trusted / Blocked / Risky) and a three-dot menu for Mark trusted / Block."]],
@@ -6727,7 +6835,7 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
     <div class="icard"><div class="abr"><span>Orders</span><b>${orders.length.toLocaleString("en-IN")}</b></div><div class="abr"><span>Parties · banks</span><b>${parties.length} · ${banks.length}</b></div>${cl?`<div class="abr"><span>Client history</span><b>${cl.toLocaleString("en-IN")} clients</b></div>`:""}
       <div class="abr"><span>Saved</span><b>${col?"Cloud sync":"This device"}</b></div>
       ${col?`<div class="abr"><span>Space used</span><b>${used.toLocaleString("en-IN")} / ${cap.toLocaleString("en-IN")}</b></div><div class="pvbar"><i style="width:${Math.min(100,used/cap*100).toFixed(1)}%"></i></div>`:""}
-      <div class="abbtn"><button type="button" class="mini ghost" id="ab-bk">Backup now</button><button type="button" class="mini ghost" data-sheet="imphist">Import history</button></div></div>
+      <div class="abbtn"><button type="button" class="mini ghost" id="ab-bk">Backup now</button><button type="button" class="mini ghost" data-sheet="imphist">Import history</button><button type="button" class="mini ghost" data-sheet="features">Features and licence</button></div></div>
     <p class="note abf">Made for P2P merchants${pref("owner")?" · "+esc(pref("owner")):""}<br>${APP_NAME} v${APP_VER}</p></div>`,el=>{const q=s=>el.querySelector(s);
     if(q("#ab-apply"))q("#ab-apply").onclick=e=>appApply(pv,e.currentTarget);
     if(q("#ab-chk"))q("#ab-chk").onclick=e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Checking…";try{window.P2PNative.checkUpdate()}catch(err){b.disabled=false;b.textContent="Check for updates"}};
@@ -6753,74 +6861,6 @@ const ring=(v,max,color,big,small)=>{const R=52,C=2*Math.PI*R;return`<svg viewBo
 const lvlCol=l=>l==="ok"?"var(--accent)":l==="warn"?"var(--warn)":"var(--sell)";
 const dfmt=t=>new Date(t).toLocaleDateString("en-IN",{day:"numeric",month:"short"});
 const tfmt=t=>new Date(t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
-
-// ---- 1. Trader 360
-function traderData(name){const k=cpKey(name);const L=orders.filter(o=>o.cp&&cpKey(o.cp)===k).sort((a,b)=>b.time-a.time);
-  const Hh=cpBook()[k]||null;
-  const done=L.filter(o=>o.status==="Completed"),canc=L.filter(o=>o.status==="Cancelled").length+(Hh?Hh.c:0),ap=L.filter(o=>o.status==="Appeal").length+(Hh?Hh.a:0);
-  const nDone=done.length+(Hh?Hh.d:0);const closed=nDone+canc+ap,comp=closed?nDone/closed:0;const vol=done.reduce((t,o)=>t+orderTotal(o),0)+(Hh?Hh.bv+Hh.sv:0);
-  const side=sd=>{const a=done.filter(o=>o.side===sd);let n=a.length,q=a.reduce((t,o)=>t+(+o.qty),0),v=a.reduce((t,o)=>t+o.qty*o.rate,0);if(Hh){if(sd==="BUY"){n+=Hh.bn;q+=Hh.bq;v+=Hh.bv}else{n+=Hh.sn;q+=Hh.sq;v+=Hh.sv}}return{n,q,avg:q?v/q:0}};
-  const bk={},mt={};L.forEach(o=>(o.splits||[]).forEach(x=>{bk[x.bank]=(bk[x.bank]||0)+(+x.amt||0);const m=x.method||methodOf(o.pay);mt[m]=(mt[m]||0)+1}));
-  const hrs=[...Array(24)].fill(0);L.forEach(o=>hrs[new Date(o.time).getHours()]++);if(Hh)Object.entries(Hh.h||{}).forEach(([h,n])=>hrs[+h]+=n);const hb=hrs.indexOf(Math.max(...hrs));
-  const tag=cpTag(name);let score=closed?Math.round(100*(0.6*comp+0.2*Math.min(1,closed/10)+0.2*(ap?0:1))):0;
-  if(tag&&tag.tag==="star")score=Math.min(100,score+10);if(tag&&tag.tag==="block")score=Math.min(score,10);
-  const SPm=(()=>{try{return ACC().sellP||{}}catch(e){return{}}})();const profit=done.filter(o=>o.side==="SELL").reduce((t,o)=>t+(SPm[o.id]||0),0);const tms=done.filter(o=>o.doneAt&&o.doneAt>o.time).map(o=>(o.doneAt-o.time)/6e4);const avgT=tms.length?tms.reduce((a,b)=>a+b,0)/tms.length:0;
-  const ts=[...(L.length?[L[L.length-1].time,L[0].time]:[]),...(Hh?[Hh.f,Hh.l]:[])];return{L,done,profit,avgT,canc,ap,closed,comp,vol,buy:side("SELL"),sell:side("BUY"),bk,mt,hb,tag,score,hist:Hh,total:L.length+(Hh?Hh.o:0),first:ts.length?Math.min(...ts):0,last:ts.length?Math.max(...ts):0}}
-const phNorm=v=>{const d=String(v||"").replace(/\D/g,"");return d.length===10?"91"+d:d};
-const tgNorm=v=>String(v||"").trim().replace(/^https?:\/\/(t\.me|telegram\.me)\//i,"").replace(/^@/,"").replace(/[^\w]/g,"");
-function cpxHtml(name,D){const x=cpx(name)||{},lb=x.labels||[],all=[...CP_LABELS,...lb.filter(l=>!CP_LABELS.includes(l))];
-  const upi={},pay={};D.L.forEach(o=>{if(o.vpa)upi[o.vpa]=(upi[o.vpa]||0)+1;if(o.payer)pay[o.payer]=(pay[o.payer]||0)+1});
-  const ph=phNorm(x.phone),tg=tgNorm(x.tg);
-  return`<div class="pcsec">Labels</div><div class="lbs">${all.map(l=>`<button type="button" class="lbc${lb.includes(l)?" on":""}" data-lb="${esc(l)}">${esc(l)}</button>`).join("")}</div><div class="tgf" style="margin-top:8px"><input id="tr-lbin" placeholder="Add your own label" maxlength="24"><button type="button" class="mini ghost" id="tr-lbadd">Add</button></div>
-  <div class="pcsec">Contact</div><div class="cpterms"><input id="tr-ph" inputmode="tel" placeholder="Phone number" value="${esc(x.phone||"")}" maxlength="20"><input id="tr-tg" placeholder="Telegram @username" value="${esc(x.tg||"")}" maxlength="40"></div><div class="cpexp"><button type="button" class="mini ghost" id="tr-cs">Save contact</button>${ph?`<a class="mini ghost" href="tel:+${ph}">Call</a><a class="mini ghost" href="https://wa.me/${ph}" target="_blank" rel="noopener">WhatsApp</a>`:""}${tg?`<a class="mini ghost" href="https://t.me/${tg}" target="_blank" rel="noopener">Telegram</a>`:""}</div>
-  ${Object.keys(upi).length||Object.keys(pay).length?`<div class="pcsec">Known accounts</div><div class="rml">${Object.entries(upi).map(([v,n])=>`<div class="dqr"><span>Pays to UPI</span><b style="font-weight:600;word-break:break-all">${esc(v)} <em class="note" style="font-style:normal">×${n}</em></b></div>`).join("")}${Object.entries(pay).map(([v,n])=>{const same=verNameBase(v,name)==="M"||ixlAlias(v,name);return`<div class="dqr"><span>Paid by</span><b style="font-weight:600;text-align:right">${esc(v)} <em class="cpp ${same?"star":"risk"}">${same?"Same name":"Third party"}</em> <em class="note" style="font-style:normal">×${n}</em></b></div>`}).join("")}</div>`:""}`}
-function cpTierLine(name,D){const t=cpTier(D.vol);if(!t)return"";let tv=0;Object.values(cpStats()).forEach(x=>tv+=x.vol);const sh=tv?Math.round(D.vol/tv*100):0;return`<p class="note" style="margin:6px 0"><em class="cpp" style="color:${t.c};background:color-mix(in srgb,${t.c} 16%,transparent)">${t.n} client</em> · ${sh}% of your volume</p>`}
-function cpxHtml2(name,D){const x=cpx(name)||{};const kp=parties.find(p=>cpKey(p.name)===cpKey(name));const log=[...(x.log||[])].sort((a,b)=>b.t-a.t);const docs=x.proofs||[];
-  return`<div class="pcsec">Deal terms</div><div class="cpterms"><label>Special rate (₹)<input id="tr-rate" type="number" inputmode="decimal" step="any" placeholder="e.g. 95" value="${x.rate||""}"></label><label>Max per order (₹)<input id="tr-lo" type="number" inputmode="decimal" step="any" placeholder="No limit" value="${x.limOrd||""}"></label><label>Max per day (₹)<input id="tr-ld" type="number" inputmode="decimal" step="any" placeholder="No limit" value="${x.limDay||""}"></label></div><div class="cpexp"><button type="button" class="mini ghost" id="tr-ts">Save terms</button></div>
-  <div class="pcsec">Follow-up reminder</div><div class="cpexp">${[3,7,14,30].map(d=>`<button type="button" class="mini ghost" data-rmd="${d}">In ${d} days</button>`).join("")}</div>
-  ${kp?`<div class="pcsec">Khata (direct deals)</div><div class="rml"><div class="dqr"><span>Total to pay</span><b>${inr(Math.round(partyOwed(kp.id)))}</b></div><div class="dqr"><span>Paid</span><b>${inr(Math.round(partyPaid(kp.id)))}</b></div><div class="dqr"><span>Left to pay</span><b>${inr(Math.round(partyOwed(kp.id)-partyPaid(kp.id)))}</b></div></div><div class="cpexp"><button type="button" class="mini ghost" data-sheet="partyView:${esc(kp.id)}">Open khata</button></div>`:""}
-  <div class="pcsec">Notes log</div><div class="tgf"><input id="tr-lg" placeholder="e.g. Appeal raised, solved in 2 days" maxlength="140"><button type="button" class="mini ghost" id="tr-lga">Add</button></div><div class="nlog">${log.map(l=>`<div class="nl"><span><b>${dfmt(l.t)}</b> ${esc(l.text)}</span><button type="button" data-lgx="${l.t}" aria-label="Delete entry">×</button></div>`).join("")}</div>
-  <div class="pcsec">Documents</div><div class="cpdocs" id="gl-grid">${docs.map(id=>`<div class="dc">${proofImg(id,"thumb")}<button type="button" class="dx" data-dx="${esc(id)}" aria-label="Remove">×</button></div>`).join("")}<button type="button" class="mini ghost" id="tr-doc">Add photo</button><input type="file" id="tr-docf" accept="image/*" multiple hidden></div>`}
-function cpxBind2(el,name,D){const q=s=>el.querySelector(s);proofBack=()=>sheets.trader(name);
-  q("#tr-ts").onclick=async()=>{const n=v=>{const z=+q(v).value;return z>0?z:""};try{await cpxSet(name,{rate:n("#tr-rate"),limOrd:n("#tr-lo"),limDay:n("#tr-ld")});toast("Terms saved");sheets.trader(name)}catch(e){toast("Couldn't save")}};
-  el.querySelectorAll("[data-rmd]").forEach(b=>b.onclick=async()=>{try{await cpRemind(name,+b.dataset.rmd)}catch(e){toast("Couldn't save")}});
-  q("#tr-lga").onclick=async()=>{const v=q("#tr-lg").value.trim().slice(0,140);if(!v)return;const old=((cpx(name)||{}).log||[]);try{await cpxSet(name,{log:[...old,{t:Date.now(),text:v}].slice(-60)});sheets.trader(name)}catch(e){toast("Couldn't save")}};
-  el.querySelectorAll("[data-lgx]").forEach(b=>twoTap(b,async()=>{const old=((cpx(name)||{}).log||[]);try{await cpxSet(name,{log:old.filter(l=>String(l.t)!==b.dataset.lgx)});sheets.trader(name)}catch(e){toast("Couldn't delete")}}));
-  q("#tr-doc").onclick=()=>{if(!assetsApi){toast("Photo upload isn't available here");return}q("#tr-docf").click()};
-  q("#tr-docf").onchange=async e=>{const fs=[...e.target.files].filter(f=>/^image\//.test(f.type)||/\.(png|jpe?g|webp|heic|heif)$/i.test(f.name||""));if(!fs.length)return;try{const ids=await uploadProofs(fs);await cpxSet(name,{proofs:[...((cpx(name)||{}).proofs||[]),...ids]});toast("Saved");sheets.trader(name)}catch(err){toast("Couldn't upload")}};
-  el.querySelectorAll("[data-dx]").forEach(b=>twoTap(b,async()=>{try{await cpxSet(name,{proofs:((cpx(name)||{}).proofs||[]).filter(i=>i!==b.dataset.dx)});sheets.trader(name)}catch(e){toast("Couldn't remove")}}));
-  const rp=q("#tr-rep");if(rp)rp.onclick=()=>{const o=[...D.L].filter(z=>z.status!=="Cancelled")[0]||D.L[0];if(!o)return;closeSheet();setTimeout(()=>cpRepeat(o),60)}}
-function cpOrdersCsv(name){const D=traderData(name);const q=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  const rows=[...D.L].sort((a,b)=>a.time-b.time).map(o=>{const d=new Date(o.time);return[d.toLocaleDateString("en-CA"),d.toLocaleTimeString("en-GB"),o.side,o.coin,o.qty,o.rate,orderTotal(o).toFixed(2),o.status,o.platform,o.pay,o.cp,o.payer||"",o.vpa||"",o.utr||""].map(q).join(",")});
-  return"\ufeff"+["Date,Time,Side,Coin,Quantity,Rate,Total INR,Status,Platform,Payment,Counterparty,Paid by,UPI,UTR",...rows].join("\n")}
-function cpStatement(name){const D=traderData(name);const L=[...D.L].sort((a,b)=>a.time-b.time);
-  return[`Statement: ${name}`,`${D.total} orders · ${D.canc} cancelled · completed ${inr(Math.round(D.vol))}`,"",...L.slice(-15).map(o=>`${new Date(o.time).toLocaleDateString("en-IN",{day:"numeric",month:"short"})} · ${o.side==="BUY"?"Bought":"Sold"} ${fmtQ(o.qty)} ${o.coin} @ ₹${fmtR(o.rate)} = ${inr(Math.round(orderTotal(o)))} · ${o.status}`)].join("\n")}
-function cpxBind(el,name,D){const q=s=>el.querySelector(s);
-  const setLb=async list=>{try{await cpxSet(name,{labels:list});sheets.trader(name)}catch(e){toast("Couldn't save")}};
-  el.querySelectorAll("[data-lb]").forEach(b=>b.onclick=()=>{const cur=new Set((cpx(name)||{}).labels||[]);cur.has(b.dataset.lb)?cur.delete(b.dataset.lb):cur.add(b.dataset.lb);setLb([...cur])});
-  q("#tr-lbadd").onclick=()=>{const v=q("#tr-lbin").value.trim().slice(0,24);if(!v)return;setLb([...new Set([...((cpx(name)||{}).labels||[]),v])])};
-  q("#tr-cs").onclick=async()=>{try{await cpxSet(name,{phone:q("#tr-ph").value.trim(),tg:q("#tr-tg").value.trim()});toast("Contact saved");sheets.trader(name)}catch(e){toast("Couldn't save")}};
-  q("#tr-csv").onclick=()=>saveFile(`Pexai-${cpKey(name).replace(/^cp_/,"")||"client"}-${new Date().toLocaleDateString("en-CA")}.csv`,cpOrdersCsv(name));
-  q("#tr-wa").onclick=()=>{const t=cpStatement(name);if(navigator.share)navigator.share({text:t}).catch(()=>{});else window.open("https://wa.me/?text="+encodeURIComponent(t),"_blank")}}
-sheets.trader=function(name){if(!name)return;const D=traderData(name);const lv=!D.closed?"mute":D.score>=75?"ok":D.score>=50?"warn":"bad";const coin=pref("coin")||"USDT";
-  const myB=avgBuyRate(orders,coin),myS=(()=>{let q=0,v=0;orders.forEach(o=>{if(o.side==="SELL"&&o.status==="Completed"&&o.coin===coin){q+=+o.qty;v+=o.qty*o.rate}});return q?v/q:0})();
-  const isB=D.tag&&D.tag.tag==="block",isS=D.tag&&D.tag.tag==="star";
-  openSheet(`<div class="insw"><div class="pvh"><span class="pva">${esc(name.slice(0,2).toUpperCase())}</span><div class="pvn"><b>${esc(name)} ${cpBadge(name)}</b><small>${D.total?`Since ${new Date(D.first).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})} · last ${dfmt(D.last)}`:"No orders yet"}</small></div><span class="pvs ${lv}">${!D.closed?"New":lv==="ok"?"Good":lv==="warn"?"Careful":"Risky"}</span></div>
-    ${cpTierLine(name,D)}${akaNames(name).length?`<p class="note" style="margin:6px 0">Also known as: ${akaNames(name).map(esc).join(", ")}</p>`:""}
-    <div class="tgh">${ring(D.score,100,lvlCol(lv==="mute"?"warn":lv),D.closed?D.score:"—","trust score")}<div class="tgk"><div><span>Volume</span><b>${inr(Math.round(D.vol))}</b></div><div><span>Completion</span><b>${D.closed?Math.round(D.comp*100)+"%":"—"}</b></div></div></div>
-    <div class="msgr">${[["Orders",D.total,""],["Cancelled",D.canc,D.canc?"neg":""],["Appeals",D.ap,D.ap?"neg":""],["Bought from you",D.buy.n?fmtQ(+D.buy.q.toFixed(2))+" "+coin:"—",""],["Sold to you",D.sell.n?fmtQ(+D.sell.q.toFixed(2))+" "+coin:"—",""],["Usual time",D.total?hLab(D.hb):"—",""],["Avg time",D.avgT?durF(D.avgT):"—",""],["Profit",D.profit?inr(Math.round(D.profit)):"—",D.profit<0?"neg":""],["Last order",D.last?cpAgo(D.last):"—",""]].map(([l,v,c])=>`<div><span>${l}</span><b class="${c}">${v}</b></div>`).join("")}</div>
-    ${D.buy.n||D.sell.n?`<div class="pcsec">Rates with this trader</div>${insList([D.buy.n&&myS?[D.buy.avg>=myS?"ok":"warn",`You sold to them at <b>₹${D.buy.avg.toFixed(2)}</b> avg · your overall sell ₹${myS.toFixed(2)}.`]:null,D.sell.n&&myB?[D.sell.avg<=myB?"ok":"warn",`You bought from them at <b>₹${D.sell.avg.toFixed(2)}</b> avg · your overall buy ₹${myB.toFixed(2)}.`]:null])}`:""}
-    ${Object.keys(D.bk).length?`<div class="pcsec">Money moved through</div><div class="rml">${Object.entries(D.bk).sort((a,b)=>b[1]-a[1]).map(([b,v])=>`<div class="dqr"><span>${esc(bankName(b))}</span><b>${inr(Math.round(v))}</b></div>`).join("")}<div class="dqr"><span>Methods</span><span class="note" style="margin:0">${Object.entries(D.mt).map(([m,n])=>m+" ×"+n).join(" · ")}</span></div></div>`:""}
-    ${cpxHtml(name,D)}${cpxHtml2(name,D)}<div class="pcsec">Note</div><div class="tgf"><input id="tr-note" placeholder="e.g. Pays from wife's account" value="${esc(D.tag&&D.tag.note||"")}" maxlength="120"><button type="button" class="mini ghost" id="tr-ns">Save</button></div>
-    <div class="pcsec">Orders <span>${D.L.length}</span></div>${D.hist?`<p class="note trh">📚 + ${D.hist.o} older orders from imported history (${new Date(D.hist.f).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})} – ${new Date(D.hist.l).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}): ${D.hist.d} completed, ${D.hist.c} cancelled. Counted in the numbers above.</p>`:""}<div class="tl">${D.L.slice(0,25).map(o=>`<div class="tli ${o.status==="Cancelled"?"tdue":"pay"}" data-oid="${o.id}" style="cursor:pointer"><span class="tld"></span><div class="tlb"><div class="tlr"><b>${o.side==="BUY"?"Bought":"Sold"} ${fmtQ(o.qty)} ${esc(o.coin)} @ ₹${fmtR(o.rate)}</b><span class="amt">${inr(Math.round(orderTotal(o)))}</span></div><small>${tfmt(o.time)} · ${esc(o.status)}</small></div></div>`).join("")||(D.hist?"":'<p class="note">No orders.</p>')}</div>
-    <div class="cpexp">${D.L.length?`<button type="button" class="mini ghost" id="tr-rep">Repeat last order</button>`:""}<button type="button" class="mini ghost" id="tr-csv">Orders CSV</button><button type="button" class="mini ghost" id="tr-wa">Share statement</button></div><div class="pvfoot"><button type="button" class="mini ghost ${isS?"on":""}" id="tr-star">${isS?"★ Trusted":"☆ Trust"}</button><button type="button" class="mini ghost" id="tr-block" style="${isB?"color:var(--sell)":""}">${isB?"⛔ Blocked":"⛔ Block"}</button><button type="button" class="mini ghost" id="tr-back">Back</button></div></div>`,el=>{
-    el.querySelector("#tr-star").onclick=async()=>{try{await setCpTag(name,"star");sheets.trader(name)}catch(e){toast("Couldn't save")}};
-    el.querySelector("#tr-block").onclick=async()=>{try{await setCpTag(name,"block");sheets.trader(name)}catch(e){toast("Couldn't save")}};
-    el.querySelector("#tr-back").onclick=()=>sheets.cps();
-    el.querySelector("#tr-ns").onclick=async()=>{const n=el.querySelector("#tr-note").value.trim();const t=cpTag(name);try{await putRec({id:cpKey(name),kind:"cptag",name,tag:t?t.tag:"note",note:n,time:Date.now()});toast("Note saved")}catch(e){toast("Couldn't save")}};
-    el.querySelectorAll("[data-oid]").forEach(r=>r.onclick=()=>orderSheet(r.dataset.oid));
-    cpxBind(el,name,D);cpxBind2(el,name,D);
-  })};
 
 // ---- 2. Cash flow forecast
 function cashFlow(withProfit){const d0=new Date();d0.setHours(0,0,0,0);const today=(new Date().getDay()+6)%7;
@@ -7134,7 +7174,7 @@ function ixLiveHtml(){const its=(ixS.items||[]).filter(x=>x.ocr&&x.ocr.text);if(
   else f.push(["Details",null]);
   return`<div class="ixlv"><b>${esc(IX_TYPES[it.cls.type]||"Screenshot")}</b>${f.map(([k,v])=>`<div><span>${k}</span>${v?`<em>${esc(v)} ✓</em>`:`<i>Not confidently detected ⚠</i>`}</div>`).join("")}</div>`}).join("")+`</div>`}
 function ixLinkCand(g){try{const X=g.X,P=X.pay,O=X.ord;const sd=ixSide(g);if(!g.order||!sd)return null;const nick=sd==="BUY"?O.seller:O.buyer,real=sd==="BUY"?P.receiver:P.sender;if(!nick||!real)return null;if(cpKey(nick)===cpKey(real)||verName(nick,real)==="M")return null;return{nick,real}}catch(e){return null}}
-function ixLiteHtml(g){try{const L=banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on);if(!(g.X&&g.X.pay&&g.X.pay.lite)||!L.length||g.saved)return"";const cur=g.liteBank||g.liteCur||"";
+function ixLiteHtml(g){try{if(!feat("lite"))return"";const L=banks.filter(b=>b.type!=="Cash"&&b.lite&&b.lite.on);if(!(g.X&&g.X.pay&&g.X.pay.lite)||!L.length||g.saved)return"";const cur=g.liteBank||g.liteCur||"";
   return`<div class="ixmine ${g.liteAmbig&&!g.liteBank?"warn":"ok"}"><b>UPI Lite bank</b><div style="margin:4px 0 6px;font:500 .84rem var(--body)">${g.liteBank?"You chose this bank.":g.liteAmbig?"The receipt does not name the bank. Pick the one your UPI Lite is on.":"Read from the bank logo on the receipt."}</div><div class="ixown"><select data-ixlite aria-label="Which bank has this UPI Lite?">${L.map(b=>`<option value="${esc(b.id)}" ${b.id===cur?"selected":""}>${esc(b.name||b.bankName)} · Lite ${inr(+b.lite.bal||0)}</option>`).join("")}</select></div></div>`}catch(e){return""}}
 function ixLinkHtml(g){const c=ixLinkCand(g);return c?`<div class="ixmine warn"><b>Two names for one person?</b><div style="margin:4px 0 8px;font:500 .84rem var(--body)">Order page shows <b>${esc(c.nick)}</b>. Payment shows <b>${esc(c.real)}</b>.</div><button type="button" class="mini" data-ix="linknames">Link as same person</button></div>`:""}
 async function ixLinkNames(nick,real){const a=ixlN(nick),b=ixlN(real);if(a&&b&&a!==b){const[x,y]=a<b?[a,b]:[b,a];try{await ixlSet("ixl_alias_"+ixlH(x+"|"+y),{t:"alias",a:x,b:y,da:nick,db:real})}catch(e){}}return identMerge(cpKey(nick),cpKey(real),[nick,real],real)}
@@ -7940,5 +7980,96 @@ setTimeout(()=>{try{P2PCheckShared()}catch(e){}},900);
     }catch(e){($("#syncNote").classList.add("ok"),$("#syncNote").textContent="Saved on this device")}
   }else ($("#syncNote").classList.add("ok"),$("#syncNote").textContent="Saved on this device");
 })();
+// ================= FEATURES: switching parts on/off, licence codes, owner tools =================
+// The list of parts and feat() live in 05-features.js. This file applies the switches to the screen
+// and handles licence codes (signed with the owner's private key, checked with the public key in LIC_PUB).
+const b64u={enc(u8){let s="";u8.forEach(c=>s+=String.fromCharCode(c));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")},
+  dec(t){t=String(t).replace(/-/g,"+").replace(/_/g,"/");while(t.length%4)t+="=";const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}};
+const licText=s=>new TextEncoder().encode(s);
+const licJwkSame=(a,b)=>!!a&&!!b&&a.x===b.x&&a.y===b.y;
+function featSel(f){return[...(f.go||[]).flatMap(g=>[`[data-go="${g}"]`,`.tabs button[data-tab="${g}"]`]),...(f.sheets||[]).flatMap(s=>[`[data-sheet="${s}"]`,`[data-sheet^="${s}:"]`]),`[data-feat="${f.k}"]`,...(f.css||[])]}
+function featPurge(){const off=FEATURES.filter(f=>!feat(f.k));if(!off.length)return;const sel=off.flatMap(featSel).join(",");
+  try{document.querySelectorAll("#dAll .dri").forEach(b=>{if(b.matches(sel))b.remove()});document.querySelectorAll("#dAll .dgrp").forEach(g=>{if(!g.querySelector(".dri"))g.remove()})}catch(e){}}
+let featStyle=null;
+function featApply(){const off=FEATURES.filter(f=>!feat(f.k));
+  if(!featStyle){featStyle=document.createElement("style");featStyle.id="featcss";document.head.appendChild(featStyle)}
+  featStyle.textContent=off.map(f=>featSel(f).join(",")+"{display:none!important}").join("\n");
+  featPurge();
+  off.forEach(f=>(f.sheets||[]).forEach(n=>{const o=sheets[n];if(typeof o==="function"&&!o.__lock){const w=function(){featLocked(f)};w.__lock=1;w.__orig=o;sheets[n]=w}}));
+  window.__featOff=off.map(f=>f.k)}
+// a screen of a part that is off: say why and how to get it
+function featLocked(f){const sw=FS.off.indexOf(f.k)>=0;
+  openSheet(`<h3>${esc(f.n)}</h3><p class="note">${sw?"This part is switched off on this phone.":"This part is not included in your licence."}</p><div class="row2"><button class="primary" type="button" data-fl="open">${sw?"Turn it on":"Licence and features"}</button><button class="mini ghost" type="button" data-close>Close</button></div>`,el=>{el.querySelector("[data-fl]").onclick=()=>sheets.features()})}
+// ---- licence codes: PX1.<payload>.<signature>  (ECDSA P-256, payload = JSON, signature over "PX1.<payload>")
+async function licVerify(code){const m=/^PX1\.([\w-]+)\.([\w-]+)$/.exec(String(code||"").trim());
+  if(!m)return{ok:false,why:"That does not look like a licence code."};
+  if(!LIC_PUB)return{ok:false,why:"This build does not check licence codes."};
+  if(!(window.crypto&&crypto.subtle))return{ok:false,why:"This phone cannot check licence codes here."};
+  try{const key=await crypto.subtle.importKey("jwk",JSON.parse(LIC_PUB),{name:"ECDSA",namedCurve:"P-256"},false,["verify"]);
+    const good=await crypto.subtle.verify({name:"ECDSA",hash:"SHA-256"},key,b64u.dec(m[2]),licText("PX1."+m[1]));
+    if(!good)return{ok:false,why:"This licence code is not valid."};
+    const p=JSON.parse(new TextDecoder().decode(b64u.dec(m[1])));
+    if(p.exp&&Date.parse(p.exp+"T23:59:59")<Date.now())return{ok:false,why:"This licence ended on "+p.exp+".",payload:p};
+    return{ok:true,payload:p}}catch(e){return{ok:false,why:"This licence code is not valid."}}}
+async function licActivate(code){const r=await licVerify(code);if(!r.ok)return r;
+  try{localStorage.setItem("p2p_lic",String(code).trim());localStorage.setItem("p2p_lic_ok",JSON.stringify({n:r.payload.n||"",f:r.payload.f,exp:r.payload.exp||"",id:r.payload.id||""}))}catch(e){}
+  featLoad();return r}
+async function licGenKeys(){const kp=await crypto.subtle.generateKey({name:"ECDSA",namedCurve:"P-256"},true,["sign","verify"]);
+  const priv=await crypto.subtle.exportKey("jwk",kp.privateKey),pub=await crypto.subtle.exportKey("jwk",kp.publicKey);
+  localStorage.setItem("p2p_lic_priv",JSON.stringify(priv));localStorage.setItem("p2p_lic_pub",JSON.stringify(pub));featLoad();return pub}
+async function licSign(payload){const priv=JSON.parse(localStorage.getItem("p2p_lic_priv")||"null");if(!priv)throw new Error("no key");
+  const key=await crypto.subtle.importKey("jwk",priv,{name:"ECDSA",namedCurve:"P-256"},false,["sign"]);
+  const body=b64u.enc(licText(JSON.stringify(payload)));const sig=await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"},key,licText("PX1."+body));
+  return"PX1."+body+"."+b64u.enc(new Uint8Array(sig))}
+// is this phone the owner's? (its private key must match the public key built into this app)
+(function(){try{const pub=JSON.parse(localStorage.getItem("p2p_lic_pub")||"null");FS.owner=!!(LIC_PUB&&pub&&licJwkSame(pub,JSON.parse(LIC_PUB)))}catch(e){FS.owner=false}})();
+featLoad=(old=>function(){old();try{const pub=JSON.parse(localStorage.getItem("p2p_lic_pub")||"null");FS.owner=!!(LIC_PUB&&pub&&licJwkSame(pub,JSON.parse(LIC_PUB)))}catch(e){FS.owner=false}})(featLoad);
+// ---- the screen
+sheets.features=function(){const owner=FS.owner,lic=licOk(),setup=!LIC_PUB;
+  const st=setup?["Open","This build does not ask for a licence code. Every part is on unless you switch it off here."]:owner?["Owner","Your phone has the licence key. Every part works here."]:lic?["Licensed",(lic.n?lic.n+" · ":"")+(lic.exp?"valid till "+lic.exp:"no end date")]:["No licence","Only the basic parts work. Enter a licence code to unlock more."];
+  const row=f=>{const locked=!setup&&!owner&&!(lic&&(lic.f==="*"||(lic.f||[]).indexOf(f.k)>=0));const on=FS.off.indexOf(f.k)<0&&!locked;
+    return`<div class="dqr fsr"><span><b>${esc(f.n)}</b><small>${esc(f.d)}</small></span>${locked?'<em class="cpp risk">Locked</em>':`<label class="tog"><input type="checkbox" data-fk="${f.k}" ${on?"checked":""}><span></span></label>`}</div>`};
+  const grp=(t,n)=>`<div class="pcsec">${n}</div><div class="rml">${FEATURES.filter(f=>f.tier===t).map(row).join("")}</div>`;
+  openSheet(`<div class="insw"><h3>Features and licence</h3>
+    <div class="fstat"><b>${st[0]}</b><small>${esc(st[1])}</small></div>
+    <p class="note" style="margin:8px 0 0">Basic parts (orders, banks, wallet, expenses, profit, backup, lock) are always on.</p>
+    ${grp("pro","Pro")}${grp("business","Business")}
+    <div class="cpexp"><button type="button" class="primary" id="fs-save">Save and restart</button></div>
+    <div class="pcsec">Licence code</div><div class="tgf"><input id="fs-code" placeholder="PX1…" autocomplete="off" autocapitalize="off"><button type="button" class="mini ghost" id="fs-act">Activate</button></div><p class="note" id="fs-msg" style="margin:6px 0 0"></p>
+    ${setup||owner?`<div class="pcsec">Owner tools</div><div id="fs-own"></div>`:""}
+    <div class="cpexp"><button type="button" class="mini ghost" data-close>Close</button></div></div>`,el=>{
+    const q=s=>el.querySelector(s),msg=t=>{q("#fs-msg").textContent=t};
+    q("#fs-save").onclick=()=>{const off=[...el.querySelectorAll("[data-fk]")].filter(c=>!c.checked).map(c=>c.dataset.fk);try{localStorage.setItem("p2p_feat_off",JSON.stringify(off))}catch(e){}toast("Saved. Restarting…");setTimeout(()=>location.reload(),350)};
+    q("#fs-act").onclick=async()=>{const r=await licActivate(q("#fs-code").value);if(!r.ok){msg(r.why);return}msg("Licence accepted. Restarting…");setTimeout(()=>location.reload(),500)};
+    if(q("#fs-own"))featOwner(q("#fs-own"))})};
+// owner tools: make the signing keys once, then make a code for each customer
+function featOwner(box){const have=()=>!!localStorage.getItem("p2p_lic_priv");
+  const draw=()=>{if(!have()){box.innerHTML=`<p class="note">To sell the app with licence codes, first make your signing keys. They stay on this phone. You then give Claude the public key (safe to share) so it can be built into the app.</p><div class="cpexp"><button type="button" class="mini ghost" id="fo-gen">Make my signing keys</button></div>`;
+      box.querySelector("#fo-gen").onclick=async()=>{try{await licGenKeys();draw()}catch(e){toast("This phone cannot make keys here")}};return}
+    const pub=localStorage.getItem("p2p_lic_pub")||"";
+    box.innerHTML=`<p class="note">Public key (safe to share, it goes into the app):</p><textarea id="fo-pub" readonly rows="3" class="fotx">${esc(pub)}</textarea><div class="cpexp"><button type="button" class="mini ghost" id="fo-cp">Copy public key</button><button type="button" class="mini ghost" id="fo-bk">Save private key backup</button></div>
+      <p class="note">The private key makes codes. Keep the backup file safe and never send it to anyone.</p>
+      <div class="pcsec">New licence code</div><div class="cpterms"><input id="fo-name" placeholder="Customer name" maxlength="40"><select id="fo-plan"><option value="pro">Pro plan</option><option value="business">Business plan (everything)</option><option value="basic">Basic plan (no extras)</option><option value="custom">Pick parts</option></select><div class="lbs" id="fo-feats" hidden>${FEATURES.map(f=>`<label class="lbc"><input type="checkbox" data-fo="${f.k}" hidden>${esc(f.n)}</label>`).join("")}</div><select id="fo-exp"><option value="1">Valid 1 month</option><option value="3">Valid 3 months</option><option value="12" selected>Valid 12 months</option><option value="0">No end date</option></select></div>
+      <div class="cpexp"><button type="button" class="primary" id="fo-make">Create code</button></div><textarea id="fo-out" readonly rows="4" class="fotx" hidden></textarea><div class="cpexp" id="fo-act" hidden><button type="button" class="mini ghost" id="fo-copy">Copy code</button><button type="button" class="mini ghost" id="fo-wa">Send on WhatsApp</button></div>`;
+    const q=s=>box.querySelector(s);
+    q("#fo-cp").onclick=()=>copyText(pub);
+    q("#fo-bk").onclick=()=>saveFile("pexai-licence-private-key-SECRET.json",localStorage.getItem("p2p_lic_priv")||"");
+    q("#fo-plan").onchange=()=>{const v=q("#fo-plan").value;q("#fo-feats").hidden=v!=="custom"};
+    q("#fo-feats").addEventListener("click",e=>{const l=e.target.closest(".lbc");if(!l)return;e.preventDefault();const c=l.querySelector("input");c.checked=!c.checked;l.classList.toggle("on",c.checked)});
+    q("#fo-make").onclick=async()=>{const name=q("#fo-name").value.trim();if(!name){toast("Type the customer name");return}
+      const plan=q("#fo-plan").value;let f=plan==="business"?"*":plan==="basic"?[]:plan==="pro"?FEATURES.filter(x=>x.tier==="pro").map(x=>x.k):[...box.querySelectorAll("[data-fo]")].filter(c=>c.checked).map(c=>c.dataset.fo);
+      const mo=+q("#fo-exp").value;let exp="";if(mo){const d=new Date();d.setMonth(d.getMonth()+mo);exp=d.toISOString().slice(0,10)}
+      try{const code=await licSign({v:1,n:name,f,exp,id:Math.random().toString(36).slice(2,8),iat:Date.now()});const o=q("#fo-out");o.value=code;o.hidden=false;q("#fo-act").hidden=false;
+        q("#fo-copy").onclick=()=>copyText(code);q("#fo-wa").onclick=()=>window.open("https://wa.me/?text="+encodeURIComponent("Your Pexai licence code:\n"+code),"_blank")}catch(e){toast("Couldn't make the code")}}};
+  draw()}
+// check a saved licence when the app starts (and once more if it changed, e.g. ended)
+async function licBoot(){let code="";try{code=localStorage.getItem("p2p_lic")||""}catch(e){}if(!LIC_PUB||!code)return;
+  const had=JSON.stringify(FS.lic),r=await licVerify(code);
+  try{if(r.ok)localStorage.setItem("p2p_lic_ok",JSON.stringify({n:r.payload.n||"",f:r.payload.f,exp:r.payload.exp||"",id:r.payload.id||""}));else localStorage.removeItem("p2p_lic_ok")}catch(e){}
+  featLoad();if(had!==JSON.stringify(FS.lic)){try{if(!sessionStorage.getItem("p2p_lic_rl")){sessionStorage.setItem("p2p_lic_rl","1");location.reload()}}catch(e){}}}
+// ---- put the switches in force: pages can't be opened, screens say why, menus lose the entries
+{const _go=goPage;goPage=function(t){const f=FEATURES.find(x=>(x.go||[]).indexOf(t)>=0);if(f&&!feat(f.k)){featLocked(f);t="home"}return _go(t)};
+ if(typeof p7Drawer==="function"){const _p7=p7Drawer;p7Drawer=function(){const r=_p7.apply(this,arguments);featPurge();return r}}}
+featApply();licBoot();
 </script>
 </body></html>

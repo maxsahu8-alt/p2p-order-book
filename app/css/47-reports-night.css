@@ -1,0 +1,19 @@
+.rep{display:flex;flex-direction:column;gap:12px}
+.rep pre{white-space:pre-wrap;background:var(--soft);border-radius:12px;padding:12px;font:500 .82rem/1.55 var(--mono);margin:0;user-select:text;-webkit-user-select:text}
+.night{background:linear-gradient(135deg,#1b1f3b,#16181a);border:1px solid #2c3160;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px;color:#e8eaff}
+:root[data-theme="light"] .night{background:linear-gradient(135deg,#eef0ff,#fff);border-color:#d5d9ff;color:#1b1f3b}
+.night b{font-size:.95rem}
+.night label{flex-direction:row;align-items:center;gap:10px;font-size:.86rem;color:inherit;font-weight:500;cursor:pointer}
+.night input{width:20px;height:20px;min-height:0;flex:none;accent-color:var(--accent)}
+.night .warnline{color:var(--sell);font-weight:700;font-size:.86rem}
+.lock{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px}
+.lock b{font-size:1.1rem}.lkb{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:10px}.lkb .dlogo{width:76px;height:76px;border-radius:23px}.lkb svg{width:48px;height:48px}.lkb .pxw{font:800 1.6rem var(--display);letter-spacing:-.02em}.lkb small{color:var(--muted);font-weight:600;font-size:.8rem}
+.dots{display:flex;gap:14px}
+.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--fg)}
+.dots i.on{background:var(--fg)}
+.dots.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.pad{display:grid;grid-template-columns:repeat(3,72px);gap:14px}
+.pad button{height:72px;border-radius:50%;border:0;background:var(--surface);color:var(--fg);font:600 1.5rem var(--body);cursor:pointer}
+.pad button.ghost{background:none;font-size:.85rem;color:var(--muted)}
+.smt{display:flex;flex-direction:column;gap:10px}

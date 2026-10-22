@@ -1,0 +1,85 @@
+  <section id="p-settings" class="ih chat">
+    <div class="sgroup"><h3>Business</h3>
+      <div class="srow2"><div><b>Business name</b></div><input id="st-biz" class="sinp" placeholder="Shown on Home" maxlength="40"></div>
+      <div class="srow2"><div><b>Your name</b></div><input id="st-owner" class="sinp" placeholder="Used by AI" maxlength="40"></div>
+      <div class="srow2"><div><b>Intake memory</b><small>What Smart Intake has learned</small></div><button type="button" class="mini" id="st-ixmem">Open</button></div>
+    </div>
+    <div class="sgroup"><h3>New order defaults</h3>
+      <div class="srow2"><div><b>Deal type</b></div><select id="st-mode" class="ssel"><option value="P2P">P2P</option><option value="Direct">Direct</option><option value="Cash">Cash</option></select></div>
+      <div class="srow2"><div><b>Coin</b></div><select id="st-coin" class="ssel"></select></div>
+      <div class="srow2"><div><b>Platform</b></div><select id="st-plat" class="ssel"></select></div>
+      <div class="srow2"><div><b>Payment</b></div><select id="st-pay" class="ssel"><option value="UPI">UPI</option><option value="IMPS">IMPS</option><option value="Bank Transfer">Bank Transfer</option><option value="Paytm">Paytm</option><option value="Cash">Cash</option></select></div>
+      <div class="srow2"><div><b>Status</b></div><select id="st-status" class="ssel"><option value="Completed">Completed</option><option value="Pending">Pending</option></select></div>
+      <div class="srow2"><div><b>Coins list</b><small>Comma separated</small></div><input id="st-coins" class="sinp" placeholder="USDT, BTC, ETH"></div>
+      <div class="srow2"><div><b>Platforms list</b><small>Comma separated</small></div><input id="st-plats" class="sinp" placeholder="Binance, Bybit"></div>
+    </div>
+    <div class="sgroup"><h3>Banks & week</h3>
+      <div class="srow2"><div><b>UPI limit counts</b></div><select id="st-upi" class="ssel"><option value="rolling">Last 24 hours</option><option value="midnight">Resets at midnight</option></select></div>
+      <div class="srow2"><div><b>Week starts on</b><small>For Direct weekly payments</small></div><select id="st-week" class="ssel"><option value="Mon">Monday</option><option value="Sun">Sunday</option></select></div>
+    </div>
+    <div class="sgroup"><h3>Alerts</h3>
+      <div class="srow2"><div><b>Pending order alert after</b></div><span class="inl"><input id="st-pmin" class="sinp sm" type="number" min="5" step="5"> min</span></div>
+      <div class="srow2"><div><b>Limit warning at</b></div><span class="inl"><input id="st-lpct" class="sinp sm" type="number" min="50" max="100" step="5"> %</span></div>
+      <div class="srow2"><div><b>Pending / appeal orders</b></div><label class="tog"><input type="checkbox" id="st-a-pending"><span></span></label></div>
+      <div class="srow2"><div><b>Bank limits & negative balance</b></div><label class="tog"><input type="checkbox" id="st-a-limits"><span></span></label></div>
+      <div class="srow2"><div><b>Direct payments due</b></div><label class="tog"><input type="checkbox" id="st-a-direct"><span></span></label></div>
+      <div class="srow2"><div><b>Unassigned payments</b></div><label class="tog"><input type="checkbox" id="st-a-unassigned"><span></span></label></div>
+      <div class="srow2"><div><b>Low crypto stock</b></div><label class="tog"><input type="checkbox" id="st-a-stock"><span></span></label></div>
+    </div>
+    <div class="sgroup"><h3>Security</h3>
+      <div class="srow2"><div><b>App lock (PIN)</b><small id="pinState">Off · this device only</small></div><button type="button" class="mini" id="pinBtn">Set PIN</button></div>
+      <div class="srow2"><div><b>Lock again after</b><small>When the app is in the background</small></div><select id="st-lockmin" class="ssel"><option value="0">Immediately</option><option value="1">1 min</option><option value="5">5 min</option><option value="15">15 min</option></select></div>
+    </div>
+    <div class="sgroup"><h3>Night mode</h3>
+      <div class="srow2"><div><b>Night checklist</b><small>Reminds you to switch off ads and clear pending orders before sleeping</small></div><label class="tog"><input type="checkbox" id="st-night"><span></span></label></div>
+      <div class="srow2"><div><b>Starts at</b></div><input id="st-nightat" class="sinp sm" type="time" style="width:110px"></div>
+    </div>
+    <div class="sgroup"><h3>Appearance & privacy</h3>
+      <div class="srow2"><div><b>Theme</b><small id="st-themeNote">This device only</small></div><select id="st-theme" class="ssel"><option value="dark">Dark</option><option value="light">Light</option><option value="system">Same as phone</option></select></div>
+      <div class="srow2"><div><b>Hide amounts when app opens</b><small>This device only</small></div><label class="tog"><input type="checkbox" id="st-hide"><span></span></label></div>
+    </div>
+    <div class="sgroup"><h3>AI</h3>
+    <details class="aiset inset" id="aiSet">
+      <summary>AI connection · <span id="aiProvLbl">Built-in</span></summary>
+      <div class="aigrid">
+        <label class="full">Provider<select id="ai-prov">
+          <option value="braingemini">P2P Brain + Gemini (learns from Google Gemini · free key)</option>
+          <option value="brainclaude">P2P Brain + Claude (learns from Claude · your Claude key)</option>
+          <option value="brain">P2P Brain (app's own brain · offline · no AI)</option>
+          <option value="builtin">Built-in (Claude, inside this app link)</option>
+          <option value="anthropic">Anthropic Claude (your API key)</option>
+          <option value="openai">OpenAI (your API key)</option>
+          <option value="gemini">Google Gemini (your API key)</option>
+          <option value="custom">Other (OpenAI-compatible URL)</option>
+        </select></label>
+        <label class="ih full" id="ai-url-w">API base URL<input id="ai-url" type="url" placeholder="https://your-provider.com/v1" autocomplete="off"></label>
+        <label class="ih full" id="ai-key-w">API key<input id="ai-key" type="password" placeholder="Paste your key" autocomplete="off"></label>
+        <label class="ih full" id="ai-model-w">Model<input id="ai-model" type="text" placeholder="Model name from your provider" autocomplete="off"></label>
+        <p class="note full" id="ai-help">Uses Claude through this app link. No key needed.</p>
+        <button class="primary" type="button" id="ai-connect">Connect</button>
+      </div>
+    </details>
+      <div class="srow2"><div><b>AI reply language</b></div><select id="st-lang" class="ssel"><option value="English">English</option><option value="Hinglish">Hinglish</option><option value="Hindi">Hindi</option></select></div>
+      <div class="srow2"><div><b>Answer style</b></div><select id="st-len" class="ssel"><option value="Short">Short</option><option value="Detailed">Detailed</option></select></div>
+      <div class="srow2"><div><b>Smart intake saves automatically</b><small>Off by default: you check what was read, then apply. Turn on to save right away, with Undo.</small></div><label class="tog"><input type="checkbox" id="st-auto"><span></span></label></div>
+      <div class="srow2"><div><b>Learn from my data</b><small>AI studies your orders, parties and banks to find your habits</small></div><label class="tog"><input type="checkbox" id="st-learn"><span></span></label></div>
+      <div class="srow2"><div><b>Let AI save what it learns</b><small>AI suggests notes from chat; you confirm before saving</small></div><label class="tog"><input type="checkbox" id="st-mem"><span></span></label></div>
+    </div>
+    <div class="sgroup"><h3>AI learning</h3>
+      <p class="note">Things the AI remembers about your business and uses in every answer. Teach it rules like “Always pay Amit from ICICI” or “Raju often cancels at night”.</p>
+      <div class="teach"><input id="noteIn" class="sinp" placeholder="Teach AI something…" maxlength="200"><button type="button" class="mini" id="noteAdd">Teach</button></div>
+      <div class="list" id="notesList"></div>
+      <h4 class="lh">Learned from your data</h4>
+      <div class="list" id="learnedList"></div>
+    </div>
+    <div class="sgroup"><h3>Data</h3>
+      <div class="srow2"><div><b>Backup reminder</b><small id="bkLast">Never backed up on this device</small></div><select id="st-bkdays" class="ssel"><option value="0">Off</option><option value="3">Every 3 days</option><option value="7">Every week</option><option value="30">Every month</option></select></div>
+      <div class="srow2"><div><b>Backup all data</b><small>Orders, banks, parties, expenses, settings</small></div><button type="button" class="mini" id="bkExport">Download</button></div>
+      <div class="srow2"><div><b>Orders as Excel (CSV)</b></div><button type="button" class="mini" id="csvExport">Download</button></div>
+      <div class="srow2"><div><b>Restore from backup</b></div><label class="mini ghost" style="cursor:pointer">Choose file<input class="ih" type="file" id="bkImport" accept=".json,application/json"></label></div>
+      <p class="note" id="bkNote"></p>
+      <div class="srow2"><div><b>Delete all data</b><small>Cannot be undone. Download a backup first.</small></div><button type="button" class="mini" id="wipeBtn" style="background:var(--sell);color:#fff">Delete</button></div>
+    </div>
+    <p class="note" id="aboutLine" style="text-align:center"></p>
+  </section>
+

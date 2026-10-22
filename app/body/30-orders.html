@@ -1,0 +1,21 @@
+  <section id="p-orders" class="ih chat">
+    <div class="sec-head"><h2>Orders</h2><span id="listCount"></span></div>
+    <button class="aibar" type="button" data-ai="orders"><span class="aiic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span><span><b>AI order analysis</b><small>Cancellations, best hours, counterparties, rates</small></span><span class="go">›</span></button>
+    <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg><input id="hq" type="search" placeholder="Search name, coin, note, amount" autocomplete="off"></label>
+    <div class="chart-card"><div class="ch-head"><b>Orders by hour of day</b><span id="chHours-sub">completed vs cancelled</span></div><div class="ch-legend" id="chHours-leg"></div><div class="chart" id="chHours"></div></div>
+    <div class="filters" id="filters">
+      <button class="chip" aria-pressed="true" data-f="all">All</button>
+      <button class="chip" aria-pressed="false" data-f="today">Today</button>
+      <button class="chip" aria-pressed="false" data-m="P2P">P2P</button>
+      <button class="chip" aria-pressed="false" data-m="Direct">Direct</button>
+      <button class="chip" aria-pressed="false" data-m="Cash">Cash</button>
+      <button class="chip" aria-pressed="false" data-m="Pair">P2P ⇄ Direct</button>
+      <button class="chip" aria-pressed="false" data-f="Pending">Pending</button>
+      <button class="chip" aria-pressed="false" data-f="Appeal">Appeal</button>
+      <button class="chip" aria-pressed="false" data-f="Cancelled">Cancelled</button>
+      <button class="chip" aria-pressed="false" data-f="BUY">Buy</button>
+      <button class="chip" aria-pressed="false" data-f="SELL">Sell</button>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+

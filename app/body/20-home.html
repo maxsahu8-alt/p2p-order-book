@@ -1,0 +1,30 @@
+  <section id="p-home" class="chat">
+    <section class="hero2">
+      <div class="h2top"><span class="al">Net worth <button type="button" class="eye" id="eyeBtn" aria-label="Hide amounts"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></span><span class="h2chg" id="hNetChg"></span></div>
+      <div class="atot" id="hTotal" role="button" tabindex="0" style="cursor:pointer">₹0</div>
+      <div class="h2sub"><span><i class="lgd" style="background:var(--c1)"></i>Banks <b id="hBanks">₹0</b></span><span><i class="lgd" style="background:var(--c3)"></i><span id="hUsdt">0 USDT</span> <b id="hStock">≈ ₹0</b></span></div>
+      <div class="bbar" id="hBar" data-go="wallet" role="button" tabindex="0"></div>
+      <div class="bleg" id="hBarLeg"></div>
+    </section>
+    <div id="alerts" class="ih abox"></div>
+    <div class="dseg" id="dashP" role="tablist"><button type="button" data-p="today">Today</button><button type="button" data-p="7">7D</button><button type="button" data-p="30">30D</button><button type="button" data-p="all">All</button></div>
+    <div class="kpis">
+      <div class="kpi big"><span class="kl">Spread profit</span><b id="sProfit">₹0</b><span class="kd" id="kProfitD"></span><svg class="kspark" id="kSpark" viewBox="0 0 120 34" preserveAspectRatio="none"></svg></div>
+      <div class="kpi"><span class="kl">Volume</span><b id="kVol">₹0</b><span class="ks" id="kVolS"></span></div>
+      <div class="kpi"><span class="kl">Orders</span><b id="sCount">0</b><span class="ks" id="kOrdS"></span><span class="ih" id="sPend"></span></div>
+      <div class="kpi" data-go="coins" style="cursor:pointer"><span class="kl">Avg spread</span><b id="kSpread">—</b><span class="ks"><span id="sBuy">—</span> → <span id="sSell">—</span></span></div>
+      <div class="kpi" data-sheet="profit" style="cursor:pointer"><span class="kl">Net after expenses</span><b id="kNet">₹0</b><span class="ks" id="kNetS"></span></div>
+    </div>
+    <div id="nightCard" class="ih night"></div>
+    <div class="dcard2" id="mixCard"><div class="ch-head"><b>Volume by deal type</b><span id="mixSub"></span></div><div class="mixbar" id="mixBar"></div><div class="mixleg" id="mixLeg"></div></div>
+    <div class="chart-card"><div class="ch-head"><b id="chProfitT">Profit · last 14 days</b><span id="chProfit-sub"></span></div><div class="ch-legend" id="chProfit-leg"></div><div class="chart" id="chProfit"></div></div>
+    <div class="dcard2" id="topCpCard"><div class="ch-head"><b>Top counterparties</b><button type="button" class="link" data-sheet="cps" style="color:var(--fg)">All ›</button></div><div id="topCp"></div></div>
+    <button type="button" class="rowcard" data-go="direct"><span class="rc-ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 4.5a3 3 0 0 1 0 6M18 14.8c1.8.7 3 2.5 3 5.2"/></svg></span><span class="rc-t"><b>Direct payments</b><small id="hDirectWk"></small></span><span class="rc-v" id="hDirect">₹0</span></button>
+    <button class="aibar" type="button" data-ai="home"><span class="aiic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span><span><b>AI business check</b><small>Profit, risks and what to do next</small></span><span class="go">›</span></button>
+    <div class="hlist">
+      <div class="htabs" id="htabs"><button type="button" class="on" data-h="all">Recent</button><button type="button" data-h="Pending">Pending</button><button type="button" data-h="Appeal">Appeal</button><button type="button" data-h="Cancelled">Cancelled</button><button type="button" class="see" data-go="orders">All ›</button></div>
+      <div class="list flat" id="recent"></div>
+    </div>
+    <div class="ih"><div id="homeModes"></div><div id="homeWallet"></div><b id="h14"></b><svg id="hSpark"></svg></div>
+  </section>
+

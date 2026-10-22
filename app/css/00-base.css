@@ -1,0 +1,29 @@
+[hidden]{display:none!important}
+/* Layout: native-app shell — brand header, balance-style summary card, content panes, fixed bottom tab bar with raised "New" action */
+/* dark-first exchange look; light palette only when the viewer explicitly picks light */
+:root{
+  --bg:#0c0d0e; --surface:#16181a; --raised:#1d2023; --line:#25292d; --line-strong:#33383d;
+  --fg:#f4f5f6; --muted:#8b9197; --primary:#f4f5f6; --primary-fg:#0c0d0e; --accent:#23c58f;
+  --hero:#16181a; --hero-fg:#f4f5f6; --hero-muted:#8b9197; --gold:#f4f5f6;
+  --buy:#23c58f; --sell:#f0596b; --warn:#f2b441; --soft:#1d2023;
+  --shadow:none;
+  --display:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --body:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --nav-h:64px;
+  --s1:#3987e5; --s2:#d95926; --grid:#25292d; --axis:#6b7279;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#f4f5f7; --surface:#ffffff; --raised:#f6f7f9; --line:#e4e7eb; --line-strong:#d2d7dd;
+  --fg:#0c0d0e; --muted:#69707a; --primary:#0c0d0e; --primary-fg:#ffffff; --accent:#0d9466;
+  --hero:#ffffff; --hero-fg:#0c0d0e; --hero-muted:#69707a; --gold:#0c0d0e;
+  --buy:#0d9466; --sell:#d63a4d; --warn:#b7791f; --soft:#eef0f3;
+  --s1:#2a78d6; --s2:#eb6834; --grid:#e8ebee; --axis:#8a929c;
+  color-scheme:light;
+}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;padding:0 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom,0px));-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-block:16px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+

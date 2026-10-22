@@ -1,0 +1,34 @@
+  <section id="p-wallet" class="ih chat">
+    <span class="ih" id="walletDate"></span>
+    <section class="hero2 whero">
+      <div class="h2top"><span class="al">Money in banks &amp; cash <button type="button" class="eye" id="wEye" aria-label="Hide amounts"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></span><span class="h2chg" id="wNetChg"></span></div>
+      <div class="atot" id="wTotal">₹0</div>
+      <div class="bbar" id="wBar"></div>
+      <div class="bleg" id="wBarLeg"></div>
+      <div class="wacts"><button type="button" data-sheet="bank"><span class="qri t-green"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg></span>Add bank</button><button type="button" data-sheet="transfer"><span class="qri t-blue"><svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg></span>Transfer</button><button type="button" data-sheet="expense"><span class="qri t-red"><svg viewBox="0 0 24 24"><path d="M6 3h12M6 8h12M14 21 6 12h3a4 4 0 0 0 0-8"/></svg></span>Expense</button><button type="button" data-sheet="which"><span class="qri t-violet"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></span>Which bank?</button></div>
+    </section>
+    <div class="dseg" id="wSeg"><button type="button" data-p="today">Today</button><button type="button" data-p="7">7D</button><button type="button" data-p="30">30D</button></div>
+    <div class="kpis">
+      <div class="kpi"><span class="kl">Money in</span><b id="wIn" class="pos">₹0</b><span class="ks" id="wInS"></span></div>
+      <div class="kpi"><span class="kl">Money out</span><b id="wOut" class="neg">₹0</b><span class="ks" id="wOutS"></span></div>
+    </div>
+    <div class="chart-card"><div class="ch-head"><b id="chFlowT">Cash flow</b><span id="chFlow-sub"></span></div><div class="ch-legend" id="chFlow-leg"></div><div class="chart" id="chFlow"></div></div>
+    <div class="dcard2" id="wLimCard"><div class="ch-head"><b>Can send right now</b><span id="wLimSub"></span></div><div class="wlims" id="wLims"></div></div>
+    <div class="dcard2" id="wCover"></div>
+    <button class="aibar" type="button" data-ai="wallet"><span class="aiic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span><span><b>AI money analysis</b><small>Bank balances, limits, expenses and cash flow</small></span><span class="go">›</span></button>
+    <details class="ih chart-card wcoll"><summary class="ch-head"><b>Balance by bank</b><span id="chBanks-sub">Tap to open</span></summary><div class="ch-legend" id="chBanks-leg"></div><div class="chart" id="chBanks"></div></details>
+    <div class="sec-head"><h2>Banks</h2><span><span id="bankCount"></span> <button type="button" class="link" data-sheet="bankmgr" style="margin-left:6px">Manage</button></span></div>
+    <div id="bankAdvisor"></div>
+    <div class="filters" id="bankFilter"></div>
+    <div class="list" id="bankList"></div>
+    <div id="bankHidTog"></div>
+    <div class="sec-head"><h2>Crypto left</h2><button class="link" type="button" data-sheet="stock" style="color:var(--primary)">Opening stock</button></div>
+    <div class="mode-cards" id="stockCards"></div>
+    <div class="sec-head"><h2>Payments to assign</h2><span id="unCount"></span></div>
+    <div class="list" id="unList"></div>
+    <div class="sec-head"><h2>Personal expenses</h2><span id="expMonth"></span></div>
+    <div class="chart-card"><div class="ch-head"><b>Expenses this month by category</b><span id="chExp-sub"></span></div><div class="ch-legend" id="chExp-leg"></div><div class="chart" id="chExp"></div></div>
+    <div class="filters" id="expCats"></div>
+    <div class="list" id="expList"></div>
+  </section>
+

@@ -1,0 +1,18 @@
+  <section id="p-ideas" class="ih chat">
+    <div class="sec-head"><h2>Feature requests</h2></div>
+    <form id="ideaForm" style="grid-template-columns:1fr">
+      <label>What should the app do better?<textarea id="ideaIn" rows="3" placeholder="e.g. Show profit per coin, export orders to Excel, monthly report"></textarea></label>
+      <button class="primary" id="ideaBtn" type="submit">Send request</button>
+    </form>
+    <button class="ih primary" id="nowBtn" type="button" style="background:var(--ink);color:var(--bg)">Update now</button>
+    <p class="note" id="nowNote">Every Sunday morning your requests are reviewed and a new version is prepared. Tap “Update now” to start it right away instead. You get a preview link in a few minutes, and nothing changes until you approve it.</p>
+    <div class="list" id="reqList"></div>
+  </section>
+</div>
+<button type="button" class="aifab" id="aiFab" aria-label="Ask AI"><span class="lg"><i></i></span></button>
+<div class="ih aipop" id="aiPop"><div class="apbox" role="dialog" aria-label="Ask AI">
+  <div class="aphead"><span class="apic apbot" id="apBot"><span class="lg"><i></i></span></span><div><b id="apName">Ask anything</b><small id="apSub">P2P Brain</small></div><button type="button" class="apx apvoice ih" id="apVoice" aria-label="Support" title="Support"><svg viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg></button><button type="button" class="apx" id="apMax" aria-label="Open full chat"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button><button type="button" class="apx" id="apClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="apmsgs msgs" id="apMsgs"></div>
+  <div class="apchips" id="apChips"></div>
+  <form class="apform" id="apForm"><button type="button" class="ih apmic" id="apMic" aria-label="Speak"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><input id="apIn" placeholder="Ask, or tell me what happened…" autocomplete="off"><button type="submit" class="apsend" id="apSend" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2-7z"/></svg><svg class="wv" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg></button></form>
+</div></div>

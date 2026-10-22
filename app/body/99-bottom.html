@@ -1,0 +1,18 @@
+<nav class="tabs" role="tablist" aria-label="Main">
+  <button role="tab" id="t-home" aria-selected="true" data-tab="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button role="tab" id="t-orders" aria-selected="false" data-tab="orders"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Orders</button>
+  <button role="tab" id="t-add" aria-selected="false" data-tab="add"><span class="plus"><svg viewBox="22 14 64 76" aria-hidden="true"><defs><linearGradient id="pxgn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3DDCA6"/><stop offset="1" stop-color="#12A077"/></linearGradient></defs><path d="M37 82V28h19a16.5 16.5 0 0 1 0 33H37" fill="none" stroke="url(#pxgn)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M78 24l2.2 5.3 5.3 2.2-5.3 2.2L78 39l-2.2-5.3-5.3-2.2 5.3-2.2z" fill="#F2B441"/></svg></span>New</button>
+  <button role="tab" id="t-wallet" aria-selected="false" data-tab="wallet"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2z"/><circle cx="16" cy="14.5" r="1.2"/></svg>Wallet</button>
+  <button role="tab" id="t-direct" aria-selected="false" data-tab="direct"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 4.5a3 3 0 0 1 0 6M18 14.8c1.8.7 3 2.5 3 5.2"/></svg>Direct</button>
+</nav>
+<div class="ih sheet-bg" id="sheetBg"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div></div>
+<div class="ih us" id="us" role="dialog" aria-label="Search">
+  <div class="us-top"><label class="us-box"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg><input id="usIn" type="search" placeholder="Search anything… e.g. raju, sell >500, 9800, today" autocomplete="off" enterkeyhint="search"></label><button type="button" class="us-x" id="usClose">Cancel</button></div>
+  <div class="us-chips" id="usChips"></div>
+  <div class="us-body" id="usBody"></div>
+</div>
+<div class="ih lock" id="lock"><div class="lkb" id="lockBrand"></div><b id="lockTitle">Enter PIN</b><div class="dots" id="lockDots"></div><div class="pad" id="lockPad"></div><button type="button" class="link" id="lockForgot">Forgot PIN?</button></div>
+<div class="ih tip" id="tip"></div>
+<div class="ih toast" id="toast"></div>
+
+<script>

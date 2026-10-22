@@ -1,0 +1,80 @@
+  <section class="ih" id="p-add">
+    <div class="sec-head" style="margin-bottom:12px"><h2 id="formTitle">New order</h2><button type="button" class="ih link" id="editCancel" style="color:var(--sell)">Cancel edit</button></div>
+    <form id="form">
+      <div class="flabel">Deal type</div>
+      <div class="seg full" id="modeSeg" style="grid-template-columns:repeat(4,1fr)">
+        <button type="button" data-m="P2P" class="on">P2P</button>
+        <button type="button" data-m="Direct">Direct</button>
+        <button type="button" data-m="Cash">Cash</button>
+        <button type="button" data-m="Pair">P2P ⇄ Direct</button>
+      </div>
+      <p class="ih note full" id="pairNote" style="margin:-4px 0 0">Bought on the exchange, sold to someone outside (or the other way). The money comes into your own bank, so add the bank below. The exchange price is filled in from your exchange orders\' average. Only this deal is saved, so nothing is counted twice.</p>
+      <div class="flabel">Side</div>
+      <div class="seg full" id="sideSeg">
+        <button type="button" data-v="BUY" class="on">BUY</button>
+        <button type="button" data-v="SELL">SELL</button>
+      </div>
+      <div class="flabel">Details</div>
+      <label>Coin<select id="f-coin"><option>USDT</option><option>BTC</option><option>ETH</option><option>USDC</option></select></label>
+      <label>Status<select id="f-status"><option>Completed</option><option>Pending</option><option>Appeal</option><option>Cancelled</option></select></label>
+      <label>Quantity<input id="f-qty" type="number" inputmode="decimal" step="any" placeholder="100" required></label>
+      <label>Rate (₹)<input id="f-rate" type="number" inputmode="decimal" step="any" placeholder="92.50" required><span class="opt hint" id="rateHint"></span></label>
+      <div class="ih full pairbox" id="pairBox">
+        <div class="pbrow"><span>Paid to you in</span><div class="seg" id="pb-mode"><button type="button" data-pm="Direct" class="on">Bank</button><button type="button" data-pm="Cash">Cash</button></div></div>
+        <div class="pbh"><span class="pbi">⇄</span><div><b>Exchange avg <span id="pb-side">buy</span> price</b><small id="pb-info">From your exchange orders</small></div></div>
+        <div class="cvchips" id="pb-basis" style="margin:0"><button type="button" data-b="today" class="on">Today</button><button type="button" data-b="7">7 days</button><button type="button" data-b="last10">Last 10 orders</button><button type="button" data-b="all">All</button></div>
+        <label>Exchange avg rate (₹) <span class="opt">auto · you can change it</span><input id="pb-rate" type="number" inputmode="decimal" step="any" placeholder="Auto"></label>
+        <div class="pbstock" id="pb-stock"></div>
+        <div class="pbp"><span>Profit vs exchange</span><b id="pb-profit">₹0</b></div>
+      </div>
+      <label id="payWrap">Payment<select id="f-pay"><option>UPI</option><option>IMPS</option><option>Bank Transfer</option><option>Paytm</option><option>Cash</option></select></label>
+      <label id="platWrap">Platform<select id="f-plat"><option>Binance</option><option>Bybit</option><option>OKX</option><option>KuCoin</option><option>Other</option></select></label>
+      <label class="full">Counterparty / Order ID<input id="f-cp" type="text" placeholder="Name or order number" list="cpList" autocomplete="off"><datalist id="cpList"></datalist><span class="ih cpwarn" id="cpWarn"></span></label><button type="button" class="cprep full" id="cpRep" hidden></button>
+      <div class="ih full cpparty" id="cpParty"><span>Client is a party:</span><div class="cpchips" id="cpChips"></div></div>
+      <label class="full">Note<input id="f-note" type="text" placeholder="e.g. payment came late"></label>
+      <details class="full pdet" id="pdet"><summary>Order ID, UTR &amp; fee <span class="opt">· optional</span></summary><div class="pdg">
+        <label class="full">Exchange order ID<input id="f-exid" type="text" inputmode="text" autocomplete="off" placeholder="Order number from the exchange"></label>
+        <label class="full">UTR / payment reference<input id="f-utr" type="text" autocomplete="off" placeholder="Reference number from the bank"></label>
+        <label>Fee ₹<input id="f-fee" type="number" inputmode="decimal" step="any" placeholder="Counted in profit"></label>
+        <label>TDS deducted ₹<input id="f-tds" type="number" inputmode="decimal" step="any" placeholder="Sell only. Tax credit"></label>
+        <button type="button" class="link full" id="f-tds1" style="text-align:left;margin:-4px 0 4px">Fill 1% of total</button>
+        <label>Payment check<select id="f-pv"><option value="">Not checked</option><option value="ai">AI-read, not checked</option><option value="received">Received</option><option value="verified">Verified</option></select></label>
+        <div class="full dupwarn" id="dupWarn" hidden></div></div></details>
+      <div class="calc"><span>Total amount</span><b class="num" id="f-total">₹0</b></div>
+      <div class="ih full dirbox" id="dirBox">
+        <div class="pbh"><span class="pbi" style="background:#8b5cf6">D</span><div><b>Direct deal · no bank entry</b><small>Money moves between parties, not your accounts</small></div></div>
+        <label id="dirPartyL">Party<select id="dir-party"><option value="">No party (just record the trade)</option></select></label>
+        <label class="dirchk" id="dirDueL"><input type="checkbox" id="dir-due" checked><span id="dir-due-t">Add to amount I have to pay this party</span></label>
+        <label class="ih" id="dirAccL">Paid into<select id="dir-acc"></select></label>
+        <p class="note" id="dir-hint" style="margin:0"></p>
+      </div>
+      <div class="flabel" id="bankLbl">Bank payment <span class="opt" id="f-dir">· paid from</span></div>
+      <div class="full splitwrap" id="splitWrap"><div id="f-splits"></div>
+        <div class="splitbar"><button type="button" class="link" id="f-addsplit">+ Add bank</button><button type="button" class="link" id="f-suggest">Suggest banks</button></div>
+        <p class="note" id="f-remain">You can leave this empty and assign banks later from Wallet.</p></div>
+      <button class="primary" id="saveBtn" type="submit">Save order</button>
+    </form>
+
+    <div class="imp" id="imp">
+      <div class="imph"><h2>Import old orders</h2><button type="button" class="link" data-sheet="imphist">History</button></div>
+      <p class="note">Upload your P2P order history from the exchange: Excel, CSV or PDF. Pick many files at once (e.g. one per month). Every row is checked and counted, nothing is skipped silently. Orders already in the app are updated, not doubled.</p>
+      <div class="seg iseg" id="i-what" style="grid-template-columns:1fr 1fr"><button type="button" data-w="client">Client data only</button><button type="button" data-w="orders">Orders</button></div>
+      <p class="note" id="i-whatn"></p>
+      <div class="imp-row">
+        <label>Platform<select id="i-plat"><option>Binance</option><option>Bybit</option><option>OKX</option><option>KuCoin</option><option>Bitget</option><option>MEXC</option><option>Other</option></select></label>
+        <label>Mode<select id="i-mode"><option>P2P</option><option>Direct</option><option>Cash</option></select></label>
+      </div>
+      <label class="imptz">Times in the file are<select id="i-tz"><option value="ist">India time (IST)</option><option value="utc">UTC (Binance export default)</option></select></label>
+      <label class="filebtn" for="i-file"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>Choose files · .xlsx, .csv, .pdf</label>
+      <input class="ih" id="i-file" type="file" accept=".xlsx,.xls,.csv,.pdf" multiple>
+      <p class="note" id="i-status"></p>
+      <div id="i-files" class="iffs"></div>
+      <div id="i-rep" class="ih irep"></div>
+      <p class="ih note irw" id="i-cap"></p>
+      <div class="ih" id="i-preview">
+        <div class="list" id="i-list"></div>
+        <button class="primary" id="i-go" type="button">Import</button>
+      </div>
+    </div>
+  </section>
+

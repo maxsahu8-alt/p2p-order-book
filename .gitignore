@@ -7,3 +7,4 @@ android/local.properties
 
 # screenshots written by the test scripts
 tests/*.png
+dist/

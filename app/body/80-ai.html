@@ -1,0 +1,19 @@
+  <section id="p-ai" class="ih chat">
+    <div class="sec-head"><h2>AI assistant</h2><button type="button" class="aistate" id="aiState" data-go="settings" style="background:none;border:0;color:var(--muted);font:600 .78rem var(--body);cursor:pointer">Not connected</button></div>
+    <button class="aibar" type="button" data-ai="full"><span class="aiic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span><span><b>Full business report</b><small>Deep analysis of everything: orders, coins, banks, direct, expenses</small></span><span class="go">›</span></button>
+    <div class="msgs" id="msgs">
+      <div class="msg a">Hi! I'm your business agent. Ask me anything, or just tell me what happened and I'll record it for you. For example: "Bought 500 USDT at 91.5 from Raju, paid 30k SBI and rest HDFC by IMPS", or "Paid Amit 20,000 to his Kotak account from ICICI".</div>
+    </div>
+    <div class="sugs">
+      <button class="chip" data-q="Sold 200 USDT at 93 to Rahul, received in SBI by UPI">Record a sale</button>
+      <button class="chip" data-q="What is my total profit today and how was it calculated?">Today's profit?</button>
+      <button class="chip" data-q="Which orders are pending or in appeal? What should I do?">Pending orders</button>
+      <button class="chip" data-q="How is my buy-sell spread? How can I improve it?">Spread tips</button>
+      <button class="chip" data-q="How can I stop orders getting cancelled at night?">Night cancels</button>
+    </div>
+    <form class="ask" id="askForm" style="all:unset;display:flex;gap:8px">
+      <input id="askIn" type="text" placeholder="Ask, or tell me what to record…" autocomplete="off">
+      <button type="submit" id="askBtn">Ask</button>
+    </form>
+    <p class="note" id="aiNote">AI answers only from your order data. Double-check before making money decisions.</p>
+  </section>

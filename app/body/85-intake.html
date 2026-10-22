@@ -1,0 +1,28 @@
+  <section id="p-intake" class="ih chat">
+    <div class="ixrail" id="ix-rail" role="list" aria-label="Intake progress">
+      <div class="ixst" data-s="add" role="listitem"><i>1</i><div><b>Add</b><small>Order + payment</small></div></div>
+      <div class="ixst" data-s="check" role="listitem"><i>2</i><div><b>Check</b><small>Match and verify</small></div></div>
+      <div class="ixst" data-s="save" role="listitem"><i>3</i><div><b>Save</b><small>You confirm</small></div></div>
+    </div>
+    <div class="ixdz" id="idrop">
+      <span class="ixdz-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg></span>
+      <b>Add screenshots</b>
+      <small>Exchange order and bank payment together become one transaction. Up to 10.</small>
+      <input id="i2-file" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.heic" multiple aria-label="Add screenshots" class="cover-input">
+    </div>
+    <div class="ixalt">
+      <label class="ixbtn ixcam">📷 Camera<input id="i2-cam" type="file" accept="image/*" capture="environment" class="cover-input" aria-label="Take a photo"></label>
+      <button type="button" class="ixbtn" id="i2-pastebtn">📋 Paste image</button>
+    </div>
+    <div class="ixprev" id="i2-prev"></div>
+    <p class="ixready" id="i2-ready"></p>
+    <details class="ixtxt" id="ix-txt"><summary>Paste an SMS or message instead</summary><textarea id="i2-text" rows="3" placeholder="Paste the bank SMS or the deal message here"></textarea></details>
+    <div class="ixact"><button type="button" class="primary" id="i2-go">Add from text</button><button type="button" class="ixclear" id="i2-clear">Clear</button></div>
+    <label class="ixautot"><input type="checkbox" id="ix-auto" checked><span>Auto-save safe ones<small>Only verified, low risk. You can undo.</small></span></label>
+    <div id="i2-ix" class="chat"></div>
+    <div id="i2-out" class="chat"></div>
+    <div id="i2-hist"></div>
+    <div id="i2-jobs" class="chat"></div>
+    <details class="ixtips"><summary>Tips</summary><div class="note">One screenshot per payment works best. If a payment matches an order that has no bank yet, AI will link them. Payment screenshots are kept as proof.<br><button type="button" class="link" id="i2-legacy" style="color:var(--primary)">Not a P2P order? Let the AI agent sort these screenshots</button></div></details>
+  </section>
+

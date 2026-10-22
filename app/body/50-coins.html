@@ -1,0 +1,16 @@
+  <section id="p-coins" class="ih chat">
+    <div class="sec-head"><h2>Coin performance</h2></div>
+    <button class="aibar" type="button" data-ai="coins"><span class="aiic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span><span><b>AI coin analysis</b><small>Spread, stock and which coin earns most</small></span><span class="go">›</span></button>
+    <div class="filters" id="coinPeriod">
+      <button class="chip" aria-pressed="true" data-p="today">Today</button>
+      <button class="chip" aria-pressed="false" data-p="week">7 days</button>
+      <button class="chip" aria-pressed="false" data-p="month">This month</button>
+      <button class="chip" aria-pressed="false" data-p="all">All time</button>
+      <select id="coinModeSel" class="chipsel" aria-label="Deal type"><option value="all">All types</option><option>P2P</option><option>Direct</option><option>Cash</option><option value="Pair">P2P ⇄ Direct</option></select>
+    </div>
+    <div class="mode-cards" id="modeCards"></div>
+    <div class="chart-card"><div class="ch-head"><b>USDT avg buy vs sell rate</b><span id="chRates-sub">last 14 days</span></div><div class="ch-legend" id="chRates-leg"></div><div class="chart" id="chRates"></div></div>
+    <div class="coins-wrap"><table class="coins"><thead><tr><th>Coin</th><th>Bought</th><th>Avg buy</th><th>Sold</th><th>Avg sell</th><th>Spread</th><th>Profit</th><th>Net qty</th></tr></thead><tbody id="coinBody"></tbody></table></div>
+    <p class="note">Only Completed orders count. Profit = (avg sell − avg buy) × matched quantity. Net qty = bought − sold in this period.</p>
+  </section>
+
