@@ -209,7 +209,8 @@ function buildReport(p){
     `Net (profit − expenses): ${inr(Math.round(st.profit-ex))}`,
     dp?`Direct payments made: ${inr(Math.round(dp))}`:"",
     "",`Money left now: ${inr(Math.round(money))} · USDT left: ${fmtQ(+usdt.toFixed(2))}`].filter(x=>x!=="");
-  return{text:lines.join("\n"),orders:ol,label:L};
+  const cnt={done:done.length,canc:ol.filter(o=>o.status==="Cancelled").length,pend:ol.filter(o=>o.status==="Pending"||o.status==="Appeal").length};
+  return{text:lines.join("\n"),orders:ol,label:L,a,b,st,ex,dp,money,usdt,byMode,cnt};
 }
 sheets.profit=function(){let per="today",ca="",cb="";
   const rng=()=>{const d0=new Date();d0.setHours(0,0,0,0);const t0=d0.getTime();
@@ -234,17 +235,4 @@ sheets.profit=function(){let per="today",ca="",cb="";
       el.querySelectorAll("#pa-seg button").forEach(x=>x.onclick=()=>{per=x.dataset.k;draw()});
       const ia=el.querySelector("#pa-a"),ib=el.querySelector("#pa-b");if(ia)ia.onchange=()=>{ca=ia.value;draw()};if(ib)ib.onchange=()=>{cb=ib.value;draw()}})};
   draw()};
-sheets.report=function(){let p="today";
-  const draw=el=>{const R=buildReport(p);el.querySelector("#repTxt").textContent=R.text;el.querySelector("#repWa").href="https://wa.me/?text="+encodeURIComponent(R.text);el.querySelector("#repCsv").textContent=`Orders CSV (${R.orders.length})`};
-  openSheet(`<h3>Report</h3><div class="rep"><div class="filters" id="repP">${[["today","Today"],["yesterday","Yesterday"],["week","This week"],["month","This month"],["lastmonth","Last month"],["all","All time"]].map(([k,l],i)=>`<button type="button" class="chip" aria-pressed="${i===0}" data-p="${k}">${l}</button>`).join("")}</div>
-    <pre id="repTxt"></pre>
-    <div class="row2"><button class="primary" type="button" id="repCopy">Copy</button><a class="primary wa" id="repWa" href="#" target="_blank" rel="noopener">WhatsApp</a></div>
-    <div class="row2"><button class="mini ghost" type="button" id="repCsv">Orders CSV</button><button class="mini ghost" type="button" data-ai="full">AI report</button><button class="mini ghost" type="button" data-close>Close</button></div></div>`,el=>{
-    draw(el);
-    el.querySelector("#repP").onclick=e=>{const b=e.target.closest("[data-p]");if(!b)return;p=b.dataset.p;el.querySelectorAll("#repP .chip").forEach(x=>x.setAttribute("aria-pressed",x===b));draw(el)};
-    el.querySelector("#repCopy").onclick=()=>copyText(buildReport(p).text,el.querySelector("#repTxt"));
-    el.querySelector("#repCsv").onclick=()=>{const R=buildReport(p);const q=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-      const rows=[...R.orders].sort((a,b)=>a.time-b.time).map(o=>{const d=new Date(o.time);return[d.toLocaleDateString("en-CA"),d.toLocaleTimeString("en-GB"),modeOf(o),o.side,o.coin,o.qty,o.rate,orderTotal(o).toFixed(2),o.status,o.platform,o.pay,o.cp,(o.splits||[]).map(x=>bankName(x.bank)+" "+x.amt).join("; "),o.note].map(q).join(",")});
-      saveFile(`Pexai-${R.label.toLowerCase().replace(/\s+/g,"-")}-${new Date().toLocaleDateString("en-CA")}.csv`,"﻿"+["Date,Time,Mode,Side,Coin,Quantity,Rate,Total INR,Status,Platform,Payment,Counterparty,Banks,Note",...rows].join("\n"))};
-  })};
 
