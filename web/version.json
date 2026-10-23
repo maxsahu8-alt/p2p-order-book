@@ -1,9 +1,9 @@
 {
- "web": "0.0171",
- "build": 171,
- "display": "0.0.0.00171",
+ "web": "0.0172",
+ "build": 172,
+ "display": "0.0.0.00172",
  "files": {
-  "index.html": "be9e3b33e82f79a0eaef4bfc8747e50387baf461",
+  "index.html": "3fea3f19347a472ef03b4708544ede1bae761671",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"

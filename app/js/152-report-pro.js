@@ -38,7 +38,7 @@ function rpTipText(B,i){if(i==null){const live=B.filter(x=>x.n);if(!live.length)
   const x=B[i];return x.fut?`<b>${esc(x.t)}</b> · not yet`:`<b>${esc(x.t)}</b> · ${x.n?`<span class="${x.v<0?"neg":"pos"}">${rpM(x.v)}</span> from ${x.n} sell${x.n>1?"s":""}`:"no sells"}`}
 function rpHtml(p){const R=buildReport(p),st=R.st,pf=st.profit,pv=rpPrev(p,R.a,R.b);
   let delta="";if(pv){const L=orders.filter(o=>o.time>=pv[0]&&o.time<pv[1]);const d=pf-listProfit(L);if(L.length)delta=`<span class="rpdl ${d>=0?"pos":"neg"}">${d>=0?"▲":"▼"} ${rpM(Math.abs(d))}</span><small>${pv[2]}</small>`}
-  const net=pf-R.ex,sold=st.s.v,margin=sold?pf/sold*100:0,sprd=st.b.avg&&st.s.avg?st.s.avg-st.b.avg:null,vol=st.b.v+st.s.v;
+  const net=pf-R.ex-R.chg,sold=st.s.v,margin=sold?pf/sold*100:0,sprd=st.b.avg&&st.s.avg?st.s.avg-st.b.avg:null,vol=st.b.v+st.s.v;
   const B=rpBuckets(p,R.a),c=R.cnt,tot=c.done+c.canc+c.pend;
   const bmx=Math.max(st.b.v,st.s.v)||1;
   const bs=(k,cls,q,avg,v)=>`<div class="rpbr"><div class="rpbt"><span><i class="${cls}"></i>${k} <small>${fmtQ(+q.toFixed(4))} USDT</small></span><b>${inr(Math.round(v))}</b></div><div class="rpbk"><i class="${cls}" style="width:${Math.max(v?2:0,v/bmx*100).toFixed(1)}%"></i></div><small>avg ₹${avg?avg.toFixed(2):"—"}</small></div>`;
@@ -62,10 +62,11 @@ function rpHtml(p){const R=buildReport(p),st=R.st,pf=st.profit,pv=rpPrev(p,R.a,R
     <div class="rpst">${seg(c.done,"d")}${seg(c.pend,"p")}${seg(c.canc,"x")}</div>
     <div class="rplg"><span><i class="d"></i>Completed <b>${c.done}</b></span><span><i class="p"></i>Pending <b>${c.pend}</b></span><span><i class="x"></i>Cancelled <b>${c.canc}</b></span></div></div>`:""}
   ${modes.length>1?`<div class="rpcard"><div class="rph3"><b>Profit by type</b></div>${modes.map(([m,n,v])=>`<div class="rpbr"><div class="rpbt"><span>${esc(m)} <small>${n} order${n>1?"s":""}</small></span><b class="${v<0?"neg":""}">${rpM(v)}</b></div><div class="rpbk"><i class="${v<0?"s":"m"}" style="width:${(Math.abs(v)/mmx*100).toFixed(1)}%"></i></div></div>`).join("")}</div>`:""}
-  <div class="rpcard"><div class="rph3"><b>After expenses</b></div>
+  <div class="rpcard"><div class="rph3"><b>After costs</b></div>
     ${row("Trading profit",(pf>0?"+":"")+rpM(pf),pf<0?"rn":"")}
+    ${R.chg?row("Bank charges","−"+inr(Math.round(R.chg)),"rn"):""}
     ${row("Personal expenses",R.ex?"−"+inr(Math.round(R.ex)):"₹0",R.ex?"rn":"")}
-    ${row("Net",(net>0?"+":"")+rpM(net),"tot "+(net<0?"rn":"rg"),net<0?"expenses were more than profit":"")}</div>
+    ${row("Net",(net>0?"+":"")+rpM(net),"tot "+(net<0?"rn":"rg"),net<0?"costs were more than profit":"")}</div>
   <div class="rpcard"><div class="rph3"><b>Balance now</b></div>
     <div class="rpkp rpkp2"><div><span>Money in banks</span><b>${inr(Math.round(R.money))}</b></div><div><span>USDT left</span><b>${fmtQ(+R.usdt.toFixed(2))}</b></div></div>
     ${R.dp?row("Direct payments made",inr(Math.round(R.dp)),"",esc(R.label.toLowerCase())):""}</div>

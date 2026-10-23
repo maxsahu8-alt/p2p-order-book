@@ -1589,6 +1589,19 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
 .rpd summary{cursor:pointer;padding:12px 0;font-size:.82rem;font-weight:600;color:var(--muted);list-style:none;display:flex;justify-content:space-between}
 .rpd summary::-webkit-details-marker{display:none}.rpd summary::after{content:"Show";font-weight:600;color:var(--accent)}.rpd[open] summary::after{content:"Hide"}
 .rpd pre{margin:0 0 12px!important;background:var(--surface)!important}
+/* bank charges sheet */
+.chgl{font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:-4px}
+.chgc{display:flex;flex-wrap:wrap;gap:6px}
+.chgc .chip{flex:none}
+.chgc.shake{animation:chgShake .35s}
+@keyframes chgShake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.chgr{margin-top:14px;border-radius:16px;background:var(--raised);padding:4px 12px}
+.chgrh{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:.78rem;color:var(--muted);font-weight:600}
+.chgrh b{color:var(--sell);font-variant-numeric:tabular-nums}
+.chgi{display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;border:0;border-top:1px solid var(--line);background:none;color:var(--fg);font:inherit;text-align:left;padding:10px 0;cursor:pointer}
+.chgi span{font-size:.86rem;font-weight:600;min-width:0}
+.chgi small{display:block;font-size:.7rem;font-weight:500;color:var(--muted);margin-top:2px}
+.chgi b{color:var(--sell);font-variant-numeric:tabular-nums;font-size:.86rem}
 </style>
 
 <div class="wrap">
@@ -2315,7 +2328,7 @@ function movements(){if(mvCache)return mvCache;return mvCache=movementsRaw()}
 function movementsRaw(){
   const m=[];
   orders.forEach(o=>{if(o.status==="Cancelled"||noBank(o))return;(o.splits||[]).forEach(x=>m.push({bank:x.bank,amt:x.lite?0:(o.side==="SELL"?1:-1)*(+x.amt||0),cp:o.cp||"",time:o.time,label:`${o.side} ${fmtQ(o.qty)} ${o.coin}${o.cp?" · "+o.cp:""} · ${x.lite?"UPI Lite":x.method||methodOf(o.pay)}`,kind:o.side,method:x.method||methodOf(o.pay),pend:o.status==="Pending"||o.status==="Appeal"}))});
-  exps.forEach(x=>{if(x.bank)m.push({bank:x.bank,amt:-(+x.amt||0),time:x.time,label:"Expense · "+x.cat+(x.note?" · "+x.note:""),kind:"EXP"})});
+  exps.forEach(x=>{if(!x.bank)return;const c=x.cat==="Bank charges";m.push({bank:x.bank,amt:-(+x.amt||0),time:x.time,label:(c?"Bank charge · "+(x.chg||"Other"):"Expense · "+x.cat)+(x.note?" · "+x.note:""),kind:c?"CHG":"EXP",id:x.id})});
   ppays.forEach(x=>{const pn=(parties.find(p=>p.id===x.party)||{}).name||"party";(x.splits||[]).forEach(sp=>m.push({bank:sp.bank,amt:-(+sp.amt||0),time:x.time,label:"Paid "+pn+" · "+(sp.method||"IMPS"),kind:"PP",method:sp.method||"IMPS"}))});
   recs.forEach(x=>{if(x.kind==="litemove"&&x.bank&&+x.amt>0&&x.dir!=="spend")m.push(x.dir==="out"?{bank:x.bank,amt:+x.amt,time:x.time,label:"Withdrawn from UPI Lite",kind:"TR"}:{bank:x.bank,amt:-(+x.amt),time:x.time,label:"Loaded to UPI Lite",kind:"TR",method:"UPI"})});
   moves.forEach(x=>{m.push({bank:x.from,amt:-((+x.amt||0)+(+x.cost||0)),time:x.time,label:"Transfer to "+bankName(x.to)+" · "+(x.method||"IMPS")+(+x.cost?" · charges ₹"+x.cost:""),kind:"TR",method:x.method||"IMPS"});m.push({bank:x.to,amt:+x.amt||0,time:x.time,label:"Transfer from "+bankName(x.from),kind:"TR"})});
@@ -3563,8 +3576,8 @@ const sheets={
     <div class="bstats"><div><span>Today's volume</span><b>${inr(S.volume)}</b></div><div><span>Txns today / total</span><b>${S.todayN} / ${S.total}</b></div><div><span>Pending</span><b>${S.pendN?S.pendN+" · "+inr(S.pendIn+S.pendOut):"None"}</b></div><div><span>Last txn</span><b>${S.last?dt(S.last):"—"}</b></div></div>
     ${(()=>{if(b.type==="Cash")return"";const I=bankInsight(b,mv,bal[id]||0,limitUse());return `<div class="binf" style="margin:2px 0 8px">${bankSpark(I.line)}${bankChips(b,I)}</div><p class="note" style="margin:0 0 8px">Freeze risk (estimate): <b>${I.level}</b> · ${I.ppl} people and ${inr(Math.round(I.flow))} received in the last 24 hours${I.why.length?" — "+esc(I.why.join("; ")):""}. The line shows the balance of the last 7 days.</p>`})()}${b.lite&&b.lite.on?`<div class="litebox"><span><b>UPI Lite</b><small>${inr(b.lite.bal||0)} of ₹5,000 · room ${inr(Math.max(0,5e3-(b.lite.bal||0)))} · Auto top-up ${b.lite.auto&&b.lite.auto.on?"ON":"OFF"}</small></span><button type="button" class="mini" data-sheet="lite:${b.id}">Load · Withdraw</button></div>`:""}<p class="note" style="margin:6px 0 10px">${lc?`Last check ${dt(lc.time)}: real ${inr(lc.real)} · ${Math.abs(lc.diff)<1?"matched ✓":"difference "+(lc.diff>0?"+":"−")+inr(Math.abs(lc.diff))}`:"Not checked against the real bank balance yet."}</p>
     ${limBar(b,limitUse()).replace('class="lims"','class="lims" style="margin-bottom:12px"')}
-    <div class="ledger">${list.length?list.map(x=>`<div class="lg"><span>${esc(x.label)}${x.pend?' <span class="mtag">Pending</span>':""}</span><span class="a ${x.amt>=0?"in":"out"}">${x.amt>=0?"+":"−"}${inr(Math.abs(x.amt))}</span><div class="o-meta">${dt(x.time)}</div></div>`).join("")+(!all&&full.length>60?`<button type="button" class="link" id="l-all" style="padding:10px;width:100%">Show all ${full.length} ›</button>`:""):'<p class="note">No transactions yet. Opening balance '+inr(b.opening||0)+'.</p>'}</div>
-    <div class="row2" style="margin-top:14px"><button class="mini" type="button" id="l-rec">Check balance</button><button class="mini ghost" type="button" id="l-stmt">Match statement</button><button class="mini ghost" type="button" id="l-share">Share details</button><button class="mini ghost" type="button" id="l-edit">Edit / limits</button></div>`,el=>{el.querySelector("#l-edit").onclick=()=>sheets.bank(id);el.querySelector("#l-share").onclick=()=>sheets.share(id);el.querySelector("#l-stmt").onclick=()=>sheets.stmt(id);el.querySelector("#l-rec").onclick=()=>sheets.bankrec(id);const la=el.querySelector("#l-all");if(la)la.onclick=()=>sheets.ledger(id,true)})},
+    <div class="ledger">${list.length?list.map(x=>`<div class="lg"${x.kind==="CHG"?` data-chg="${x.id}" style="cursor:pointer"`:""}><span>${esc(x.label)}${x.pend?' <span class="mtag">Pending</span>':""}</span><span class="a ${x.amt>=0?"in":"out"}">${x.amt>=0?"+":"−"}${inr(Math.abs(x.amt))}</span><div class="o-meta">${dt(x.time)}</div></div>`).join("")+(!all&&full.length>60?`<button type="button" class="link" id="l-all" style="padding:10px;width:100%">Show all ${full.length} ›</button>`:""):'<p class="note">No transactions yet. Opening balance '+inr(b.opening||0)+'.</p>'}</div>
+    <div class="row2" style="margin-top:14px"><button class="mini" type="button" id="l-rec">Check balance</button><button class="mini ghost" type="button" id="l-stmt">Match statement</button><button class="mini ghost" type="button" id="l-share">Share details</button><button class="mini ghost" type="button" id="l-edit">Edit / limits</button><button class="mini ghost" type="button" id="l-chg">Bank charge</button></div>`,el=>{el.querySelector("#l-edit").onclick=()=>sheets.bank(id);el.querySelector("#l-chg").onclick=()=>sheets.bankcharge(id);el.querySelector("#l-share").onclick=()=>sheets.share(id);el.querySelector("#l-stmt").onclick=()=>sheets.stmt(id);el.querySelector("#l-rec").onclick=()=>sheets.bankrec(id);const la=el.querySelector("#l-all");if(la)la.onclick=()=>sheets.ledger(id,true)})},
   bankrec(id){const b=banks.find(x=>x.id===id);if(!b)return;const {bal}=balances();const app=bal[id]||0;const S=bankStats(b,null,app);
     openSheet(`<h3>Check ${esc(b.name)}</h3><p class="note" style="margin:-6px 0 12px">Type the balance your real bank app shows right now. The app compares it with its own number.</p>
     <div class="calc" style="margin-bottom:10px"><span>App balance</span><b class="num">${inr(app)}</b></div>
@@ -3572,10 +3585,10 @@ const sheets={
     <div class="calc" id="br-diff" style="margin:10px 0"><span>Difference</span><b class="num">—</b></div>
     <p class="note" id="br-hint" style="margin:0 0 10px">Pending orders are already counted in the app balance${S.pendN?" ("+S.pendN+" pending now)":""}. If the bank has not received a payment yet, the difference can be that.</p>
     <label>Note (optional)<input id="br-note" placeholder="e.g. checked after night orders"></label>
-    <div class="row2" style="margin-top:12px"><button class="primary" type="button" id="br-save">Save check</button><button class="mini ghost" type="button" id="br-fix" hidden>Save &amp; fix balance</button></div>
+    <div class="row2" style="margin-top:12px"><button class="primary" type="button" id="br-save">Save check</button><button class="mini ghost" type="button" id="br-fix" hidden>Save &amp; fix balance</button></div><button class="mini ghost" type="button" id="br-chg" hidden style="width:100%;margin-top:8px">Bank cut this? Save as bank charge</button>
     ${S.checks.length?`<div class="flabel" style="margin:16px 0 4px">Earlier checks</div><div class="ledger">${S.checks.slice(0,8).map(c=>`<div class="lg"><span>Real ${inr(c.real)} · app ${inr(c.app)}</span><span class="a ${Math.abs(c.diff)<1?"in":"out"}">${Math.abs(c.diff)<1?"matched":(c.diff>0?"+":"−")+inr(Math.abs(c.diff))}</span><div class="o-meta">${new Date(c.time).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}${c.fixed?" · balance fixed":""}${c.note?" · "+esc(c.note):""}</div></div>`).join("")}</div>`:""}`,el=>{
       const real=()=>{const v=el.querySelector("#br-real").value;return v===""?null:+v};
-      el.querySelector("#br-real").oninput=()=>{const r=real();const d=r==null?null:Math.round((r-app)*100)/100;el.querySelector("#br-diff").innerHTML=r==null?"<span>Difference</span><b class=\"num\">—</b>":`<span>Difference</span><b class="num ${Math.abs(d)<1?"pos":"neg"}">${Math.abs(d)<1?"Matched ✓":(d>0?"+":"−")+inr(Math.abs(d))}</b>`;el.querySelector("#br-fix").hidden=r==null||Math.abs(d)<1};
+      el.querySelector("#br-real").oninput=()=>{const r=real();const d=r==null?null:Math.round((r-app)*100)/100;el.querySelector("#br-diff").innerHTML=r==null?"<span>Difference</span><b class=\"num\">—</b>":`<span>Difference</span><b class="num ${Math.abs(d)<1?"pos":"neg"}">${Math.abs(d)<1?"Matched ✓":(d>0?"+":"−")+inr(Math.abs(d))}</b>`;el.querySelector("#br-fix").hidden=r==null||Math.abs(d)<1;const bc=el.querySelector("#br-chg");bc.hidden=r==null||!(d<=-1);if(!bc.hidden)bc.textContent=`Bank cut ${inr(Math.abs(d))}? Save as bank charge`};el.querySelector("#br-chg").onclick=()=>{const r=real();if(r!=null&&r<app)sheets.bankcharge(id,null,app-r)};
       const save=async fix=>{const r=real();if(r==null){toast("Enter the real balance");return}const diff=Math.round((r-app)*100)/100;
         try{
           if(fix&&Math.abs(diff)>=1){if(!confirm(`Change the opening balance of ${b.name} by ${diff>0?"+":"−"}₹${Math.abs(diff).toLocaleString("en-IN")} so the app matches your bank?`))return;await putRec({...allBanks.find(x=>x.id===id),opening:(+b.opening||0)+diff});auditLog(id,"bank_fix",{diff,real:r,app})}
@@ -6650,7 +6663,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=171;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=172;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6717,6 +6730,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00172","23 Oct 2026",["Bank charges: record money the bank cuts (cash deposit, SMS, IMPS/NEFT, UPI, ATM, card, min balance penalty, account maintenance, GST and more) from Add → Bank charges or the Bank charge button on a bank. It lowers that bank's balance, shows in the bank's list (tap to edit) and counts as a business cost in profit","Check balance: if the real balance is lower than the app, one tap saves the difference as a bank charge","Report shows Bank charges on their own line, apart from personal expenses"]],
   ["0.0.0.00171","23 Oct 2026",["Report is redesigned: a big profit card with change vs the last period, Orders, Volume and Margin tiles, a profit trend chart (every 2 hours, by day or by month — tap a bar for details), Buy vs sell bars with the spread, an Orders status bar, profit by type, profit after expenses and balance now. The WhatsApp text is the same, under Message preview"]],
   ["0.0.0.00170","23 Oct 2026",["Menu: tapping Today profit opened a blank screen. It now opens the Report (Today). If a link ever points to a page that does not exist, the app now stays on Home instead of going blank"]],
   ["0.0.0.00169","23 Oct 2026",["Smart Intake: the exchange page does not show the payment method (or the accounts), so those rows said NOT FOUND and pulled the match score down. Now the method is read from the payment itself (UPI, IMPS…) and shown as FROM PAYMENT, and it no longer lowers the score. If the order does state a different method, it is still flagged."]],
@@ -7674,7 +7688,8 @@ function buildReport(p){
   const [a,b]=periodRange(p);const inR=t=>t>=a&&t<b;const L={today:"Today",yesterday:"Yesterday",week:"This week",month:"This month",lastmonth:"Last month",all:"All time"}[p];
   const ol=orders.filter(o=>inR(o.time));const st=stats(ol);const done=ol.filter(o=>o.status==="Completed");
   const byMode=["P2P","Direct","Cash","Pair"].map(m=>{const L=ol.filter(o=>inMode(o,m));return[m==="Pair"?"P2P ⇄ Direct (vs exchange avg)":m,m==="Pair"?pairCount(L):L.length,m==="Pair"?pairSum(L):stats(L).profit]}).filter(x=>x[1]);
-  const ex=exps.filter(x=>inR(x.time)).reduce((t,x)=>t+(+x.amt||0),0);
+  const ex=exps.filter(x=>inR(x.time)&&x.cat!=="Bank charges").reduce((t,x)=>t+(+x.amt||0),0);
+  const chg=exps.filter(x=>inR(x.time)&&x.cat==="Bank charges").reduce((t,x)=>t+(+x.amt||0),0);
   const dp=ppays.filter(x=>inR(x.time)).reduce((t,x)=>t+(+x.amt||0),0);
   const {bal}=balances();const money=banks.reduce((t,k)=>t+bal[k.id],0);const usdt=stockLeft().USDT||0;
   const fmtD=t=>new Date(t).toLocaleDateString("en-IN",{day:"numeric",month:"short"});
@@ -7684,12 +7699,13 @@ function buildReport(p){
     `Sold: ${fmtQ(+st.s.q.toFixed(4))} @ avg ₹${st.s.avg.toFixed(2)} = ${inr(Math.round(st.s.v))}`,
     `Spread profit: ${inr(+st.profit.toFixed(2))}`,
     ...byMode.map(([m,c,pf])=>`  · ${m}: ${c} orders, profit ${inr(+pf.toFixed(2))}`),
+    chg?`Bank charges: ${inr(Math.round(chg))}`:"",
     `Personal expenses: ${inr(Math.round(ex))}`,
-    `Net (profit − expenses): ${inr(Math.round(st.profit-ex))}`,
+    `Net (profit − ${chg?"charges − ":""}expenses): ${inr(Math.round(st.profit-chg-ex))}`,
     dp?`Direct payments made: ${inr(Math.round(dp))}`:"",
     "",`Money left now: ${inr(Math.round(money))} · USDT left: ${fmtQ(+usdt.toFixed(2))}`].filter(x=>x!=="");
   const cnt={done:done.length,canc:ol.filter(o=>o.status==="Cancelled").length,pend:ol.filter(o=>o.status==="Pending"||o.status==="Appeal").length};
-  return{text:lines.join("\n"),orders:ol,label:L,a,b,st,ex,dp,money,usdt,byMode,cnt};
+  return{text:lines.join("\n"),orders:ol,label:L,a,b,st,ex,chg,dp,money,usdt,byMode,cnt};
 }
 sheets.profit=function(){let per="today",ca="",cb="";
   const rng=()=>{const d0=new Date();d0.setHours(0,0,0,0);const t0=d0.getTime();
@@ -7703,8 +7719,8 @@ sheets.profit=function(){let per="today",ca="",cb="";
     <div class="pcsec">How it adds up</div><div class="rml">
     ${L("Gross spread profit",M(R.gross),"",R.sellN+" completed sell"+(R.sellN===1?"":"s"))}
     ${L("Platform fees","−"+inr(Math.round(R.fees)),R.fees?"neg":"","from the Fee field on orders")}
-    ${L("Transfer charges","−"+inr(Math.round(R.xfer)),R.xfer?"neg":"","bank charges on transfers")}
-    ${L("Business costs","−"+inr(Math.round(R.biz)),R.biz?"neg":"","expenses marked Business")}
+    ${L("Transfer charges","−"+inr(Math.round(R.xfer)),R.xfer?"neg":"","fees added on transfers")}
+    ${L("Business costs","−"+inr(Math.round(R.biz)),R.biz?"neg":"","bank charges and expenses marked Business")}
     ${L("<b>Net profit</b>",M(R.net),R.net<0?"neg":"")}</div>
     ${R.tds?`<div class="pcsec">Tax</div><div class="rml">${L("TDS deducted on sells",inr(Math.round(R.tds)),"","a tax credit, not a cost. Not taken off profit")}</div>`:""}
     <div class="pcsec">Averages</div><div class="rml">
@@ -7755,7 +7771,7 @@ function rpTipText(B,i){if(i==null){const live=B.filter(x=>x.n);if(!live.length)
   const x=B[i];return x.fut?`<b>${esc(x.t)}</b> · not yet`:`<b>${esc(x.t)}</b> · ${x.n?`<span class="${x.v<0?"neg":"pos"}">${rpM(x.v)}</span> from ${x.n} sell${x.n>1?"s":""}`:"no sells"}`}
 function rpHtml(p){const R=buildReport(p),st=R.st,pf=st.profit,pv=rpPrev(p,R.a,R.b);
   let delta="";if(pv){const L=orders.filter(o=>o.time>=pv[0]&&o.time<pv[1]);const d=pf-listProfit(L);if(L.length)delta=`<span class="rpdl ${d>=0?"pos":"neg"}">${d>=0?"▲":"▼"} ${rpM(Math.abs(d))}</span><small>${pv[2]}</small>`}
-  const net=pf-R.ex,sold=st.s.v,margin=sold?pf/sold*100:0,sprd=st.b.avg&&st.s.avg?st.s.avg-st.b.avg:null,vol=st.b.v+st.s.v;
+  const net=pf-R.ex-R.chg,sold=st.s.v,margin=sold?pf/sold*100:0,sprd=st.b.avg&&st.s.avg?st.s.avg-st.b.avg:null,vol=st.b.v+st.s.v;
   const B=rpBuckets(p,R.a),c=R.cnt,tot=c.done+c.canc+c.pend;
   const bmx=Math.max(st.b.v,st.s.v)||1;
   const bs=(k,cls,q,avg,v)=>`<div class="rpbr"><div class="rpbt"><span><i class="${cls}"></i>${k} <small>${fmtQ(+q.toFixed(4))} USDT</small></span><b>${inr(Math.round(v))}</b></div><div class="rpbk"><i class="${cls}" style="width:${Math.max(v?2:0,v/bmx*100).toFixed(1)}%"></i></div><small>avg ₹${avg?avg.toFixed(2):"—"}</small></div>`;
@@ -7779,10 +7795,11 @@ function rpHtml(p){const R=buildReport(p),st=R.st,pf=st.profit,pv=rpPrev(p,R.a,R
     <div class="rpst">${seg(c.done,"d")}${seg(c.pend,"p")}${seg(c.canc,"x")}</div>
     <div class="rplg"><span><i class="d"></i>Completed <b>${c.done}</b></span><span><i class="p"></i>Pending <b>${c.pend}</b></span><span><i class="x"></i>Cancelled <b>${c.canc}</b></span></div></div>`:""}
   ${modes.length>1?`<div class="rpcard"><div class="rph3"><b>Profit by type</b></div>${modes.map(([m,n,v])=>`<div class="rpbr"><div class="rpbt"><span>${esc(m)} <small>${n} order${n>1?"s":""}</small></span><b class="${v<0?"neg":""}">${rpM(v)}</b></div><div class="rpbk"><i class="${v<0?"s":"m"}" style="width:${(Math.abs(v)/mmx*100).toFixed(1)}%"></i></div></div>`).join("")}</div>`:""}
-  <div class="rpcard"><div class="rph3"><b>After expenses</b></div>
+  <div class="rpcard"><div class="rph3"><b>After costs</b></div>
     ${row("Trading profit",(pf>0?"+":"")+rpM(pf),pf<0?"rn":"")}
+    ${R.chg?row("Bank charges","−"+inr(Math.round(R.chg)),"rn"):""}
     ${row("Personal expenses",R.ex?"−"+inr(Math.round(R.ex)):"₹0",R.ex?"rn":"")}
-    ${row("Net",(net>0?"+":"")+rpM(net),"tot "+(net<0?"rn":"rg"),net<0?"expenses were more than profit":"")}</div>
+    ${row("Net",(net>0?"+":"")+rpM(net),"tot "+(net<0?"rn":"rg"),net<0?"costs were more than profit":"")}</div>
   <div class="rpcard"><div class="rph3"><b>Balance now</b></div>
     <div class="rpkp rpkp2"><div><span>Money in banks</span><b>${inr(Math.round(R.money))}</b></div><div><span>USDT left</span><b>${fmtQ(+R.usdt.toFixed(2))}</b></div></div>
     ${R.dp?row("Direct payments made",inr(Math.round(R.dp)),"",esc(R.label.toLowerCase())):""}</div>
@@ -7803,6 +7820,39 @@ sheets.report=function(){let p="today";
       const rows=[...R.orders].sort((a,b)=>a.time-b.time).map(o=>{const d=new Date(o.time);return[d.toLocaleDateString("en-CA"),d.toLocaleTimeString("en-GB"),modeOf(o),o.side,o.coin,o.qty,o.rate,orderTotal(o).toFixed(2),o.status,o.platform,o.pay,o.cp,(o.splits||[]).map(x=>bankName(x.bank)+" "+x.amt).join("; "),o.note].map(q).join(",")});
       saveFile(`Pexai-${R.label.toLowerCase().replace(/\s+/g,"-")}-${new Date().toLocaleDateString("en-CA")}.csv`,"﻿"+["Date,Time,Mode,Side,Coin,Quantity,Rate,Total INR,Status,Platform,Payment,Counterparty,Banks,Note",...rows].join("\n"))};
   })};
+// ================= BANK CHARGES (SMS, IMPS fee, card fee, penalty…) — saved as a business-cost expense on that bank
+const CHG_TYPES=["SMS alert","IMPS / NEFT fee","UPI fee","Debit card fee","Min balance penalty","Cash deposit / withdrawal","ATM fee","Account maintenance","Cheque / DD","GST on charges","Other"];
+const isChg=x=>x&&x.cat==="Bank charges";
+function chgMonth(bankId){const n=new Date();return exps.filter(x=>isChg(x)&&(!bankId||x.bank===bankId)&&new Date(x.time).getMonth()===n.getMonth()&&new Date(x.time).getFullYear()===n.getFullYear())}
+sheets.bankcharge=function(bankId,id,preAmt){const x=exps.find(e=>e.id===id)||(preAmt>0?{amt:Math.round(preAmt*100)/100}:{});let ty=x.chg||"";
+  const bk=x.bank||bankId||((banks.find(b=>b.type!=="Cash"&&b.status!=="paused")||banks[0])||{}).id;
+  const recent=bid=>{const L=chgMonth(bid).filter(e=>e.id!==id).sort((a,b)=>b.time-a.time);if(!L.length)return"";
+    return`<div class="chgr"><div class="chgrh"><span>This month on this bank</span><b>−${inr(Math.round(L.reduce((t,e)=>t+(+e.amt||0),0)))}</b></div>${L.slice(0,4).map(e=>`<button type="button" class="chgi" data-ce="${e.id}"><span>${esc(e.chg||"Other")}<small>${new Date(e.time).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}${e.note?" · "+esc(e.note):""}</small></span><b>−${inr(+e.amt||0)}</b></button>`).join("")}</div>`};
+  openSheet(`<h3>${id?"Edit bank charge":"Bank charges"}</h3><p class="note" style="margin:-4px 0 10px">Money the bank cut from your account. It lowers this bank's balance and counts as a business cost in profit.</p>
+    <form id="sf" style="grid-template-columns:1fr">
+    <div class="chgl">Type of charge</div>
+    <div class="chgc" id="c-ty">${CHG_TYPES.map(t=>`<button type="button" class="chip" aria-pressed="${t===ty}" data-t="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+    <label>Amount (₹)<input id="c-amt" type="number" inputmode="decimal" step="any" required value="${x.amt??""}" placeholder="e.g. 17.70"></label>
+    <label>Bank<select id="c-bank">${bankOpts(bk,false)}</select></label>
+    <label>Note<input id="c-note" value="${esc(x.note||"")}" placeholder="optional, e.g. quarterly SMS"></label>
+    <label>Date<input id="c-date" type="date" value="${new Date((x.time||Date.now())-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10)}"></label>
+    <button class="primary" type="submit">Save charge</button>${id?'<button class="primary" type="button" id="c-del" style="background:var(--soft);color:var(--sell)">Delete charge</button>':""}</form>
+    <div id="c-rec">${recent(bk)}</div>`,el=>{
+    const tyBox=el.querySelector("#c-ty"),bs=el.querySelector("#c-bank");
+    tyBox.onclick=e=>{const b=e.target.closest("[data-t]");if(!b)return;ty=b.dataset.t;tyBox.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b));if(!el.querySelector("#c-amt").value)el.querySelector("#c-amt").focus()};
+    bs.onchange=()=>{el.querySelector("#c-rec").innerHTML=recent(bs.value)};
+    el.querySelector("#c-rec").onclick=e=>{const b=e.target.closest("[data-ce]");if(b)sheets.bankcharge(null,b.dataset.ce)};
+    el.querySelector("#sf").onsubmit=async e=>{e.preventDefault();const amt=+el.querySelector("#c-amt").value;
+      if(!ty){toast("Choose the type of charge");tyBox.classList.add("shake");setTimeout(()=>tyBox.classList.remove("shake"),400);return}
+      if(!(amt>0)){toast("Enter an amount");return}if(!bs.value){toast("Choose a bank");return}
+      const d=el.querySelector("#c-date").value;const t=d?new Date(d+"T"+new Date(x.time||Date.now()).toTimeString().slice(0,8)).getTime():Date.now();
+      try{await putRec({id:id||newId("x_"),kind:"expense",amt,cat:"Bank charges",chg:ty,biz:true,bank:bs.value,note:el.querySelector("#c-note").value.trim().slice(0,100),time:t});toast("Charge saved · "+bankName(bs.value)+" −"+inr(amt));closeSheet()}catch(err){toast("Couldn't save")}};
+    if(id)twoTap(el.querySelector("#c-del"),async()=>{try{await delRec(id);toast("Charge deleted");closeSheet()}catch(err){toast("Couldn't delete")}});
+  })};
+// editing a bank charge from anywhere opens this sheet, not the personal-expense form
+(function(){const _exp=sheets.expense;sheets.expense=function(id){const x=exps.find(e=>e.id===id);if(isChg(x))return sheets.bankcharge(x.bank,id);return _exp.apply(this,arguments)}})();
+// tap a charge line in a bank's ledger to edit it
+document.addEventListener("click",e=>{const r=e.target.closest("#sheetBody [data-chg]");if(r)sheets.bankcharge(null,r.dataset.chg)});
 // ---------- bank statement match ----------
 sheets.stmt=function(bid){const b=banks.find(x=>x.id===bid);if(!b)return;
   openSheet(`<h3>Match statement · ${esc(b.name)}</h3><div class="smt"><p class="note" style="margin:0">Download this account's statement from your bank (Excel or CSV) and choose it. The app finds entries that are in the bank but not in the app, and the other way round.</p>
@@ -7876,7 +7926,7 @@ document.addEventListener("click",e=>{if(e.target.closest('[data-go="settings"]'
 setInterval(()=>{try{renderNight()}catch(e){}},60000);
 
 // ---------- + button: quick actions ----------
-const QA_HTML=`<div class="qwrap"><div class="qhead"><h3>Add</h3><button type="button" class="qx" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><div class="qheroes"><button type="button" class="qh t-green" data-q="q-order"><span class="qhi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2"/><path d="M7.8 10.2h8.4l-2.5-2.5M16.2 13.8H7.8l2.5 2.5"/></svg></span><span class="qht"><b>New order</b><small>Buy or sell crypto</small><em class="qhv" data-v="q-order"></em></span></button><button type="button" class="qh t-blue" data-q="q-intake"><span class="qhi"><svg viewBox="0 0 24 24"><path d="M4 8V6.5A2.5 2.5 0 0 1 6.5 4H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V8M20 16v1.5a2.5 2.5 0 0 1-2.5 2.5H16M8 20H6.5A2.5 2.5 0 0 1 4 17.5V16"/><path d="M12 8.2l1.15 2.65 2.65 1.15-2.65 1.15L12 15.8l-1.15-2.65L8.2 12l2.65-1.15z"/></svg></span><span class="qht"><b>Smart intake</b><small>Save from screenshots</small><em class="qhv" data-v="q-intake"></em></span></button></div><div class="qrep" id="qrep"></div><div class="qsec">Payments</div><div class="qlist"><button type="button" class="qr" data-q="q-pay"><span class="qri t-violet"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M17 8h5M19.5 5.5 22 8l-2.5 2.5"/></svg></span><span class="qrt"><b>Pay a party</b><small>Record a direct payment</small></span><span class="qrv" data-v="q-pay"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-due"><span class="qri t-amber"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="8.5"/></svg></span><span class="qrt"><b>Amount to pay</b><small>Add what you owe a party</small></span><span class="qrv" data-v="q-due"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-tr"><span class="qri t-blue"><svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg></span><span class="qrt"><b>Transfer</b><small>Between my banks</small></span><span class="qrv" data-v="q-tr"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button></div><div class="qsec">More</div><div class="qlist"><button type="button" class="qr" data-q="q-exp"><span class="qri t-red"><svg viewBox="0 0 24 24"><path d="M6 3h12M6 8h12M14 21 6 12h3a4 4 0 0 0 0-8"/></svg></span><span class="qrt"><b>Expense</b><small>Personal spending</small></span><span class="qrv" data-v="q-exp"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-bank"><span class="qri t-gray"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg></span><span class="qrt"><b>Add bank</b><small>New bank or cash account</small></span><span class="qrv" data-v="q-bank"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-ai"><span class="qri t-green"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span><span class="qrt"><b>Tell AI</b><small>Type what happened, AI records it</small></span><span class="qrv" data-v="q-ai"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-file"><span class="qri t-gray"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 17v-6M9 14l3 3 3-3"/></svg></span><span class="qrt"><b>Import file</b><small>Excel, CSV or PDF order history</small></span><span class="qrv" data-v="q-file"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button></div></div>`;
+const QA_HTML=`<div class="qwrap"><div class="qhead"><h3>Add</h3><button type="button" class="qx" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><div class="qheroes"><button type="button" class="qh t-green" data-q="q-order"><span class="qhi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2"/><path d="M7.8 10.2h8.4l-2.5-2.5M16.2 13.8H7.8l2.5 2.5"/></svg></span><span class="qht"><b>New order</b><small>Buy or sell crypto</small><em class="qhv" data-v="q-order"></em></span></button><button type="button" class="qh t-blue" data-q="q-intake"><span class="qhi"><svg viewBox="0 0 24 24"><path d="M4 8V6.5A2.5 2.5 0 0 1 6.5 4H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V8M20 16v1.5a2.5 2.5 0 0 1-2.5 2.5H16M8 20H6.5A2.5 2.5 0 0 1 4 17.5V16"/><path d="M12 8.2l1.15 2.65 2.65 1.15-2.65 1.15L12 15.8l-1.15-2.65L8.2 12l2.65-1.15z"/></svg></span><span class="qht"><b>Smart intake</b><small>Save from screenshots</small><em class="qhv" data-v="q-intake"></em></span></button></div><div class="qrep" id="qrep"></div><div class="qsec">Payments</div><div class="qlist"><button type="button" class="qr" data-q="q-pay"><span class="qri t-violet"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M17 8h5M19.5 5.5 22 8l-2.5 2.5"/></svg></span><span class="qrt"><b>Pay a party</b><small>Record a direct payment</small></span><span class="qrv" data-v="q-pay"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-due"><span class="qri t-amber"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="8.5"/></svg></span><span class="qrt"><b>Amount to pay</b><small>Add what you owe a party</small></span><span class="qrv" data-v="q-due"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-tr"><span class="qri t-blue"><svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg></span><span class="qrt"><b>Transfer</b><small>Between my banks</small></span><span class="qrv" data-v="q-tr"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button></div><div class="qsec">More</div><div class="qlist"><button type="button" class="qr" data-q="q-exp"><span class="qri t-red"><svg viewBox="0 0 24 24"><path d="M6 3h12M6 8h12M14 21 6 12h3a4 4 0 0 0 0-8"/></svg></span><span class="qrt"><b>Expense</b><small>Personal spending</small></span><span class="qrv" data-v="q-exp"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-chg"><span class="qri t-amber"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M19 10v8M3 20h18"/><path d="M9.5 16.5l5-5"/><circle cx="10" cy="12" r=".9"/><circle cx="14" cy="16" r=".9"/></svg></span><span class="qrt"><b>Bank charges</b><small>Cash deposit, SMS, fees</small></span><span class="qrv" data-v="q-chg"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-bank"><span class="qri t-gray"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg></span><span class="qrt"><b>Add bank</b><small>New bank or cash account</small></span><span class="qrv" data-v="q-bank"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-ai"><span class="qri t-green"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span><span class="qrt"><b>Tell AI</b><small>Type what happened, AI records it</small></span><span class="qrv" data-v="q-ai"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button><button type="button" class="qr" data-q="q-file"><span class="qri t-gray"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 17v-6M9 14l3 3 3-3"/></svg></span><span class="qrt"><b>Import file</b><small>Excel, CSV or PDF order history</small></span><span class="qrv" data-v="q-file"></span><span class="qrc"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button></div></div>`;
 function pickParty(then){if(!parties.length){toast("Add a party first");sheets.party();return}if(parties.length===1){then(parties[0].id);return}
   openSheet(`<h3>Choose party</h3><div class="list">${parties.map(p=>{const bl=partyOwed(p.id)-partyPaid(p.id);return `<button type="button" class="party" data-pp="${p.id}"><span class="bico">${esc(p.name.slice(0,2).toUpperCase())}</span><span class="pname">${esc(p.name)}</span><span class="pleft">${bl>0.5?inr(bl)+" left":""}</span></button>`}).join("")}</div>`,el=>el.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>then(b.dataset.pp)))}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".tabs button");if(!b)return;b.classList.remove("tp");void b.offsetWidth;b.classList.add("tp");clearTimeout(b._tp);b._tp=setTimeout(()=>b.classList.remove("tp"),700)},true);
@@ -7891,8 +7941,9 @@ function quickFill(el){
   set("q-pay",due>0.5?inr(Math.round(due))+" due":"",due>0.5?"warn":"");
   set("q-due",parties.length?parties.length+(parties.length===1?" party":" parties"):"");
   const {bal}=balances();set("q-tr",banks.length?inr(Math.round(banks.reduce((t,b)=>t+bal[b.id],0))):"");
-  const n=new Date();const me=exps.filter(x=>{const d=new Date(x.time);return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear()}).reduce((t,x)=>t+(+x.amt||0),0);
+  const n=new Date();const me=exps.filter(x=>{const d=new Date(x.time);return x.cat!=="Bank charges"&&d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear()}).reduce((t,x)=>t+(+x.amt||0),0);
   set("q-exp",me?inr(Math.round(me))+" this month":"");
+  const mc=chgMonth().reduce((t,x)=>t+(+x.amt||0),0);set("q-chg",mc?inr(Math.round(mc))+" this month":"");
   set("q-bank",banks.length?banks.length+" added":"Start here","");
   set("q-ai",aiCfg.prov==="builtin"&&!sampleFn?"App assistant":"","");
   const seen=new Set(),rep=[];[...orders].sort((a,b)=>b.time-a.time).forEach(o=>{const k=o.side+o.coin+(o.cp||"")+modeOf(o);if(seen.has(k)||rep.length>=4)return;seen.add(k);rep.push(o)});
@@ -7906,6 +7957,7 @@ function openQuick(){openSheet(QA_HTML,el=>{quickFill(el);el.querySelectorAll(".
   else if(q==="q-pay")pickParty(id=>sheets.pay(id));
   else if(q==="q-due")pickParty(id=>sheets.due(id));
   else if(q==="q-exp")sheets.expense();
+  else if(q==="q-chg")sheets.bankcharge();
   else if(q==="q-tr")sheets.transfer();
   else if(q==="q-bank")sheets.bank();
   else if(q==="q-ai"){goPage("ai");setTimeout(()=>$("#askIn").focus(),150)}

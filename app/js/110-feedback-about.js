@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=171;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=172;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00172","23 Oct 2026",["Bank charges: record money the bank cuts (cash deposit, SMS, IMPS/NEFT, UPI, ATM, card, min balance penalty, account maintenance, GST and more) from Add → Bank charges or the Bank charge button on a bank. It lowers that bank's balance, shows in the bank's list (tap to edit) and counts as a business cost in profit","Check balance: if the real balance is lower than the app, one tap saves the difference as a bank charge","Report shows Bank charges on their own line, apart from personal expenses"]],
   ["0.0.0.00171","23 Oct 2026",["Report is redesigned: a big profit card with change vs the last period, Orders, Volume and Margin tiles, a profit trend chart (every 2 hours, by day or by month — tap a bar for details), Buy vs sell bars with the spread, an Orders status bar, profit by type, profit after expenses and balance now. The WhatsApp text is the same, under Message preview"]],
   ["0.0.0.00170","23 Oct 2026",["Menu: tapping Today profit opened a blank screen. It now opens the Report (Today). If a link ever points to a page that does not exist, the app now stays on Home instead of going blank"]],
   ["0.0.0.00169","23 Oct 2026",["Smart Intake: the exchange page does not show the payment method (or the accounts), so those rows said NOT FOUND and pulled the match score down. Now the method is read from the payment itself (UPI, IMPS…) and shown as FROM PAYMENT, and it no longer lowers the score. If the order does state a different method, it is still flagged."]],

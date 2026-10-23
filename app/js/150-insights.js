@@ -195,7 +195,8 @@ function buildReport(p){
   const [a,b]=periodRange(p);const inR=t=>t>=a&&t<b;const L={today:"Today",yesterday:"Yesterday",week:"This week",month:"This month",lastmonth:"Last month",all:"All time"}[p];
   const ol=orders.filter(o=>inR(o.time));const st=stats(ol);const done=ol.filter(o=>o.status==="Completed");
   const byMode=["P2P","Direct","Cash","Pair"].map(m=>{const L=ol.filter(o=>inMode(o,m));return[m==="Pair"?"P2P ⇄ Direct (vs exchange avg)":m,m==="Pair"?pairCount(L):L.length,m==="Pair"?pairSum(L):stats(L).profit]}).filter(x=>x[1]);
-  const ex=exps.filter(x=>inR(x.time)).reduce((t,x)=>t+(+x.amt||0),0);
+  const ex=exps.filter(x=>inR(x.time)&&x.cat!=="Bank charges").reduce((t,x)=>t+(+x.amt||0),0);
+  const chg=exps.filter(x=>inR(x.time)&&x.cat==="Bank charges").reduce((t,x)=>t+(+x.amt||0),0);
   const dp=ppays.filter(x=>inR(x.time)).reduce((t,x)=>t+(+x.amt||0),0);
   const {bal}=balances();const money=banks.reduce((t,k)=>t+bal[k.id],0);const usdt=stockLeft().USDT||0;
   const fmtD=t=>new Date(t).toLocaleDateString("en-IN",{day:"numeric",month:"short"});
@@ -205,12 +206,13 @@ function buildReport(p){
     `Sold: ${fmtQ(+st.s.q.toFixed(4))} @ avg ₹${st.s.avg.toFixed(2)} = ${inr(Math.round(st.s.v))}`,
     `Spread profit: ${inr(+st.profit.toFixed(2))}`,
     ...byMode.map(([m,c,pf])=>`  · ${m}: ${c} orders, profit ${inr(+pf.toFixed(2))}`),
+    chg?`Bank charges: ${inr(Math.round(chg))}`:"",
     `Personal expenses: ${inr(Math.round(ex))}`,
-    `Net (profit − expenses): ${inr(Math.round(st.profit-ex))}`,
+    `Net (profit − ${chg?"charges − ":""}expenses): ${inr(Math.round(st.profit-chg-ex))}`,
     dp?`Direct payments made: ${inr(Math.round(dp))}`:"",
     "",`Money left now: ${inr(Math.round(money))} · USDT left: ${fmtQ(+usdt.toFixed(2))}`].filter(x=>x!=="");
   const cnt={done:done.length,canc:ol.filter(o=>o.status==="Cancelled").length,pend:ol.filter(o=>o.status==="Pending"||o.status==="Appeal").length};
-  return{text:lines.join("\n"),orders:ol,label:L,a,b,st,ex,dp,money,usdt,byMode,cnt};
+  return{text:lines.join("\n"),orders:ol,label:L,a,b,st,ex,chg,dp,money,usdt,byMode,cnt};
 }
 sheets.profit=function(){let per="today",ca="",cb="";
   const rng=()=>{const d0=new Date();d0.setHours(0,0,0,0);const t0=d0.getTime();
@@ -224,8 +226,8 @@ sheets.profit=function(){let per="today",ca="",cb="";
     <div class="pcsec">How it adds up</div><div class="rml">
     ${L("Gross spread profit",M(R.gross),"",R.sellN+" completed sell"+(R.sellN===1?"":"s"))}
     ${L("Platform fees","−"+inr(Math.round(R.fees)),R.fees?"neg":"","from the Fee field on orders")}
-    ${L("Transfer charges","−"+inr(Math.round(R.xfer)),R.xfer?"neg":"","bank charges on transfers")}
-    ${L("Business costs","−"+inr(Math.round(R.biz)),R.biz?"neg":"","expenses marked Business")}
+    ${L("Transfer charges","−"+inr(Math.round(R.xfer)),R.xfer?"neg":"","fees added on transfers")}
+    ${L("Business costs","−"+inr(Math.round(R.biz)),R.biz?"neg":"","bank charges and expenses marked Business")}
     ${L("<b>Net profit</b>",M(R.net),R.net<0?"neg":"")}</div>
     ${R.tds?`<div class="pcsec">Tax</div><div class="rml">${L("TDS deducted on sells",inr(Math.round(R.tds)),"","a tax credit, not a cost. Not taken off profit")}</div>`:""}
     <div class="pcsec">Averages</div><div class="rml">

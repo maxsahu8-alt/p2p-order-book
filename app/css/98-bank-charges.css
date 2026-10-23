@@ -1,0 +1,13 @@
+/* bank charges sheet */
+.chgl{font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:-4px}
+.chgc{display:flex;flex-wrap:wrap;gap:6px}
+.chgc .chip{flex:none}
+.chgc.shake{animation:chgShake .35s}
+@keyframes chgShake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.chgr{margin-top:14px;border-radius:16px;background:var(--raised);padding:4px 12px}
+.chgrh{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:.78rem;color:var(--muted);font-weight:600}
+.chgrh b{color:var(--sell);font-variant-numeric:tabular-nums}
+.chgi{display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;border:0;border-top:1px solid var(--line);background:none;color:var(--fg);font:inherit;text-align:left;padding:10px 0;cursor:pointer}
+.chgi span{font-size:.86rem;font-weight:600;min-width:0}
+.chgi small{display:block;font-size:.7rem;font-weight:500;color:var(--muted);margin-top:2px}
+.chgi b{color:var(--sell);font-variant-numeric:tabular-nums;font-size:.86rem}
