@@ -74,7 +74,7 @@ $("#todayLbl").textContent=new Date().toLocaleDateString("en-IN",{day:"numeric",
 document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(!g)return;
   const t=g.dataset.go;if(t==="import"){$("#t-add").click();setTimeout(()=>$("#imp").scrollIntoView({behavior:"smooth",block:"start"}),50);return}
   const tb=document.querySelector(`.tabs button[data-tab="${t}"]`);
-  if(tb)tb.click();else{document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected","false"));["home","orders","add","coins","wallet","direct","ai","ideas","settings","intake"].forEach(n=>$("#p-"+n).hidden=n!==t)}
+  if(tb)tb.click();else if(!$("#p-"+t)){if(typeof sheets[t]==="function")sheets[t]();else $("#t-home").click();return}else{document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected","false"));["home","orders","add","coins","wallet","direct","ai","ideas","settings","intake"].forEach(n=>$("#p-"+n).hidden=n!==t)}
   window.scrollTo({top:0});});
 // home interactions
 $("#htabs").onclick=e=>{const b=e.target.closest("[data-h]");if(!b)return;homeTab=b.dataset.h;document.querySelectorAll("#htabs [data-h]").forEach(x=>x.classList.toggle("on",x===b));renderHome()};
@@ -199,7 +199,7 @@ function openDrawer(){
   $("#dSearch").onclick=()=>{close();openUS()};
   $("#dEdit").onclick=()=>{close();sheets.profile()};
   $("#dEye").onclick=()=>{hideAmt=!hideAmt;try{localStorage.setItem("p2p_hide",hideAmt?"1":"0")}catch(err){}renderHero();openDrawer()};
-  document.querySelectorAll("#drawer [data-dpc]").forEach(e=>e.onclick=()=>{const k=e.dataset.dpc;if(k==="nw"){if(hideAmt)return;close();sheetNetWorth()}else{close();if(k==="stock")goTo("wallet");else if(k==="profit")goTo("report");else goPage("orders")}});
+  document.querySelectorAll("#drawer [data-dpc]").forEach(e=>e.onclick=()=>{const k=e.dataset.dpc;if(k==="nw"){if(hideAmt)return;close();sheetNetWorth()}else{close();if(k==="stock")goTo("wallet");else if(k==="profit")sheets.report();else goPage("orders")}});
   document.querySelectorAll("#drawer [data-dq]").forEach(b=>b.onclick=()=>{const k=b.dataset.dq;close();if(k==="pay")pickParty(id=>sheets.pay(id));else document.querySelector(`[data-go="${k}"]`)?goTo(k):0});
   const dAll=$("#dAll");if(dAll)dAll.onclick=()=>{close();$("#t-home").click();alertsOpen=true;renderAlerts();setTimeout(()=>$("#alerts").scrollIntoView({behavior:"smooth",block:"center"}),80)};
   document.querySelectorAll("#drawer [data-th]").forEach(b=>b.onclick=()=>{devSet("p2p_theme",b.dataset.th);applyTheme();const sel=$("#st-theme");if(sel)sel.value=b.dataset.th;document.querySelectorAll("#drawer [data-th]").forEach(x=>x.classList.toggle("on",x===b))});
