@@ -73,6 +73,7 @@ public class NightAlarmService extends NotificationListenerService {
             o.put("lang", p.getString("lang", "en"));
             o.put("err", p.getString("err", ""));
             o.put("diag", p.getString("diag", ""));
+            o.put("notif", ((NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE)).areNotificationsEnabled());
             o.put("ver", BuildConfig.VERSION_NAME);
             o.put("seenAt", p.getLong("seenAt", 0));
             o.put("seenKind", p.getString("seenKind", ""));
@@ -240,16 +241,19 @@ public class NightAlarmService extends NotificationListenerService {
                 ringKind = kind;
                 ringStart = System.currentTimeMillis();
                 ringing = true;
-                if (wl == null) {
-                    PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-                    wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "pexai:nightalarm");
-                    wl.setReferenceCounted(false);
-                }
-                if (!wl.isHeld()) wl.acquire(125 * 60000L);
-                showNote();
+                // the wake lock only keeps the phone awake; the alarm must still ring if it is refused
+                try {
+                    if (wl == null) {
+                        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                        wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "pexai:nightalarm");
+                        wl.setReferenceCounted(false);
+                    }
+                    if (!wl.isHeld()) wl.acquire(125 * 60000L);
+                } catch (Throwable e) { err("wakelock: " + e.getClass().getSimpleName()); }
+                try { showNote(); } catch (Throwable e) { err("note: " + e.getClass().getSimpleName()); }
                 H.removeCallbacks(tick);
                 tick.run();
-            } catch (Throwable e) { }
+            } catch (Throwable e) { err("start: " + e.getClass().getSimpleName()); }
         });
     }
 

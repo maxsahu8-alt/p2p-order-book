@@ -986,6 +986,14 @@ public class MainActivity extends Activity {
         public boolean naTest() { return NightAlarmService.test(MainActivity.this); }
 
         @JavascriptInterface
+        public void naAskNotif() {
+            runOnUiThread(() -> {
+                try { if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 77); }
+                catch (Throwable e) { }
+            });
+        }
+
+        @JavascriptInterface
         public void naRebind() { NightAlarmService.rebind(MainActivity.this); }
 
         @JavascriptInterface
