@@ -16,6 +16,7 @@ const FEATURES=[
  {k:"insights",n:"Business insights",d:"Best time, best rate, targets, coach, loss finder, bank health",tier:"business",sheets:["besttime","bestrate","target","mscore","nightrep","coach","loss","rules","cashflow","bankrisk","bankhealth","insights","dayclose","glance"]},
  {k:"ai",n:"AI assistant",d:"Ask anything, voice assistant and P2P Brain",tier:"business",go:["ai"],sheets:["brain","conv"],css:["#aiFab",".aifab"]},
  {k:"market",n:"Live market and coins",d:"USDT price, P2P ads and coins",tier:"business",go:["coins"],sheets:["market","coinledger"],css:[".mkchip"]},
+ {k:"nightalarm",n:"Night order alarm",d:"Loud alarm for new KuCoin orders (Android app)",tier:"pro",sheets:["nalarm"]},
  {k:"audit",n:"Audit log",d:"Full history of every change",tier:"business",sheets:["auditlog"]},
  {k:"sync",n:"Phone database sync",d:"Keep a copy on your always-on phone",tier:"business",sheets:["dbphone"]}
 ];
