@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=177;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=178;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00178","28 Oct 2026",["Night order alarm screen is redesigned: a status banner at the top (Ready, Setup needed, Not connected, Snoozed, Ringing) with the main switch, setup rows with real status for Notification access and Battery, Reconnect button, grouped Alerts and Schedule settings, and an Activity section that shows when KuCoin was last heard and the latest events. Needs the new APK (0.0.0.00105), which also makes the alarm notification follow the language setting."]],
   ["0.0.0.00177","28 Oct 2026",["New Language setting (Settings, next to Theme): English or Hinglish, saved on this phone. The Night order alarm screen and menu card use it now. Other screens will move to it step by step; any text without a Hinglish version stays in English."]],
   ["0.0.0.00176","28 Oct 2026",["Night order alarm screen and menu card are now fully in English (the button is now called Seen)."]],
   ["0.0.0.00175","28 Oct 2026",["Night order alarm is now at the top of the menu: one tap opens its settings and a switch turns it ON or OFF. It shows if setup is still pending, if it is snoozed, or the time window, and a Dekh liya button appears while the alarm is ringing."]],

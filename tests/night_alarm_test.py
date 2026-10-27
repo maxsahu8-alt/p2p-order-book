@@ -7,12 +7,12 @@ def chk(n,c):
     print(("PASS " if c else "FAIL ")+n); f+=0 if c else 1
 now=int(time.time()*1000)
 MOCK="""
-window.__na={on:false,buy:true,sell:true,allday:true,from:1380,to:480,buyEvery:60,sellEvery:120,maxMin:30,loud:true,snoozeUntil:0,access:false,ringing:false};
+window.__na={on:false,buy:true,sell:true,allday:true,from:1380,to:480,buyEvery:60,sellEvery:120,maxMin:30,loud:true,snoozeUntil:0,access:false,ringing:false,listening:true,battery:false,seenAt:0,seenKind:"",seenPkg:"",lang:"en"};
 window.__calls=[];
 window.__log=[{t:%d,k:"BUY",r:1},{t:%d,k:"SELL",r:1},{t:%d,k:"DONE",r:0},{t:%d,k:"TEST",r:1},{t:%d,k:"BUY",r:1}];
 window.P2PNative={appReady(){},naGet(){return JSON.stringify(window.__na)},naSet(j){window.__calls.push(['set',j]);Object.assign(window.__na,JSON.parse(j))},
  naLog(){return JSON.stringify(window.__log)},naClearLog(){window.__log=[]},naAck(){window.__calls.push(['ack'])},naTest(){window.__calls.push(['test']);return true},
- naOpenAccess(){window.__calls.push(['acc'])},naOpenBattery(){window.__calls.push(['bat'])},naOpenDnd(){window.__calls.push(['dnd'])}};
+ naRebind(){window.__calls.push(["rb"])},naOpenAccess(){window.__calls.push(['acc'])},naOpenBattery(){window.__calls.push(['bat'])},naOpenDnd(){window.__calls.push(['dnd'])}};
 """%(now-3600000,now-7200000,now-1800000,now-60000,now-20*3600000)
 with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':900});errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
@@ -57,6 +57,12 @@ with sync_playwright() as p:
     pg.evaluate("localStorage.setItem('p2p_lang','en')");pg.evaluate("sheets.nalarm()");pg.wait_for_timeout(200)
     chk("English text",pg.evaluate("document.querySelector('#sheetBody').textContent.includes('Last 12 hours')"))
     chk("language select in settings",pg.evaluate("!!document.querySelector('#st-lang')&&LANG()==='en'"))
+    pg.evaluate("window.__na.listening=false;window.__na.on=true;sheets.nalarm()");pg.wait_for_timeout(200)
+    chk("not connected shows Reconnect",pg.evaluate("!!document.querySelector('#na-rb')"))
+    pg.evaluate("document.querySelector('#na-rb').click()");chk("reconnect calls native",pg.evaluate("window.__calls.some(c=>c[0]==='rb')"))
+    pg.evaluate("window.__na.listening=true;window.__na.ringing=false;window.__na.snoozeUntil=0;window.__na.seenAt=Date.now()-120000;window.__na.seenKind='BUY';window.__na.seenPkg='com.kubi.kucoin';sheets.nalarm()");pg.wait_for_timeout(200)
+    chk("shows KuCoin heard",pg.evaluate("document.querySelector('.nap-heard').textContent.includes('com.kubi.kucoin')"))
+    chk("status banner ready",pg.evaluate("document.querySelector('.nap-hero').classList.contains('ok')"))
     chk("no page errors",not errs)
     if errs:print(errs)
     b.close()

@@ -46,7 +46,7 @@ bindPref("st-pmin","pmin",v=>Math.max(5,+v||30));bindPref("st-lpct","lpct",v=>Ma
 ["pending","limits","direct","unassigned","stock"].forEach(k=>$("#st-a-"+k).addEventListener("change",e=>setPref("alerts",{...pref("alerts"),[k]:e.target.checked})));
 bindPref("st-lang","lang");bindPref("st-len","len");
 $("#st-learn").addEventListener("change",e=>setPref("learn",e.target.checked));$("#st-auto").addEventListener("change",e=>setPref("autoIntake",e.target.checked));$("#st-mem").addEventListener("change",e=>setPref("mem",e.target.checked));
-$("#st-lang").onchange=e=>{try{localStorage.setItem("p2p_lang",e.target.value==="hi"?"hi":"en")}catch(err){}toast(e.target.value==="hi"?"Hinglish ON":"English ON")};
+$("#st-lang").onchange=e=>{try{localStorage.setItem("p2p_lang",e.target.value==="hi"?"hi":"en")}catch(err){}try{if(typeof naSet==="function"&&NA())naSet({lang:e.target.value==="hi"?"hi":"en"})}catch(er){}toast(e.target.value==="hi"?"Hinglish ON":"English ON")};
 $("#st-theme").onchange=e=>{devSet("p2p_theme",e.target.value);applyTheme()};
 $("#st-hide").onchange=e=>devSet("p2p_hide_default",e.target.checked?"1":"0");
 document.addEventListener("click",e=>{if(e.target.closest('[data-go="settings"]'))setTimeout(loadSettingsForm,0)});

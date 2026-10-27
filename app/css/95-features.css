@@ -7,3 +7,25 @@
 .nalb{flex:1;display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;cursor:pointer;min-width:0}
 .nalb b{display:block;font-size:.88rem}.nalb small{display:block;color:var(--muted);font-size:.74rem}
 .nali{font-size:1.25rem}
+.nap-hero{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;border:1px solid var(--line);background:var(--surface);margin:4px 0 10px}
+.nap-hero .nap-ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:none;background:rgba(120,120,120,.14);color:var(--muted)}
+.nap-hero .nap-ic svg{width:22px;height:22px}
+.nap-tx{flex:1;min-width:0}.nap-tx b{display:block;font-size:1rem}.nap-tx small{display:block;color:var(--muted);font-size:.78rem;margin-top:2px}
+.nap-hero.ok{border-color:#16a34a66;background:rgba(22,163,74,.08)}.nap-hero.ok .nap-ic{background:#16a34a;color:#fff}
+.nap-hero.warn{border-color:#d9770666;background:rgba(217,119,6,.08)}.nap-hero.warn .nap-ic{background:#d97706;color:#fff}
+.nap-hero.bad{border-color:#dc262666;background:rgba(220,38,38,.08)}.nap-hero.bad .nap-ic{background:#dc2626;color:#fff}
+.nap-priv{margin:0 0 6px}
+.nap-r .nap-end{display:flex;align-items:center;gap:8px;flex:none}
+.nap-pill{font-style:normal;font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:99px;letter-spacing:.02em;background:rgba(120,120,120,.16);color:var(--muted)}
+.nap-pill.ok{background:rgba(22,163,74,.16);color:#15803d}.nap-pill.bad{background:rgba(220,38,38,.16);color:#b91c1c}.nap-pill.warn{background:rgba(217,119,6,.18);color:#b45309}
+.nap-win{margin:4px 0 8px}
+.nap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.nap-grid label{display:block}.nap-grid small{display:block;color:var(--muted);font-size:.7rem;margin-bottom:3px}
+.nap-grid select{width:100%}
+.nap-act{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+.nap-heard{margin:2px 0 6px}.nap-pkg{font-family:ui-monospace,monospace;font-size:.72rem}
+.nap-evl{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:6px 0}
+.nap-ev{display:flex;align-items:center;gap:8px;padding:7px 10px;font-size:.78rem;border-bottom:1px solid var(--line)}.nap-ev:last-child{border-bottom:0}
+.nap-ev i{font-style:normal;font-weight:700;font-size:.68rem;padding:2px 7px;border-radius:6px;background:rgba(120,120,120,.16)}
+.nap-ev i.k-BUY{background:rgba(220,38,38,.16);color:#b91c1c}.nap-ev i.k-SELL{background:rgba(22,163,74,.16);color:#15803d}
+.nap-ev span{flex:1}.nap-ev small{color:var(--muted)}
