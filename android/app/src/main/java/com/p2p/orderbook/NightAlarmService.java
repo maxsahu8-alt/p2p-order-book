@@ -71,6 +71,8 @@ public class NightAlarmService extends NotificationListenerService {
             o.put("battery", ignoringBattery(c));
             o.put("lang", p.getString("lang", "en"));
             o.put("err", p.getString("err", ""));
+            o.put("diag", p.getString("diag", ""));
+            o.put("ver", BuildConfig.VERSION_NAME);
             o.put("seenAt", p.getLong("seenAt", 0));
             o.put("seenKind", p.getString("seenKind", ""));
             o.put("seenPkg", p.getString("seenPkg", ""));
@@ -291,6 +293,17 @@ public class NightAlarmService extends NotificationListenerService {
             } catch (Throwable e) { err("tone: " + e.getClass().getSimpleName()); }
         }
         if (ok) err("");
+        try {
+            String d = "alarm vol " + (am != null ? am.getStreamVolume(AudioManager.STREAM_ALARM) + "/" + am.getStreamMaxVolume(AudioManager.STREAM_ALARM) : "?")
+                    + ", ringer " + (am != null ? am.getRingerMode() : -1)
+                    + ", dnd " + ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).getCurrentInterruptionFilter()
+                    + ", " + (mp != null ? "player started" : (ok ? "beep" : "no sound source"));
+            sp(this).edit().putString("diag", d).apply();
+            final MediaPlayer cur = mp;
+            if (cur != null) H.postDelayed(() -> {
+                try { sp(NightAlarmService.this).edit().putString("diag", sp(NightAlarmService.this).getString("diag", "") + (cur == mp && cur.isPlaying() ? ", playing" : ", NOT playing")).apply(); } catch (Throwable e) { }
+            }, 800);
+        } catch (Throwable e) { }
         try {
             Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             if (v != null) {
