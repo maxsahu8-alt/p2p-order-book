@@ -29,3 +29,6 @@
 .nap-ev i{font-style:normal;font-weight:700;font-size:.68rem;padding:2px 7px;border-radius:6px;background:rgba(120,120,120,.16)}
 .nap-ev i.k-BUY{background:rgba(220,38,38,.16);color:#b91c1c}.nap-ev i.k-SELL{background:rgba(22,163,74,.16);color:#15803d}
 .nap-ev span{flex:1}.nap-ev small{color:var(--muted)}
+.nap-win{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 10px}
+.nap-win label{display:block}.nap-win small{display:block;color:var(--muted);font-size:.7rem;margin-bottom:3px}
+.nap-win input{width:100%}

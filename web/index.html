@@ -1554,6 +1554,9 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
 .nap-ev i{font-style:normal;font-weight:700;font-size:.68rem;padding:2px 7px;border-radius:6px;background:rgba(120,120,120,.16)}
 .nap-ev i.k-BUY{background:rgba(220,38,38,.16);color:#b91c1c}.nap-ev i.k-SELL{background:rgba(22,163,74,.16);color:#15803d}
 .nap-ev span{flex:1}.nap-ev small{color:var(--muted)}
+.nap-win{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 10px}
+.nap-win label{display:block}.nap-win small{display:block;color:var(--muted);font-size:.7rem;margin-bottom:3px}
+.nap-win input{width:100%}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -6701,7 +6704,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=179;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=180;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6768,6 +6771,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00180","28 Oct 2026",["Night order alarm: the From and To times now sit side by side."]],
   ["0.0.0.00179","28 Oct 2026",["Night order alarm: the test alarm made no sound on some phones. The alarm no longer stops when Android refuses to raise the volume (for example in Do Not Disturb), it tries the alarm, ringtone and notification sounds in turn and finally a built-in beep, and the screen shows the last sound problem if there is one. Needs the new APK (0.0.0.00106)."]],
   ["0.0.0.00178","28 Oct 2026",["Night order alarm screen is redesigned: a status banner at the top (Ready, Setup needed, Not connected, Snoozed, Ringing) with the main switch, setup rows with real status for Notification access and Battery, Reconnect button, grouped Alerts and Schedule settings, and an Activity section that shows when KuCoin was last heard and the latest events. Needs the new APK (0.0.0.00105), which also makes the alarm notification follow the language setting."]],
   ["0.0.0.00177","28 Oct 2026",["New Language setting (Settings, next to Theme): English or Hinglish, saved on this phone. The Night order alarm screen and menu card use it now. Other screens will move to it step by step; any text without a Hinglish version stays in English."]],
@@ -8287,7 +8291,7 @@ sheets.nalarm=function(){
    <div class="pcsec">${tr("Schedule","Schedule")}</div><div class="rml">
     ${tg("allday",tr("24 hours","24 ghante"),tr("Turn off to use only the time below","Band karo to sirf neeche ka time"),s.allday)}
    </div>
-   <div class="tgf nap-win" id="na-win" ${s.allday?"hidden":""}><span class="note">${tr("From","Se")}</span><input type="time" id="na-from" value="${naHM(s.from)}"><span class="note">${tr("to","tak")}</span><input type="time" id="na-to" value="${naHM(s.to)}"></div>
+   <div class="nap-win" id="na-win" ${s.allday?"hidden":""}><label><small>${tr("From","Se")}</small><input type="time" id="na-from" value="${naHM(s.from)}"></label><label><small>${tr("To","Tak")}</small><input type="time" id="na-to" value="${naHM(s.to)}"></label></div>
    <div class="nap-grid">
     <label><small>${tr("BUY rings every","BUY alarm har")}</small><select id="na-be">${opt([30,60,120,180],s.buyEvery,x=>x+" sec")}</select></label>
     <label><small>${tr("SELL rings every","SELL alarm har")}</small><select id="na-se">${opt([60,120,180,300],s.sellEvery,x=>x+" sec")}</select></label>

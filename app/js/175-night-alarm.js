@@ -54,7 +54,7 @@ sheets.nalarm=function(){
    <div class="pcsec">${tr("Schedule","Schedule")}</div><div class="rml">
     ${tg("allday",tr("24 hours","24 ghante"),tr("Turn off to use only the time below","Band karo to sirf neeche ka time"),s.allday)}
    </div>
-   <div class="tgf nap-win" id="na-win" ${s.allday?"hidden":""}><span class="note">${tr("From","Se")}</span><input type="time" id="na-from" value="${naHM(s.from)}"><span class="note">${tr("to","tak")}</span><input type="time" id="na-to" value="${naHM(s.to)}"></div>
+   <div class="nap-win" id="na-win" ${s.allday?"hidden":""}><label><small>${tr("From","Se")}</small><input type="time" id="na-from" value="${naHM(s.from)}"></label><label><small>${tr("To","Tak")}</small><input type="time" id="na-to" value="${naHM(s.to)}"></label></div>
    <div class="nap-grid">
     <label><small>${tr("BUY rings every","BUY alarm har")}</small><select id="na-be">${opt([30,60,120,180],s.buyEvery,x=>x+" sec")}</select></label>
     <label><small>${tr("SELL rings every","SELL alarm har")}</small><select id="na-se">${opt([60,120,180,300],s.sellEvery,x=>x+" sec")}</select></label>
