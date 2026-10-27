@@ -70,6 +70,7 @@ public class NightAlarmService extends NotificationListenerService {
             o.put("listening", live != null);
             o.put("battery", ignoringBattery(c));
             o.put("lang", p.getString("lang", "en"));
+            o.put("err", p.getString("err", ""));
             o.put("seenAt", p.getLong("seenAt", 0));
             o.put("seenKind", p.getString("seenKind", ""));
             o.put("seenPkg", p.getString("seenPkg", ""));
@@ -249,35 +250,58 @@ public class NightAlarmService extends NotificationListenerService {
         });
     }
 
+    private void err(String m) { try { sp(this).edit().putString("err", m).apply(); } catch (Exception e) { } }
+
     private void playOnce() {
+        SharedPreferences p = sp(this);
+        AudioManager am = null;
+        try { am = (AudioManager) getSystemService(Context.AUDIO_SERVICE); } catch (Throwable e) { }
+        // raise the alarm volume; this may be refused in Do Not Disturb, and that must never stop the sound
         try {
-            SharedPreferences p = sp(this);
-            AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-            if (p.getBoolean("loud", true)) {
-                int max = am.getStreamMaxVolume(AudioManager.STREAM_ALARM);
-                am.setStreamVolume(AudioManager.STREAM_ALARM, max, 0);
-            }
-            releasePlayer();
-            Uri u = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-            if (u == null) u = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-            mp = new MediaPlayer();
-            mp.setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
-            mp.setDataSource(this, u);
-            mp.setLooping(true);
-            mp.prepare();
-            mp.start();
+            if (am != null && p.getBoolean("loud", true)) am.setStreamVolume(AudioManager.STREAM_ALARM, am.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0);
+        } catch (Throwable e) { err("volume: " + e.getClass().getSimpleName()); }
+        releasePlayer();
+        AudioAttributes aa = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build();
+        boolean ok = false;
+        int[] types = {RingtoneManager.TYPE_ALARM, RingtoneManager.TYPE_RINGTONE, RingtoneManager.TYPE_NOTIFICATION};
+        for (int ty : types) {
+            if (ok) break;
+            try {
+                Uri u = RingtoneManager.getActualDefaultRingtoneUri(this, ty);
+                if (u == null) u = RingtoneManager.getDefaultUri(ty);
+                if (u == null) continue;
+                MediaPlayer m = new MediaPlayer();
+                m.setAudioAttributes(aa);
+                m.setDataSource(this, u);
+                m.setLooping(true);
+                m.setVolume(1f, 1f);
+                m.prepare();
+                m.start();
+                mp = m;
+                ok = true;
+            } catch (Throwable e) { err("sound " + ty + ": " + e.getClass().getSimpleName()); releasePlayer(); }
+        }
+        if (!ok) {
+            // last resort: a built-in beep that needs no sound file
+            try {
+                final android.media.ToneGenerator tg = new android.media.ToneGenerator(AudioManager.STREAM_ALARM, 100);
+                tg.startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 12000);
+                H.postDelayed(tg::release, 13000);
+                ok = true;
+            } catch (Throwable e) { err("tone: " + e.getClass().getSimpleName()); }
+        }
+        if (ok) err("");
+        try {
             Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             if (v != null) {
                 long[] pat = {0, 700, 400, 700, 400, 700};
-                if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createWaveform(pat, -1), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build());
+                if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createWaveform(pat, -1), aa);
                 else v.vibrate(pat, -1);
             }
-            // sound for 14 seconds, then quiet until the next round
-            H.removeCallbacks(quiet);
-            H.postDelayed(quiet, 14000);
         } catch (Throwable e) { }
+        // sound for 14 seconds, then quiet until the next round
+        H.removeCallbacks(quiet);
+        H.postDelayed(quiet, 14000);
     }
 
     private final Runnable quiet = new Runnable() { @Override public void run() { releasePlayer(); } };
