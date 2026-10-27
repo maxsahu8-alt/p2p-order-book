@@ -20,6 +20,7 @@ function naAgo(t){if(!t)return"";const m=Math.round((Date.now()-t)/60000);return
 const NA_K={BUY:"BUY",SELL:"SELL",DONE:"Complete",TEST:"Test",CHAT:"Chat",OTHER:"Other"};
 // the state shown at the top of the screen
 function naState(s){
+  if(!s.ver)return{c:"warn",t:tr("Old APK installed","Purana APK laga hai"),d:tr("Install the latest APK (0.0.0.00107 or newer) for the alarm to work properly.","Alarm sahi chalane ke liye latest APK (0.0.0.00107 ya naya) install karo.")};
   if(!s.access)return{c:"warn",t:tr("Setup needed","Setup baaki hai"),d:tr("Allow notification access to start.","Shuru karne ke liye Notification access do.")};
   if(!s.listening)return{c:"warn",t:tr("Not connected","Connect nahi hua"),d:tr("Access is given but the service is not running. Tap Reconnect.","Access mil gaya par service chalu nahi hai. Reconnect dabao.")};
   if(s.ringing)return{c:"bad",t:tr("Alarm ringing","Alarm baj raha hai"),d:tr("Tap Seen to stop it.","Band karne ke liye Seen dabao.")};
@@ -63,6 +64,7 @@ sheets.nalarm=function(){
    <p class="note" id="na-msg" style="margin:6px 0"></p>
    <div class="pcsec">${tr("Activity","Activity")}</div>
    <p class="note nap-heard">${heard}</p>
+   ${s.diag?`<p class="note">${tr("Sound check: ","Sound check: ")}${esc(s.diag)}</p>`:""}
    ${s.err?`<p class="note warnline">${tr("Last sound problem: ","Aakhri sound problem: ")}${esc(s.err)}</p>`:""}
    ${ev?`<div class="nap-evl">${ev}</div>`:""}
    <p class="note">${tr(`Last 12 hours — Notifications: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. Orders added in the app: <b>${sm.made}</b>.`,`Pichle 12 ghante — Notification: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. App me daale gaye order: <b>${sm.made}</b>.`)}${sm.missing?` <span class="warnline">${tr(`Maybe ${sm.missing} order(s) are not added in the app. Please check.`,`Shayad ${sm.missing} order app me nahi daale. Check karo.`)}</span>`:""}</p>

@@ -6704,7 +6704,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=180;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=181;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6771,6 +6771,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00181","28 Oct 2026",["Night order alarm: if an old APK is installed the screen now says so. After a test the screen shows a Sound check line (alarm volume, ringer mode, Do Not Disturb filter, whether the player is really playing) so a silent alarm can be found. Needs the new APK (0.0.0.00107)."]],
   ["0.0.0.00180","28 Oct 2026",["Night order alarm: the From and To times now sit side by side."]],
   ["0.0.0.00179","28 Oct 2026",["Night order alarm: the test alarm made no sound on some phones. The alarm no longer stops when Android refuses to raise the volume (for example in Do Not Disturb), it tries the alarm, ringtone and notification sounds in turn and finally a built-in beep, and the screen shows the last sound problem if there is one. Needs the new APK (0.0.0.00106)."]],
   ["0.0.0.00178","28 Oct 2026",["Night order alarm screen is redesigned: a status banner at the top (Ready, Setup needed, Not connected, Snoozed, Ringing) with the main switch, setup rows with real status for Notification access and Battery, Reconnect button, grouped Alerts and Schedule settings, and an Activity section that shows when KuCoin was last heard and the latest events. Needs the new APK (0.0.0.00105), which also makes the alarm notification follow the language setting."]],
@@ -8257,6 +8258,7 @@ function naAgo(t){if(!t)return"";const m=Math.round((Date.now()-t)/60000);return
 const NA_K={BUY:"BUY",SELL:"SELL",DONE:"Complete",TEST:"Test",CHAT:"Chat",OTHER:"Other"};
 // the state shown at the top of the screen
 function naState(s){
+  if(!s.ver)return{c:"warn",t:tr("Old APK installed","Purana APK laga hai"),d:tr("Install the latest APK (0.0.0.00107 or newer) for the alarm to work properly.","Alarm sahi chalane ke liye latest APK (0.0.0.00107 ya naya) install karo.")};
   if(!s.access)return{c:"warn",t:tr("Setup needed","Setup baaki hai"),d:tr("Allow notification access to start.","Shuru karne ke liye Notification access do.")};
   if(!s.listening)return{c:"warn",t:tr("Not connected","Connect nahi hua"),d:tr("Access is given but the service is not running. Tap Reconnect.","Access mil gaya par service chalu nahi hai. Reconnect dabao.")};
   if(s.ringing)return{c:"bad",t:tr("Alarm ringing","Alarm baj raha hai"),d:tr("Tap Seen to stop it.","Band karne ke liye Seen dabao.")};
@@ -8300,6 +8302,7 @@ sheets.nalarm=function(){
    <p class="note" id="na-msg" style="margin:6px 0"></p>
    <div class="pcsec">${tr("Activity","Activity")}</div>
    <p class="note nap-heard">${heard}</p>
+   ${s.diag?`<p class="note">${tr("Sound check: ","Sound check: ")}${esc(s.diag)}</p>`:""}
    ${s.err?`<p class="note warnline">${tr("Last sound problem: ","Aakhri sound problem: ")}${esc(s.err)}</p>`:""}
    ${ev?`<div class="nap-evl">${ev}</div>`:""}
    <p class="note">${tr(`Last 12 hours — Notifications: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. Orders added in the app: <b>${sm.made}</b>.`,`Pichle 12 ghante — Notification: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. App me daale gaye order: <b>${sm.made}</b>.`)}${sm.missing?` <span class="warnline">${tr(`Maybe ${sm.missing} order(s) are not added in the app. Please check.`,`Shayad ${sm.missing} order app me nahi daale. Check karo.`)}</span>`:""}</p>

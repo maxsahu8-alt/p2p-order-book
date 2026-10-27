@@ -7,7 +7,7 @@ def chk(n,c):
     print(("PASS " if c else "FAIL ")+n); f+=0 if c else 1
 now=int(time.time()*1000)
 MOCK="""
-window.__na={on:false,buy:true,sell:true,allday:true,from:1380,to:480,buyEvery:60,sellEvery:120,maxMin:30,loud:true,snoozeUntil:0,access:false,ringing:false,listening:true,battery:false,seenAt:0,seenKind:"",seenPkg:"",lang:"en"};
+window.__na={ver:"0.0.0.00107",on:false,buy:true,sell:true,allday:true,from:1380,to:480,buyEvery:60,sellEvery:120,maxMin:30,loud:true,snoozeUntil:0,access:false,ringing:false,listening:true,battery:false,seenAt:0,seenKind:"",seenPkg:"",lang:"en"};
 window.__calls=[];
 window.__log=[{t:%d,k:"BUY",r:1},{t:%d,k:"SELL",r:1},{t:%d,k:"DONE",r:0},{t:%d,k:"TEST",r:1},{t:%d,k:"BUY",r:1}];
 window.P2PNative={appReady(){},naGet(){return JSON.stringify(window.__na)},naSet(j){window.__calls.push(['set',j]);Object.assign(window.__na,JSON.parse(j))},
