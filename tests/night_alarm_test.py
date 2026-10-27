@@ -51,7 +51,7 @@ with sync_playwright() as p:
     pg.evaluate("(()=>{const c=document.querySelector('#nalTog');c.checked=true;c.dispatchEvent(new Event('change'))})()")
     chk("menu switch turns alarm ON",pg.evaluate("window.__na.on")==True)
     pg.evaluate("window.__na.ringing=true");pg.evaluate("openDrawer()");pg.wait_for_timeout(200)
-    chk("Dekh liya shown while ringing",pg.evaluate("!!document.querySelector('#nalAck')"))
+    chk("Seen shown while ringing",pg.evaluate("!!document.querySelector('#nalAck')"))
     chk("no page errors",not errs)
     if errs:print(errs)
     b.close()
