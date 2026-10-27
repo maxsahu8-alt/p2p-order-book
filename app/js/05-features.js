@@ -20,6 +20,10 @@ const FEATURES=[
  {k:"audit",n:"Audit log",d:"Full history of every change",tier:"business",sheets:["auditlog"]},
  {k:"sync",n:"Phone database sync",d:"Keep a copy on your always-on phone",tier:"business",sheets:["dbphone"]}
 ];
+// App language (this phone only): "en" English, "hi" Hinglish (Hindi in English letters). tr(english, hinglish) picks the text.
+// Screens are moved to tr() one by one; a text without a Hinglish version simply stays in English.
+function LANG(){try{return localStorage.getItem("p2p_lang")==="hi"?"hi":"en"}catch(e){return"en"}}
+const tr=(en,hi)=>LANG()==="hi"&&hi?hi:en;
 const FEAT_BY={};FEATURES.forEach(f=>FEAT_BY[f.k]=f);
 // The owner's PUBLIC key (safe to be in the app). Empty = the app is open: every part is on unless switched off on this phone.
 // Once a key is here, optional parts need a licence code made with the matching private key (kept only on the owner's phone).

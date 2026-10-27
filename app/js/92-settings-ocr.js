@@ -31,7 +31,7 @@ function loadSettingsForm(){
   v("st-pmin",pref("pmin"));v("st-lpct",pref("lpct"));v("st-lang",pref("lang"));v("st-len",pref("len"));
   ["pending","limits","direct","unassigned","stock"].forEach(k=>$("#st-a-"+k).checked=alertOn(k));
   $("#st-learn").checked=!!pref("learn");$("#st-auto").checked=pref("autoIntake")!==false;$("#st-mem").checked=!!pref("mem");
-  $("#st-theme").value=devGet("p2p_theme","dark");$("#st-hide").checked=devGet("p2p_hide_default","0")==="1";
+  $("#st-lang").value=LANG();$("#st-theme").value=devGet("p2p_theme","dark");$("#st-hide").checked=devGet("p2p_hide_default","0")==="1";
   renderNotes();
   $("#aboutLine").textContent=`${APP_NAME} · ${orders.length} orders · ${banks.length} banks · ${parties.length} parties · ${exps.length} expenses`;
 }
@@ -46,6 +46,7 @@ bindPref("st-pmin","pmin",v=>Math.max(5,+v||30));bindPref("st-lpct","lpct",v=>Ma
 ["pending","limits","direct","unassigned","stock"].forEach(k=>$("#st-a-"+k).addEventListener("change",e=>setPref("alerts",{...pref("alerts"),[k]:e.target.checked})));
 bindPref("st-lang","lang");bindPref("st-len","len");
 $("#st-learn").addEventListener("change",e=>setPref("learn",e.target.checked));$("#st-auto").addEventListener("change",e=>setPref("autoIntake",e.target.checked));$("#st-mem").addEventListener("change",e=>setPref("mem",e.target.checked));
+$("#st-lang").onchange=e=>{try{localStorage.setItem("p2p_lang",e.target.value==="hi"?"hi":"en")}catch(err){}toast(e.target.value==="hi"?"Hinglish ON":"English ON")};
 $("#st-theme").onchange=e=>{devSet("p2p_theme",e.target.value);applyTheme()};
 $("#st-hide").onchange=e=>devSet("p2p_hide_default",e.target.checked?"1":"0");
 document.addEventListener("click",e=>{if(e.target.closest('[data-go="settings"]'))setTimeout(loadSettingsForm,0)});

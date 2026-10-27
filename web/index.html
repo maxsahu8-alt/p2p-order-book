@@ -1912,6 +1912,7 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
       <div class="srow2"><div><b>Starts at</b></div><input id="st-nightat" class="sinp sm" type="time" style="width:110px"></div>
     </div>
     <div class="sgroup"><h3>Appearance & privacy</h3>
+      <div class="srow2"><div><b>Language</b><small>Screens move to Hinglish one by one. This device only</small></div><select id="st-lang" class="ssel"><option value="en">English</option><option value="hi">Hinglish</option></select></div>
       <div class="srow2"><div><b>Theme</b><small id="st-themeNote">This device only</small></div><select id="st-theme" class="ssel"><option value="dark">Dark</option><option value="light">Light</option><option value="system">Same as phone</option></select></div>
       <div class="srow2"><div><b>Hide amounts when app opens</b><small>This device only</small></div><label class="tog"><input type="checkbox" id="st-hide"><span></span></label></div>
     </div>
@@ -2018,6 +2019,10 @@ const FEATURES=[
  {k:"audit",n:"Audit log",d:"Full history of every change",tier:"business",sheets:["auditlog"]},
  {k:"sync",n:"Phone database sync",d:"Keep a copy on your always-on phone",tier:"business",sheets:["dbphone"]}
 ];
+// App language (this phone only): "en" English, "hi" Hinglish (Hindi in English letters). tr(english, hinglish) picks the text.
+// Screens are moved to tr() one by one; a text without a Hinglish version simply stays in English.
+function LANG(){try{return localStorage.getItem("p2p_lang")==="hi"?"hi":"en"}catch(e){return"en"}}
+const tr=(en,hi)=>LANG()==="hi"&&hi?hi:en;
 const FEAT_BY={};FEATURES.forEach(f=>FEAT_BY[f.k]=f);
 // The owner's PUBLIC key (safe to be in the app). Empty = the app is open: every part is on unless switched off on this phone.
 // Once a key is here, optional parts need a licence code made with the matching private key (kept only on the owner's phone).
@@ -5635,7 +5640,7 @@ function loadSettingsForm(){
   v("st-pmin",pref("pmin"));v("st-lpct",pref("lpct"));v("st-lang",pref("lang"));v("st-len",pref("len"));
   ["pending","limits","direct","unassigned","stock"].forEach(k=>$("#st-a-"+k).checked=alertOn(k));
   $("#st-learn").checked=!!pref("learn");$("#st-auto").checked=pref("autoIntake")!==false;$("#st-mem").checked=!!pref("mem");
-  $("#st-theme").value=devGet("p2p_theme","dark");$("#st-hide").checked=devGet("p2p_hide_default","0")==="1";
+  $("#st-lang").value=LANG();$("#st-theme").value=devGet("p2p_theme","dark");$("#st-hide").checked=devGet("p2p_hide_default","0")==="1";
   renderNotes();
   $("#aboutLine").textContent=`${APP_NAME} · ${orders.length} orders · ${banks.length} banks · ${parties.length} parties · ${exps.length} expenses`;
 }
@@ -5650,6 +5655,7 @@ bindPref("st-pmin","pmin",v=>Math.max(5,+v||30));bindPref("st-lpct","lpct",v=>Ma
 ["pending","limits","direct","unassigned","stock"].forEach(k=>$("#st-a-"+k).addEventListener("change",e=>setPref("alerts",{...pref("alerts"),[k]:e.target.checked})));
 bindPref("st-lang","lang");bindPref("st-len","len");
 $("#st-learn").addEventListener("change",e=>setPref("learn",e.target.checked));$("#st-auto").addEventListener("change",e=>setPref("autoIntake",e.target.checked));$("#st-mem").addEventListener("change",e=>setPref("mem",e.target.checked));
+$("#st-lang").onchange=e=>{try{localStorage.setItem("p2p_lang",e.target.value==="hi"?"hi":"en")}catch(err){}toast(e.target.value==="hi"?"Hinglish ON":"English ON")};
 $("#st-theme").onchange=e=>{devSet("p2p_theme",e.target.value);applyTheme()};
 $("#st-hide").onchange=e=>devSet("p2p_hide_default",e.target.checked?"1":"0");
 document.addEventListener("click",e=>{if(e.target.closest('[data-go="settings"]'))setTimeout(loadSettingsForm,0)});
@@ -6673,7 +6679,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=176;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=177;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6740,6 +6746,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00177","28 Oct 2026",["New Language setting (Settings, next to Theme): English or Hinglish, saved on this phone. The Night order alarm screen and menu card use it now. Other screens will move to it step by step; any text without a Hinglish version stays in English."]],
   ["0.0.0.00176","28 Oct 2026",["Night order alarm screen and menu card are now fully in English (the button is now called Seen)."]],
   ["0.0.0.00175","28 Oct 2026",["Night order alarm is now at the top of the menu: one tap opens its settings and a switch turns it ON or OFF. It shows if setup is still pending, if it is snoozed, or the time window, and a Dekh liya button appears while the alarm is ringing."]],
   ["0.0.0.00174","28 Oct 2026",["Night order alarm (Android app): when KuCoin sends a new BUY (Action Needed) or SELL (Buyer is paying) notification, Pexai rings a loud alarm again and again until you tap Dekh liya. Set it up from About > Night order alarm: allow Notification access, set battery to Unrestricted and allow alarms in Do Not Disturb. Choose BUY / SELL, 24 hours or a time window, how often it rings, a 1 hour snooze and a Test button. Only the type and time of a notification is kept, never names or chat messages. It also shows how many order notifications came in the last 12 hours against the orders written in the app. Needs the new APK (0.0.0.00104)."]],
@@ -8219,69 +8226,69 @@ function naSummary(log,ords,since){
 }
 sheets.nalarm=function(){
   const n=NA(),s=naRead();
-  if(!n||!s){openSheet(`<div class="insw"><h3>Night order alarm</h3><p class="note">This alarm works only in the Android app. Install the latest APK, then come back here.</p><div class="cpexp"><button type="button" class="mini ghost" data-close>Close</button></div></div>`);return}
+  if(!n||!s){openSheet(`<div class="insw"><h3>${tr("Night order alarm","Raat ka order alarm")}</h3><p class="note">${tr("This alarm works only in the Android app. Install the latest APK, then come back here.","Ye alarm sirf Android app me chalta hai. Latest APK install karo, phir yahan aao.")}</p><div class="cpexp"><button type="button" class="mini ghost" data-close>${tr("Close","Band karo")}</button></div></div>`);return}
   const tg=(k,t,d,on)=>`<div class="dqr fsr"><span><b>${esc(t)}</b><small>${esc(d)}</small></span><label class="tog"><input type="checkbox" data-na="${k}" ${on?"checked":""}><span></span></label></div>`;
   const opt=(arr,v,f)=>arr.map(x=>`<option value="${x}" ${x==v?"selected":""}>${f(x)}</option>`).join("");
   const since=Date.now()-12*3600000,sm=naSummary(naLogRead(),orders,since);
   const snz=s.snoozeUntil>Date.now();
   const step=(ok,t,d,id,b)=>`<div class="dqr fsr"><span><b>${ok?"✅":"⬜"} ${esc(t)}</b><small>${esc(d)}</small></span><button type="button" class="mini ghost" id="${id}">${b}</button></div>`;
-  openSheet(`<div class="insw"><h3>Night order alarm</h3>
-   <p class="note">A loud alarm rings when a new KuCoin order arrives and keeps ringing until you tap "Seen". Only the type and time of a notification are kept. Names and chat messages are never read.</p>
-   <div class="pcsec">Setup (one time)</div><div class="rml">
-    ${step(s.access,"Notification access","Let Pexai see KuCoin notifications","na-acc",s.access?"Check":"Open")}
-    ${step(false,"Battery: Unrestricted","Otherwise the phone may stop the app at night","na-bat","Open")}
-    ${step(false,"Do Not Disturb: Alarms allowed","So the alarm rings in silent or DND mode","na-dnd","Open")}
+  openSheet(`<div class="insw"><h3>${tr("Night order alarm","Raat ka order alarm")}</h3>
+   <p class="note">${tr(`A loud alarm rings when a new KuCoin order arrives and keeps ringing until you tap "Seen". Only the type and time of a notification are kept. Names and chat messages are never read.`,`KuCoin ka naya order aate hi tez alarm bajega, jab tak "Dekh liya" na dabao. Sirf notification ka type aur time yaad rehta hai. Naam ya chat kabhi nahi padhi jaati.`)}</p>
+   <div class="pcsec">${tr("Setup (one time)","Setup (ek baar)")}</div><div class="rml">
+    ${step(s.access,tr("Notification access","Notification access"),tr("Let Pexai see KuCoin notifications","Pexai ko KuCoin ki notification dekhne do"),"na-acc",s.access?"Check":"Open")}
+    ${step(false,tr("Battery: Unrestricted","Battery: Unrestricted"),tr("Otherwise the phone may stop the app at night","Warna phone raat me app band kar sakta hai"),"na-bat","Open")}
+    ${step(false,tr("Do Not Disturb: Alarms allowed","Do Not Disturb: Alarms allowed"),tr("So the alarm rings in silent or DND mode","Taaki silent ya DND me bhi alarm bajey"),"na-dnd","Open")}
    </div>
-   <div class="pcsec">Alarm</div><div class="rml">
-    ${tg("on","Night order alarm ON","Main switch",s.on)}
-    ${tg("buy","BUY order","You must pay: loud alarm every time",s.buy)}
-    ${tg("sell","SELL order","Buyer is paying: alarm",s.sell)}
-    ${tg("loud","Full volume","Alarm volume goes to maximum",s.loud)}
-    ${tg("allday","24 hours","Turn off to use only the time below",s.allday)}
+   <div class="pcsec">${tr("Alarm","Alarm")}</div><div class="rml">
+    ${tg("on",tr("Night order alarm ON","Night order alarm ON"),tr("Main switch","Main switch"),s.on)}
+    ${tg("buy",tr("BUY order","BUY order"),tr("You must pay: loud alarm every time","Payment karna hai: har baar tez alarm"),s.buy)}
+    ${tg("sell",tr("SELL order","SELL order"),tr("Buyer is paying: alarm","Buyer pay kar raha hai: alarm"),s.sell)}
+    ${tg("loud",tr("Full volume","Full awaaz"),tr("Alarm volume goes to maximum","Alarm ki awaaz apne aap max ho jati hai"),s.loud)}
+    ${tg("allday",tr("24 hours","24 ghante"),tr("Turn off to use only the time below","Band karo to sirf neeche ka time"),s.allday)}
    </div>
-   <div class="tgf" id="na-win" ${s.allday?"hidden":""}><span class="note">Time:</span><input type="time" id="na-from" value="${naHM(s.from)}"><span class="note">to</span><input type="time" id="na-to" value="${naHM(s.to)}"></div>
+   <div class="tgf" id="na-win" ${s.allday?"hidden":""}><span class="note">${tr("Time:","Time:")}</span><input type="time" id="na-from" value="${naHM(s.from)}"><span class="note">${tr("to","se")}</span><input type="time" id="na-to" value="${naHM(s.to)}"></div>
    <div class="cpterms">
-    <label class="note">BUY alarm every <select id="na-be">${opt([30,60,120,180],s.buyEvery,x=>x+" sec")}</select></label>
-    <label class="note">SELL alarm every <select id="na-se">${opt([60,120,180,300],s.sellEvery,x=>x+" sec")}</select></label>
-    <label class="note">Stop after <select id="na-mx">${opt([10,20,30,60],s.maxMin,x=>x+" min")}</select></label></div>
-   <div class="cpexp"><button type="button" class="primary" id="na-test">Test alarm</button><button type="button" class="mini ghost" id="na-ack">Seen (stop alarm)</button><button type="button" class="mini ghost" id="na-snz">${snz?"Cancel snooze":"Snooze 1 hour"}</button></div>
+    <label class="note">${tr("BUY alarm every ","BUY alarm har ")}<select id="na-be">${opt([30,60,120,180],s.buyEvery,x=>x+" sec")}</select></label>
+    <label class="note">${tr("SELL alarm every ","SELL alarm har ")}<select id="na-se">${opt([60,120,180,300],s.sellEvery,x=>x+" sec")}</select></label>
+    <label class="note">${tr("Stop after ","Maximum ")}<select id="na-mx">${opt([10,20,30,60],s.maxMin,x=>x+" min")}</select></label></div>
+   <div class="cpexp"><button type="button" class="primary" id="na-test">${tr("Test alarm","Test alarm")}</button><button type="button" class="mini ghost" id="na-ack">${tr("Seen (stop alarm)","Dekh liya (band karo)")}</button><button type="button" class="mini ghost" id="na-snz">${snz?tr("Cancel snooze","Snooze hatao"):tr("Snooze 1 hour","1 ghanta snooze")}</button></div>
    <p class="note" id="na-msg" style="margin:6px 0"></p>
-   <div class="pcsec">Last 12 hours</div>
-   <p class="note">Notifications: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. Orders added in the app: <b>${sm.made}</b>.${sm.missing?` <span class="warnline">Maybe ${sm.missing} order(s) are not added in the app. Please check.</span>`:""}</p>
-   <p class="note">This is only an estimate. The notification time can differ from the real order time.</p>
-   <div class="cpexp"><button type="button" class="mini ghost" id="na-clr">Clear log</button><button type="button" class="mini ghost" data-close>Close</button></div></div>`,el=>{
+   <div class="pcsec">${tr("Last 12 hours","Pichle 12 ghante")}</div>
+   <p class="note">${tr(`Notifications: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. Orders added in the app: <b>${sm.made}</b>.`,`Notification: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. App me daale gaye order: <b>${sm.made}</b>.`)}${sm.missing?` <span class="warnline">${tr(`Maybe ${sm.missing} order(s) are not added in the app. Please check.`,`Shayad ${sm.missing} order app me nahi daale. Check karo.`)}</span>`:""}</p>
+   <p class="note">${tr("This is only an estimate. The notification time can differ from the real order time.","Ye sirf andaza hai. Notification ka time order ke asli time se alag ho sakta hai.")}</p>
+   <div class="cpexp"><button type="button" class="mini ghost" id="na-clr">${tr("Clear log","Log saaf karo")}</button><button type="button" class="mini ghost" data-close>${tr("Close","Band karo")}</button></div></div>`,el=>{
     const q=x=>el.querySelector(x),msg=t=>{q("#na-msg").textContent=t};
     el.querySelectorAll("[data-na]").forEach(c=>c.onchange=()=>{
-      const k=c.dataset.na;if(k==="on"&&c.checked&&!naRead().access){c.checked=false;msg("Give Notification access first (setup step 1).");return}
+      const k=c.dataset.na;if(k==="on"&&c.checked&&!naRead().access){c.checked=false;msg(tr("Give Notification access first (setup step 1).","Pehle Notification access do (setup ka step 1)."));return}
       naSet({[k]:c.checked});if(k==="allday")q("#na-win").hidden=c.checked;toast(c.checked?"ON":"OFF")});
     q("#na-from").onchange=q("#na-to").onchange=()=>naSet({from:naMin(q("#na-from").value),to:naMin(q("#na-to").value)});
     q("#na-be").onchange=()=>naSet({buyEvery:+q("#na-be").value});
     q("#na-se").onchange=()=>naSet({sellEvery:+q("#na-se").value});
     q("#na-mx").onchange=()=>naSet({maxMin:+q("#na-mx").value});
-    q("#na-acc").onclick=()=>{if(naRead().access){msg("Notification access is already given.");return}n.naOpenAccess();msg("Find Pexai in the list, turn it ON, then come back.")};
-    q("#na-bat").onclick=()=>{n.naOpenBattery();msg("Choose Battery > Unrestricted.")};
-    q("#na-dnd").onclick=()=>{n.naOpenDnd();msg("Keep Alarms allowed.")};
-    q("#na-test").onclick=()=>{const s2=naRead();if(!s2.access){msg("Give Notification access first.");return}
+    q("#na-acc").onclick=()=>{if(naRead().access){msg(tr("Notification access is already given.","Notification access mil gaya hai."));return}n.naOpenAccess();msg(tr("Find Pexai in the list, turn it ON, then come back.","List me Pexai dhundo, ON karo, phir wapas aao."))};
+    q("#na-bat").onclick=()=>{n.naOpenBattery();msg(tr("Choose Battery > Unrestricted.","Battery > Unrestricted chuno."))};
+    q("#na-dnd").onclick=()=>{n.naOpenDnd();msg(tr("Keep Alarms allowed.","Alarms ko allow rakho."))};
+    q("#na-test").onclick=()=>{const s2=naRead();if(!s2.access){msg(tr("Give Notification access first.","Pehle Notification access do."));return}
       if(!s2.on){naSet({on:true});q("[data-na=on]").checked=true}
-      msg(n.naTest()?"Alarm is ringing. Tap 'Seen' to stop it.":"The alarm service is not running yet. Turn access ON and reopen the app.")};
-    q("#na-ack").onclick=()=>{n.naAck();msg("Alarm stopped.")};
-    q("#na-snz").onclick=()=>{const on=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:on?0:Date.now()+3600000});q("#na-snz").textContent=on?"Snooze 1 hour":"Cancel snooze";msg(on?"Snooze cancelled.":"No alarm for 1 hour.")};
-    q("#na-clr").onclick=()=>{n.naClearLog();msg("Log cleared.")}});
+      msg(n.naTest()?tr("Alarm is ringing. Tap 'Seen' to stop it.","Alarm baj raha hai. Band karne ko 'Dekh liya' dabao."):tr("The alarm service is not running yet. Turn access ON and reopen the app.","Alarm service abhi chalu nahi hai. Access ON karke app dobara kholo."))};
+    q("#na-ack").onclick=()=>{n.naAck();msg(tr("Alarm stopped.","Alarm band."))};
+    q("#na-snz").onclick=()=>{const on=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:on?0:Date.now()+3600000});q("#na-snz").textContent=on?tr("Snooze 1 hour","1 ghanta snooze"):tr("Cancel snooze","Snooze hatao");msg(on?tr("Snooze cancelled.","Snooze hata diya."):tr("No alarm for 1 hour.","1 ghante tak alarm nahi bajega."))};
+    q("#na-clr").onclick=()=>{n.naClearLog();msg(tr("Log cleared.","Log saaf."))}});
 };
 
 // compact card at the top of the menu: status and an ON/OFF switch, always one tap away
 function nalCard(){
   if(!NA()||!feat("nightalarm"))return"";const s=naRead();if(!s)return"";
   const snz=s.snoozeUntil>Date.now();
-  const sub=!s.access?"Setup pending: give Notification access":s.ringing?"Alarm is ringing":!s.on?"Off":snz?"Snoozed":"ON · BUY"+(s.sell?" + SELL":"")+" · "+(s.allday?"24 hours":naHM(s.from)+"–"+naHM(s.to));
-  return`<div class="nalc ${s.on&&s.access?"on":""}"><button type="button" class="nalb" id="nalOpen"><span class="nali">🔔</span><span><b>Night order alarm</b><small>${esc(sub)}</small></span></button>${s.ringing?'<button type="button" class="mini primary" id="nalAck">Seen</button>':`<label class="tog"><input type="checkbox" id="nalTog" ${s.on&&s.access?"checked":""}><span></span></label>`}</div>`}
+  const sub=!s.access?tr("Setup pending: give Notification access","Setup baaki: Notification access do"):s.ringing?tr("Alarm is ringing","Alarm baj raha hai"):!s.on?tr("Off","Band hai"):snz?tr("Snoozed","Snooze me"):"ON · BUY"+(s.sell?" + SELL":"")+" · "+(s.allday?tr("24 hours","24 ghante"):naHM(s.from)+"–"+naHM(s.to));
+  return`<div class="nalc ${s.on&&s.access?"on":""}"><button type="button" class="nalb" id="nalOpen"><span class="nali">🔔</span><span><b>${tr("Night order alarm","Raat ka order alarm")}</b><small>${esc(sub)}</small></span></button>${s.ringing?'<button type="button" class="mini primary" id="nalAck">${tr("Seen","Dekh liya")}</button>':`<label class="tog"><input type="checkbox" id="nalTog" ${s.on&&s.access?"checked":""}><span></span></label>`}</div>`}
 function nalBind(close){
   const n=NA();if(!n)return;
   const o=document.querySelector("#nalOpen");if(o)o.onclick=()=>{close();sheets.nalarm()};
   const a=document.querySelector("#nalAck");if(a)a.onclick=()=>{n.naAck();openDrawer()};
   const t=document.querySelector("#nalTog");if(t)t.onchange=()=>{
-    if(t.checked&&!naRead().access){t.checked=false;toast("Give Notification access first");close();sheets.nalarm();return}
-    naSet({on:t.checked});toast(t.checked?"Night alarm ON":"Night alarm OFF");openDrawer()}}
+    if(t.checked&&!naRead().access){t.checked=false;toast(tr("Give Notification access first","Pehle Notification access do"));close();sheets.nalarm();return}
+    naSet({on:t.checked});toast(t.checked?tr("Night alarm ON","Night alarm ON"):tr("Night alarm OFF","Night alarm OFF"));openDrawer()}}
 // ================= FEATURES: switching parts on/off, licence codes, owner tools =================
 // The list of parts and feat() live in 05-features.js. This file applies the switches to the screen
 // and handles licence codes (signed with the owner's private key, checked with the public key in LIC_PUB).
