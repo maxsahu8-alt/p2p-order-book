@@ -36,6 +36,7 @@ public class NightAlarmService extends NotificationListenerService {
     public static final String PREF = "nightalarm";
     static final String CH = "na_alarm";
     static final int NID = 7301;
+    static final String CH_SND = "na_alarm_snd";
     static final String ACT_ACK = "com.p2p.orderbook.NA_ACK";
 
     private static NightAlarmService live;
@@ -300,8 +301,15 @@ public class NightAlarmService extends NotificationListenerService {
                     + ", " + (mp != null ? "player started" : (ok ? "beep" : "no sound source"));
             sp(this).edit().putString("diag", d).apply();
             final MediaPlayer cur = mp;
-            if (cur != null) H.postDelayed(() -> {
-                try { sp(NightAlarmService.this).edit().putString("diag", sp(NightAlarmService.this).getString("diag", "") + (cur == mp && cur.isPlaying() ? ", playing" : ", NOT playing")).apply(); } catch (Throwable e) { }
+            final AudioManager amf = am;
+            H.postDelayed(() -> {
+                boolean playing = false;
+                try { playing = cur != null && cur == mp && cur.isPlaying(); } catch (Throwable e) { }
+                boolean quietVol = false;
+                try { quietVol = amf != null && amf.getStreamVolume(AudioManager.STREAM_ALARM) == 0; } catch (Throwable e) { }
+                try { sp(NightAlarmService.this).edit().putString("diag", sp(NightAlarmService.this).getString("diag", "") + (playing ? ", playing" : ", NOT playing") + (quietVol ? ", alarm volume is 0" : "")).apply(); } catch (Throwable e) { }
+                // backup: if the player is not really playing, or the alarm volume is 0, let Android play the alarm sound with a notification
+                if (ringing && (!playing || quietVol)) backupSound();
             }, 800);
         } catch (Throwable e) { }
         try {
@@ -322,6 +330,31 @@ public class NightAlarmService extends NotificationListenerService {
     private void releasePlayer() {
         try { if (mp != null) { try { mp.stop(); } catch (Exception e) { } mp.release(); } } catch (Exception e) { }
         mp = null;
+    }
+
+    /** Backup sound: a notification on a channel whose sound is the alarm tone (alarm audio attributes, may pass Do Not Disturb). */
+    private void backupSound() {
+        try {
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel(CH_SND) == null) {
+                NotificationChannel ch = new NotificationChannel(CH_SND, "Night order alarm sound", NotificationManager.IMPORTANCE_HIGH);
+                Uri u = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+                if (u == null) u = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+                ch.setSound(u, new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+                ch.enableVibration(true);
+                ch.setBypassDnd(true);
+                nm.createNotificationChannel(ch);
+            }
+            Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(this, CH_SND) : new Notification.Builder(this);
+            b.setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                    .setContentTitle(hi(this) ? "Order alarm" : "Order alarm")
+                    .setContentText(hi(this) ? "Naya order aaya hai. KuCoin kholo." : "A new order arrived. Open KuCoin.")
+                    .setCategory(Notification.CATEGORY_ALARM)
+                    .setAutoCancel(true);
+            if (Build.VERSION.SDK_INT < 26) { b.setPriority(Notification.PRIORITY_MAX); b.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM), AudioManager.STREAM_ALARM); }
+            nm.notify(NID + 1, b.build());
+            err("backup sound used");
+        } catch (Throwable e) { }
     }
 
     private void showNote() {
@@ -362,7 +395,7 @@ public class NightAlarmService extends NotificationListenerService {
             H.removeCallbacks(quiet);
             releasePlayer();
             try { if (wl != null && wl.isHeld()) wl.release(); } catch (Exception e) { }
-            try { ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancel(NID); } catch (Exception e) { }
+            try { ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancel(NID); ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancel(NID + 1); } catch (Exception e) { }
         });
     }
 
