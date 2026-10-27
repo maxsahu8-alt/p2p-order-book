@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=181;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=182;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00182","28 Oct 2026",["Night order alarm: the Sound check line now appears a moment after you tap Test alarm, without closing the screen."]],
   ["0.0.0.00181","28 Oct 2026",["Night order alarm: if an old APK is installed the screen now says so. After a test the screen shows a Sound check line (alarm volume, ringer mode, Do Not Disturb filter, whether the player is really playing) so a silent alarm can be found. Needs the new APK (0.0.0.00107)."]],
   ["0.0.0.00180","28 Oct 2026",["Night order alarm: the From and To times now sit side by side."]],
   ["0.0.0.00179","28 Oct 2026",["Night order alarm: the test alarm made no sound on some phones. The alarm no longer stops when Android refuses to raise the volume (for example in Do Not Disturb), it tries the alarm, ringtone and notification sounds in turn and finally a built-in beep, and the screen shows the last sound problem if there is one. Needs the new APK (0.0.0.00106)."]],

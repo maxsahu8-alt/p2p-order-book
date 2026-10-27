@@ -64,7 +64,7 @@ sheets.nalarm=function(){
    <p class="note" id="na-msg" style="margin:6px 0"></p>
    <div class="pcsec">${tr("Activity","Activity")}</div>
    <p class="note nap-heard">${heard}</p>
-   ${s.diag?`<p class="note">${tr("Sound check: ","Sound check: ")}${esc(s.diag)}</p>`:""}
+   <p class="note" id="na-diag" ${s.diag?"":"hidden"}>${s.diag?tr("Sound check: ","Sound check: ")+esc(s.diag):""}</p>
    ${s.err?`<p class="note warnline">${tr("Last sound problem: ","Aakhri sound problem: ")}${esc(s.err)}</p>`:""}
    ${ev?`<div class="nap-evl">${ev}</div>`:""}
    <p class="note">${tr(`Last 12 hours — Notifications: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. Orders added in the app: <b>${sm.made}</b>.`,`Pichle 12 ghante — Notification: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. App me daale gaye order: <b>${sm.made}</b>.`)}${sm.missing?` <span class="warnline">${tr(`Maybe ${sm.missing} order(s) are not added in the app. Please check.`,`Shayad ${sm.missing} order app me nahi daale. Check karo.`)}</span>`:""}</p>
@@ -83,6 +83,7 @@ sheets.nalarm=function(){
     q("#na-bat").onclick=()=>{n.naOpenBattery();msg(tr("Choose Battery > Unrestricted, then come back.","Battery > Unrestricted chuno, phir wapas aao."))};
     q("#na-dnd").onclick=()=>{n.naOpenDnd();msg(tr("Keep Alarms allowed.","Alarms ko allow rakho."))};
     q("#na-test").onclick=()=>{const s2=naRead();if(!s2.access){msg(tr("Give Notification access first.","Pehle Notification access do."));return}
+      setTimeout(()=>{try{const r=naRead(),d=q("#na-diag");if(d&&r){d.hidden=!r.diag&&!r.err;d.textContent=(r.diag?tr("Sound check: ","Sound check: ")+r.diag:"")+(r.err?" · "+tr("problem: ","problem: ")+r.err:"")}}catch(e){}},1600);
       msg(n.naTest()?tr("Alarm is ringing. Tap 'Seen' to stop it.","Alarm baj raha hai. Band karne ko 'Dekh liya' dabao."):tr("The alarm service is not running yet. Tap Reconnect or reopen the app.","Alarm service abhi chalu nahi hai. Reconnect dabao ya app dobara kholo."))};
     q("#na-ack").onclick=()=>{n.naAck();msg(tr("Alarm stopped.","Alarm band."))};
     q("#na-snz").onclick=()=>{const on=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:on?0:Date.now()+3600000});q("#na-snz").textContent=on?tr("Snooze 1 hour","1 ghanta snooze"):tr("Cancel snooze","Snooze hatao");msg(on?tr("Snooze cancelled.","Snooze hata diya."):tr("No alarm for 1 hour.","1 ghante tak alarm nahi bajega."))};
