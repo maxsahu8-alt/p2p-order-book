@@ -67,6 +67,12 @@ public class NightAlarmService extends NotificationListenerService {
             o.put("snoozeUntil", p.getLong("snoozeUntil", 0));
             o.put("pkg", p.getString("pkg", "kucoin"));
             o.put("access", hasAccess(c));
+            o.put("listening", live != null);
+            o.put("battery", ignoringBattery(c));
+            o.put("lang", p.getString("lang", "en"));
+            o.put("seenAt", p.getLong("seenAt", 0));
+            o.put("seenKind", p.getString("seenKind", ""));
+            o.put("seenPkg", p.getString("seenPkg", ""));
             o.put("ringing", live != null && live.ringing);
             o.put("kind", live != null ? live.ringKind : "");
         } catch (Exception e) { }
@@ -87,11 +93,24 @@ public class NightAlarmService extends NotificationListenerService {
             if (o.has("buyEvery")) e.putInt("buyEvery", clamp(o.getInt("buyEvery"), 20, 600));
             if (o.has("sellEvery")) e.putInt("sellEvery", clamp(o.getInt("sellEvery"), 20, 900));
             if (o.has("maxMin")) e.putInt("maxMin", clamp(o.getInt("maxMin"), 1, 120));
+            if (o.has("lang")) e.putString("lang", "hi".equals(o.getString("lang")) ? "hi" : "en");
             if (o.has("snoozeUntil")) e.putLong("snoozeUntil", o.getLong("snoozeUntil"));
             e.apply();
             if (!o.optBoolean("on", sp(c).getBoolean("on", false)) && live != null) live.stopRing();
         } catch (Exception e) { }
     }
+
+    public static boolean ignoringBattery(Context c) {
+        try { return ((PowerManager) c.getSystemService(Context.POWER_SERVICE)).isIgnoringBatteryOptimizations(c.getPackageName()); }
+        catch (Exception e) { return false; }
+    }
+
+    /** Ask Android to connect the listener again (used when access is given but the service is not connected). */
+    public static void rebind(Context c) {
+        try { if (Build.VERSION.SDK_INT >= 24) requestRebind(new android.content.ComponentName(c, NightAlarmService.class)); } catch (Exception e) { }
+    }
+
+    static boolean hi(Context c) { return "hi".equals(sp(c).getString("lang", "en")); }
 
     static int clamp(int v, int a, int b) { return Math.max(a, Math.min(b, v)); }
 
@@ -169,7 +188,6 @@ public class NightAlarmService extends NotificationListenerService {
     public void onNotificationPosted(StatusBarNotification sbn) {
         try {
             SharedPreferences p = sp(this);
-            if (!p.getBoolean("on", false)) return;
             if (!fromKucoin(this, sbn.getPackageName())) return;
             Notification n = sbn.getNotification();
             if (n == null || n.extras == null) return;
@@ -177,6 +195,9 @@ public class NightAlarmService extends NotificationListenerService {
             CharSequence ti = n.extras.getCharSequence(Notification.EXTRA_TITLE);
             CharSequence tx = n.extras.getCharSequence(Notification.EXTRA_TEXT);
             String kind = classify(ti == null ? "" : ti.toString(), tx == null ? "" : tx.toString());
+            // only the kind, time and app name are kept (this lets the screen show that KuCoin is being heard)
+            p.edit().putLong("seenAt", System.currentTimeMillis()).putString("seenKind", kind).putString("seenPkg", sbn.getPackageName()).apply();
+            if (!p.getBoolean("on", false)) return;
             if (kind.equals("CHAT") || kind.equals("OTHER")) return; // never read or kept
             // an update of the same notification (same id and tag) is not a new order
             String key = sbn.getKey();
@@ -285,13 +306,13 @@ public class NightAlarmService extends NotificationListenerService {
             boolean buy = ringKind.equals("BUY");
             Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(this, CH) : new Notification.Builder(this);
             b.setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                    .setContentTitle(buy ? "BUY order: payment karna hai!" : "SELL order aaya: buyer pay kar raha hai")
-                    .setContentText("KuCoin kholo. Dekh liya dabane tak alarm bajega.")
+                    .setContentTitle(hi(this) ? (buy ? "BUY order: payment karna hai!" : "SELL order aaya: buyer pay kar raha hai") : (buy ? "BUY order: payment needed!" : "SELL order: buyer is paying"))
+                    .setContentText(hi(this) ? "KuCoin kholo. Dekh liya dabane tak alarm bajega." : "Open KuCoin. The alarm rings until you tap Seen.")
                     .setCategory(Notification.CATEGORY_ALARM)
                     .setContentIntent(pi)
                     .setDeleteIntent(pa)
                     .setAutoCancel(true)
-                    .addAction(new Notification.Action.Builder(null, "Dekh liya", pa).build());
+                    .addAction(new Notification.Action.Builder(null, hi(this) ? "Dekh liya" : "Seen", pa).build());
             if (Build.VERSION.SDK_INT < 26) b.setPriority(Notification.PRIORITY_MAX);
             nm.notify(NID, b.build());
         } catch (Throwable e) { }

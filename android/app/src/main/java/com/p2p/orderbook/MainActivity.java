@@ -986,6 +986,9 @@ public class MainActivity extends Activity {
         public boolean naTest() { return NightAlarmService.test(MainActivity.this); }
 
         @JavascriptInterface
+        public void naRebind() { NightAlarmService.rebind(MainActivity.this); }
+
+        @JavascriptInterface
         public void naOpenAccess() {
             runOnUiThread(() -> {
                 try { startActivity(new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
