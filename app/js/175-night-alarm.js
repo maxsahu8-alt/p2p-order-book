@@ -66,3 +66,17 @@ sheets.nalarm=function(){
     q("#na-snz").onclick=()=>{const on=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:on?0:Date.now()+3600000});q("#na-snz").textContent=on?"1 ghanta snooze":"Snooze hatao";msg(on?"Snooze hata diya.":"1 ghante tak alarm nahi bajega.")};
     q("#na-clr").onclick=()=>{n.naClearLog();msg("Log saaf.")}});
 };
+
+// compact card at the top of the menu: status and an ON/OFF switch, always one tap away
+function nalCard(){
+  if(!NA()||!feat("nightalarm"))return"";const s=naRead();if(!s)return"";
+  const snz=s.snoozeUntil>Date.now();
+  const sub=!s.access?"Setup baaki: Notification access do":s.ringing?"Alarm baj raha hai":!s.on?"Band hai":snz?"Snooze me":"ON · BUY"+(s.sell?" + SELL":"")+" · "+(s.allday?"24 ghante":naHM(s.from)+"–"+naHM(s.to));
+  return`<div class="nalc ${s.on&&s.access?"on":""}"><button type="button" class="nalb" id="nalOpen"><span class="nali">🔔</span><span><b>Night order alarm</b><small>${esc(sub)}</small></span></button>${s.ringing?'<button type="button" class="mini primary" id="nalAck">Dekh liya</button>':`<label class="tog"><input type="checkbox" id="nalTog" ${s.on&&s.access?"checked":""}><span></span></label>`}</div>`}
+function nalBind(close){
+  const n=NA();if(!n)return;
+  const o=document.querySelector("#nalOpen");if(o)o.onclick=()=>{close();sheets.nalarm()};
+  const a=document.querySelector("#nalAck");if(a)a.onclick=()=>{n.naAck();openDrawer()};
+  const t=document.querySelector("#nalTog");if(t)t.onchange=()=>{
+    if(t.checked&&!naRead().access){t.checked=false;toast("Pehle Notification access do");close();sheets.nalarm();return}
+    naSet({on:t.checked});toast(t.checked?"Night alarm ON":"Night alarm OFF");openDrawer()}}

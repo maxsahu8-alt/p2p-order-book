@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=174;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=175;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00175","28 Oct 2026",["Night order alarm is now at the top of the menu: one tap opens its settings and a switch turns it ON or OFF. It shows if setup is still pending, if it is snoozed, or the time window, and a Dekh liya button appears while the alarm is ringing."]],
   ["0.0.0.00174","28 Oct 2026",["Night order alarm (Android app): when KuCoin sends a new BUY (Action Needed) or SELL (Buyer is paying) notification, Pexai rings a loud alarm again and again until you tap Dekh liya. Set it up from About > Night order alarm: allow Notification access, set battery to Unrestricted and allow alarms in Do Not Disturb. Choose BUY / SELL, 24 hours or a time window, how often it rings, a 1 hour snooze and a Test button. Only the type and time of a notification is kept, never names or chat messages. It also shows how many order notifications came in the last 12 hours against the orders written in the app. Needs the new APK (0.0.0.00104)."]],
   ["0.0.0.00173","27 Oct 2026",["Smart Intake: a KuCoin order number is 24 characters printed over two lines. When the end (for example 0bf) was on the same line, after the Created At line, or read with a letter O, it was dropped, so the order ID came out wrong. The missing end is now taken from the text right after the number."]],
   ["0.0.0.00172","23 Oct 2026",["Bank charges: record money the bank cuts (cash deposit, SMS, IMPS/NEFT, UPI, ATM, card, min balance penalty, account maintenance, GST and more) from Add → Bank charges or the Bank charge button on a bank. It lowers that bank's balance, shows in the bank's list (tap to edit) and counts as a business cost in profit","Check balance: if the real balance is lower than the app, one tap saves the difference as a bank charge","Report shows Bank charges on their own line, apart from personal expenses"]],
