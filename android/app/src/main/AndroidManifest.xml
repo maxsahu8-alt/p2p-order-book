@@ -39,6 +39,12 @@
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/p2p_widget_info" />
         </receiver>
+        <service android:name=".NightAlarmService" android:exported="true"
+            android:label="Pexai night order alarm"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>
+        </service>
+        <receiver android:name=".NightAlarmAck" android:exported="false" />
         <provider android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"
             android:exported="false" android:grantUriPermissions="true">

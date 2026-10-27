@@ -185,7 +185,7 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new OcrBridge(), "P2POcr");
         setContentView(web);
         web.loadUrl(START);
-        if (state == null) handleShare(getIntent());
+        if (state == null) { handleShare(getIntent()); try { if (getIntent().getBooleanExtra("na_ack", false)) NightAlarmService.ack(this); } catch (Throwable e) { } }
     }
 
     // ---------------------------------------------------------------- screenshots shared from the gallery
@@ -207,6 +207,7 @@ public class MainActivity extends Activity {
         super.onNewIntent(it);
         setIntent(it);
         handleShare(it);
+        try { if (it != null && it.getBooleanExtra("na_ack", false)) NightAlarmService.ack(this); } catch (Throwable e) { }
     }
 
     /** Copies pictures shared to Pexai (Share > Pexai) into the app's private blob folder and tells the web app. */
@@ -964,6 +965,49 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void stopSpeak() { runOnUiThread(() -> { if (tts != null) tts.stop(); }); }
+
+        // ---- Night order alarm
+        @JavascriptInterface
+        public String naGet() { return NightAlarmService.settings(MainActivity.this).toString(); }
+
+        @JavascriptInterface
+        public void naSet(String json) { NightAlarmService.save(MainActivity.this, json); }
+
+        @JavascriptInterface
+        public String naLog() { return NightAlarmService.log(MainActivity.this).toString(); }
+
+        @JavascriptInterface
+        public void naClearLog() { NightAlarmService.clearLog(MainActivity.this); }
+
+        @JavascriptInterface
+        public void naAck() { NightAlarmService.ack(MainActivity.this); }
+
+        @JavascriptInterface
+        public boolean naTest() { return NightAlarmService.test(MainActivity.this); }
+
+        @JavascriptInterface
+        public void naOpenAccess() {
+            runOnUiThread(() -> {
+                try { startActivity(new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
+                catch (Exception e) { toast("Settings > Notifications > Notification access kholo"); }
+            });
+        }
+
+        @JavascriptInterface
+        public void naOpenBattery() {
+            runOnUiThread(() -> {
+                try { startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName())).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
+                catch (Exception e) { toast("Settings > Apps > Pexai > Battery > Unrestricted"); }
+            });
+        }
+
+        @JavascriptInterface
+        public void naOpenDnd() {
+            runOnUiThread(() -> {
+                try { startActivity(new Intent("android.settings.ZEN_MODE_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
+                catch (Exception e) { toast("Settings > Do Not Disturb > Alarms ON rakho"); }
+            });
+        }
 
         @JavascriptInterface
         public void checkUpdate() { new Thread(() -> checkUpdates(true)).start(); }
