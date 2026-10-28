@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=187;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=188;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00188","28 Oct 2026",["The bell panel has a cleaner look: an alarm card with the switch and four icon buttons (Seen, Snooze, Test, Settings), a summary row (alerts, open orders, KuCoin last heard), and separate cards for alerts, open orders and KuCoin notifications with counts and tidy empty states."]],
   ["0.0.0.00187","28 Oct 2026",["The bell in the top bar is now a small control centre: the Night order alarm switch with Seen, Snooze, Test and Alarm settings, the list of things that need attention, your open orders (tap one to open it) and the latest KuCoin notifications. The big alarm card in the menu is removed. The bell is always shown; its dot follows the alarm, and in the browser it shows alerts."]],
   ["0.0.0.00186","28 Oct 2026",["The Night order alarm bell is now small and sits above the Search icon."]],
   ["0.0.0.00185","28 Oct 2026",["Night order alarm now has a bell in the top bar, next to Search. The dot shows the state: green Ready, grey Off, orange needs attention (setup, not connected, snoozed) and red blinking while it rings. Tap it to open the alarm screen."]],
