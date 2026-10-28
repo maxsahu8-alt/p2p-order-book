@@ -1557,6 +1557,10 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
 .nap-win{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 10px}
 .nap-win label{display:block}.nap-win small{display:block;color:var(--muted);font-size:.7rem;margin-bottom:3px}
 .nap-win input{width:100%}
+.xr{display:flex;align-items:center;gap:2px}
+.nadot{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:#9ca3af;border:2px solid var(--bg)}
+.nadot.ok{background:#16a34a}.nadot.warn{background:#d97706}.nadot.bad{background:#dc2626;animation:napulse 1s infinite}
+@keyframes napulse{50%{opacity:.35}}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -1638,7 +1642,7 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
   <header class="xhead">
     <button class="ava menuB bell" type="button" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg><em class="ih" id="bellCount">0</em></button>
     <div class="htitle"><b id="pageTitle">Pexai</b><span><span class="sub" id="syncNote">Loading…</span><span id="todayLbl"></span></span></div>
-    <button class="ibtn" type="button" id="searchBtn" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg></button>
+    <div class="xr"><button class="ibtn ih" type="button" id="alarmBtn" aria-label="Night order alarm"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><i class="nadot" id="alarmDot"></i></button><button class="ibtn" type="button" id="searchBtn" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg></button></div>
   </header>
 
 
@@ -6704,7 +6708,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=184;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=185;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6771,6 +6775,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00185","28 Oct 2026",["Night order alarm now has a bell in the top bar, next to Search. The dot shows the state: green Ready, grey Off, orange needs attention (setup, not connected, snoozed) and red blinking while it rings. Tap it to open the alarm screen."]],
   ["0.0.0.00184","28 Oct 2026",["Night order alarm: found why the test alarm was silent. The app did not declare the wake lock permission, so Android refused it and the alarm stopped before it made any sound. The permissions (wake lock, vibrate, notifications) are now declared, and a refused wake lock can no longer stop the alarm. Android 13 and newer will ask to allow notifications. Needs the new APK (0.0.0.00109)."]],
   ["0.0.0.00183","28 Oct 2026",["Night order alarm: a backup sound. If the alarm player is not really playing, or the alarm volume is 0, Android now plays the alarm tone through an alarm notification as well. Needs the new APK (0.0.0.00108)."]],
   ["0.0.0.00182","28 Oct 2026",["Night order alarm: the Sound check line now appears a moment after you tap Test alarm, without closing the screen."]],
@@ -7390,7 +7395,7 @@ sheets.market=function(){const draw=()=>{const m=MK,ago=m.t?Math.max(0,Math.roun
    ${m.coins&&m.coins.length?`<div class="pcsec">Coins</div><div class="mkc h"><span>Coin</span><span class="r">In USDT</span><span class="r">In ₹</span><span class="r">24h</span></div>${m.coins.map(c=>`<div class="mkc"><b>${c.s}</b><span class="r">${mkP(c.usdt)}</span><span class="r">₹${mkP(c.inr)}</span><span class="r ${c.chg>=0?"p7pos":"p7neg"}">${c.chg==null?"":mkPct(c.chg)}</span></div>`).join("")}`:""}
    <p class="note">Market prices only, not your trade rates. ₹ price of a coin = its USDT price × USDT/INR. P2P ads may not load on some networks.</p></div>`,el=>{el.querySelector("#mk-r").onclick=async()=>{await mkRefresh();if($("#sheetBody").querySelector("#mk-r"))draw()}})};
  draw();if(!mkBusy&&Date.now()-MK.t>15e3)mkRefresh().then(()=>{if($("#sheetBody")&&$("#sheetBody").querySelector("#mk-r")&&!$("#sheetBg").hidden)draw()})};
-function mkStart(){try{const h=document.querySelector("header.xhead"),sb=document.getElementById("searchBtn");if(h&&sb&&!document.getElementById("mkStrip")){const d=document.createElement("button");d.type="button";d.className="mkchip";d.id="mkStrip";d.setAttribute("data-sheet","market");d.setAttribute("aria-label","Live USDT price in rupees");h.insertBefore(d,sb);h.classList.add("mk")}mkStrip();mkRefresh();clearInterval(mkTimer);mkTimer=setInterval(()=>{if(!document.hidden)mkRefresh()},60e3);document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-MK.t>45e3)mkRefresh()});window.addEventListener("online",()=>mkRefresh())}catch(e){}}
+function mkStart(){try{const h=document.querySelector("header.xhead"),sb=document.getElementById("searchBtn");if(h&&sb&&!document.getElementById("mkStrip")){const d=document.createElement("button");d.type="button";d.className="mkchip";d.id="mkStrip";d.setAttribute("data-sheet","market");d.setAttribute("aria-label","Live USDT price in rupees");h.insertBefore(d,sb.closest(".xr")||sb);h.classList.add("mk")}mkStrip();mkRefresh();clearInterval(mkTimer);mkTimer=setInterval(()=>{if(!document.hidden)mkRefresh()},60e3);document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-MK.t>45e3)mkRefresh()});window.addEventListener("online",()=>mkRefresh())}catch(e){}}
 
 sheets.ixhist=function(id){const x=recs.find(r=>r.id===id&&r.kind==="ix");if(!x)return;const T=VER_TXT[x.overall]||["","Checked",""],o=x.orderId?orders.find(y=>y.id===x.orderId):null;
   const row=(k,v)=>v?`<div class="dqr"><span>${k}<small>${v}</small></span></div>`:"";
@@ -8344,6 +8349,15 @@ function nalBind(close){
   const t=document.querySelector("#nalTog");if(t)t.onchange=()=>{
     if(t.checked&&!naRead().access){t.checked=false;toast(tr("Give Notification access first","Pehle Notification access do"));close();sheets.nalarm();return}
     naSet({on:t.checked});toast(t.checked?tr("Night alarm ON","Night alarm ON"):tr("Night alarm OFF","Night alarm OFF"));openDrawer()}}
+
+// bell in the top bar: shows the alarm state at a glance and opens the alarm screen
+function nalHeader(){
+  const b=document.getElementById("alarmBtn"),d=document.getElementById("alarmDot");if(!b||!d)return;
+  if(!NA()||!feat("nightalarm")){b.classList.add("ih");return}
+  const s=naRead();if(!s){b.classList.add("ih");return}
+  b.classList.remove("ih");b.hidden=false;const st=naState(s);d.className="nadot "+st.c;b.title=st.t+" · "+st.d}
+(function(){const b=document.getElementById("alarmBtn");if(b)b.onclick=()=>sheets.nalarm();
+  setTimeout(nalHeader,600);setInterval(nalHeader,20000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)nalHeader()})})();
 // ================= FEATURES: switching parts on/off, licence codes, owner tools =================
 // The list of parts and feat() live in 05-features.js. This file applies the switches to the screen
 // and handles licence codes (signed with the owner's private key, checked with the public key in LIC_PUB).

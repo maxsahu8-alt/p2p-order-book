@@ -103,3 +103,12 @@ function nalBind(close){
   const t=document.querySelector("#nalTog");if(t)t.onchange=()=>{
     if(t.checked&&!naRead().access){t.checked=false;toast(tr("Give Notification access first","Pehle Notification access do"));close();sheets.nalarm();return}
     naSet({on:t.checked});toast(t.checked?tr("Night alarm ON","Night alarm ON"):tr("Night alarm OFF","Night alarm OFF"));openDrawer()}}
+
+// bell in the top bar: shows the alarm state at a glance and opens the alarm screen
+function nalHeader(){
+  const b=document.getElementById("alarmBtn"),d=document.getElementById("alarmDot");if(!b||!d)return;
+  if(!NA()||!feat("nightalarm")){b.classList.add("ih");return}
+  const s=naRead();if(!s){b.classList.add("ih");return}
+  b.classList.remove("ih");b.hidden=false;const st=naState(s);d.className="nadot "+st.c;b.title=st.t+" · "+st.d}
+(function(){const b=document.getElementById("alarmBtn");if(b)b.onclick=()=>sheets.nalarm();
+  setTimeout(nalHeader,600);setInterval(nalHeader,20000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)nalHeader()})})();

@@ -32,3 +32,7 @@
 .nap-win{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 10px}
 .nap-win label{display:block}.nap-win small{display:block;color:var(--muted);font-size:.7rem;margin-bottom:3px}
 .nap-win input{width:100%}
+.xr{display:flex;align-items:center;gap:2px}
+.nadot{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:#9ca3af;border:2px solid var(--bg)}
+.nadot.ok{background:#16a34a}.nadot.warn{background:#d97706}.nadot.bad{background:#dc2626;animation:napulse 1s infinite}
+@keyframes napulse{50%{opacity:.35}}

@@ -63,6 +63,9 @@ with sync_playwright() as p:
     pg.evaluate("window.__na.listening=true;window.__na.ringing=false;window.__na.snoozeUntil=0;window.__na.seenAt=Date.now()-120000;window.__na.seenKind='BUY';window.__na.seenPkg='com.kubi.kucoin';sheets.nalarm()");pg.wait_for_timeout(200)
     chk("shows KuCoin heard",pg.evaluate("document.querySelector('.nap-heard').textContent.includes('com.kubi.kucoin')"))
     chk("status banner ready",pg.evaluate("document.querySelector('.nap-hero').classList.contains('ok')"))
+    pg.evaluate("window.__na.on=true;window.__na.access=true;window.__na.listening=true;window.__na.ringing=false;window.__na.snoozeUntil=0;nalHeader()");
+    chk("top bar bell visible and green",pg.evaluate("!document.getElementById('alarmBtn').classList.contains('ih')&&!document.getElementById('alarmBtn').hidden&&document.getElementById('alarmDot').classList.contains('ok')"))
+    pg.evaluate("window.__na.ringing=true;nalHeader()");chk("bell red while ringing",pg.evaluate("document.getElementById('alarmDot').classList.contains('bad')"))
     chk("no page errors",not errs)
     if errs:print(errs)
     b.close()
