@@ -15,9 +15,21 @@ function naSummary(log,ords,since){
   const orderN=c.BUY+c.SELL;
   return{buy:c.BUY,sell:c.SELL,done:c.DONE,made,orderN,missing:Math.max(0,orderN-made)};
 }
+// last night's report: orders heard, how many rang, how fast they were seen, and cancels written in the app
+function naNight(s,log,ords){
+  const from=s.allday?22*60:s.from,to=s.allday?8*60:s.to,now=new Date();
+  let st=new Date(now);st.setHours(Math.floor(from/60),from%60,0,0);if(st>now)st.setDate(st.getDate()-1);
+  const dur=((to-from)%1440+1440)%1440||1440,en=new Date(st.getTime()+dur*60000),live=now<en;
+  const a=st.getTime(),b=en.getTime(),L=(log||[]).filter(x=>x&&x.t>=a&&x.t<b);
+  const ord=L.filter(x=>x.k==="BUY"||x.k==="SELL"),acks=L.filter(x=>x.k==="ACK"&&x.d!=null).map(x=>x.d);
+  const cancel=(ords||[]).filter(o=>o.status==="Cancelled"&&(+o.time||0)>=a&&(+o.time||0)<b).length;
+  return{live,a,b,orders:ord.length,buy:ord.filter(x=>x.k==="BUY").length,sell:ord.filter(x=>x.k==="SELL").length,rang:ord.filter(x=>x.r).length,
+    missed:L.filter(x=>x.k==="MISS").length,seen:acks.length,avg:acks.length?Math.round(acks.reduce((m,n)=>m+n,0)/acks.length):0,max:acks.length?Math.max.apply(null,acks):0,cancel};
+}
+const naDur=sec=>sec<90?sec+" s":Math.round(sec/60)+" min";
 const NA_BELL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>';
 function naAgo(t){if(!t)return"";const m=Math.round((Date.now()-t)/60000);return m<1?tr("just now","abhi abhi"):m<60?m+tr(" min ago"," min pehle"):m<1440?Math.round(m/60)+tr(" h ago"," ghante pehle"):Math.round(m/1440)+tr(" d ago"," din pehle")}
-const NA_K={UNK:"New",BUY:"BUY",SELL:"SELL",DONE:"Complete",TEST:"Test",CHAT:"Chat",OTHER:"Other"};
+const NA_K={UNK:"New",ACK:"Seen",MISS:"Missed",BUY:"BUY",SELL:"SELL",DONE:"Complete",TEST:"Test",CHAT:"Chat",OTHER:"Other"};
 // the state shown at the top of the screen
 function naState(s){
   if(!s.ver)return{c:"warn",t:tr("Old APK installed","Purana APK laga hai"),d:tr("Install the latest APK (0.0.0.00107 or newer) for the alarm to work properly.","Alarm sahi chalane ke liye latest APK (0.0.0.00107 ya naya) install karo.")};
@@ -41,7 +53,7 @@ sheets.nalarm=function(){
   const snz=s.snoozeUntil>Date.now();
   const tg=(k,ic,t,d,on)=>`<div class="ns-row">${nsI(ic)}<span class="ns-tx"><b>${esc(t)}</b><small>${esc(d)}</small></span><label class="tog"><input type="checkbox" data-na="${k}" ${on?"checked":""}><span></span></label></div>`;
   const go=(id,ic,t,d,pill,cls)=>`<button type="button" class="ns-row ns-go" id="${id}">${nsI(ic)}<span class="ns-tx"><b>${esc(t)}</b><small>${esc(d)}</small></span><em class="nap-pill ${cls}">${esc(pill)}</em><svg viewBox="0 0 24 24" class="bp-ch"><path d="M9 6l6 6-6 6"/></svg></button>`;
-  const ev=all.slice(-6).reverse().map(x=>`<div class="bp-row bp-ev"><i class="k-${x.k}">${NA_K[x.k]||x.k}</i><span>${new Date(x.t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span><small>${x.r?tr("alarm rang","alarm baja"):tr("no alarm","alarm nahi")}</small></div>`).join("");
+  const ev=all.filter(x=>x.k!=="ACK"&&x.k!=="MISS").slice(-6).reverse().map(x=>`<div class="bp-row bp-ev"><i class="k-${x.k}">${NA_K[x.k]||x.k}</i><span>${new Date(x.t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span><small>${x.r?tr("alarm rang","alarm baja"):tr("no alarm","alarm nahi")}</small></div>`).join("");
   const heard=s.seenAt?`${tr("KuCoin heard","KuCoin suna")} ${naAgo(s.seenAt)}${s.seenKind&&s.seenKind!=="OTHER"?" · "+(NA_K[s.seenKind]||s.seenKind):""}${s.seenPkg?` · <span class="nap-pkg">${esc(s.seenPkg)}</span>`:""}`:tr("No KuCoin notification heard yet.","Abhi tak KuCoin ki koi notification nahi suni.");
   openSheet(`<div class="insw nap bp"><div class="bp-top"><h3>${tr("Night order alarm","Raat ka order alarm")}</h3><button type="button" class="bp-x" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
    <div class="bp-card bp-al nap-hero ${st.c}"><div class="bp-alh"><span class="nap-ic">${NA_BELL}</span><span class="nap-tx"><b>${esc(st.t)}</b><small>${esc(st.d)}</small></span>${s.access&&!s.listening?'<button type="button" class="mini primary" id="na-rb">'+tr("Reconnect","Reconnect")+'</button>':`<label class="tog"><input type="checkbox" data-na="on" ${s.on?"checked":""}><span></span></label>`}</div>
@@ -60,6 +72,7 @@ sheets.nalarm=function(){
     <div class="nap-grid ns-grid">
      <label><small>${tr("BUY rings every","BUY alarm har")}</small><select id="na-be">${opt([30,60,120,180],s.buyEvery,x=>x+" sec")}</select></label>
      <label><small>${tr("SELL rings every","SELL alarm har")}</small><select id="na-se">${opt([60,120,180,300],s.sellEvery,x=>x+" sec")}</select></label>
+     <label><small>${tr("Payment window","Payment time")}</small><select id="na-pm">${opt([0,10,15,20,30],s.payMin,x=>x?x+" min":tr("Off","Band"))}</select></label>
      <label><small>${tr("Stop after","Maximum")}</small><select id="na-mx">${opt([10,20,30,60],s.maxMin,x=>x+" min")}</select></label></div></div>
    <div class="bp-grid ns-act"><button type="button" id="na-test">${BP_IC.test}<span>${tr("Test alarm","Test alarm")}</span></button><button type="button" id="na-ack">${BP_IC.seen}<span>${tr("Seen","Dekh liya")}</span></button><button type="button" id="na-snz" class="${snz?"on":""}">${BP_IC.snz}<span>${snz?tr("Resume","Resume"):tr("Snooze 1h","Snooze 1h")}</span></button></div>
    <p class="note bp-msg" id="na-msg" hidden></p>
@@ -80,6 +93,7 @@ sheets.nalarm=function(){
     q("#na-from").onchange=q("#na-to").onchange=()=>naSet({from:naMin(q("#na-from").value),to:naMin(q("#na-to").value)});
     q("#na-be").onchange=()=>naSet({buyEvery:+q("#na-be").value});
     q("#na-se").onchange=()=>naSet({sellEvery:+q("#na-se").value});
+    q("#na-pm").onchange=()=>naSet({payMin:+q("#na-pm").value});
     q("#na-mx").onchange=()=>naSet({maxMin:+q("#na-mx").value});
     q("#na-acc").onclick=()=>{if(naRead().access){msg(tr("Notification access is already given.","Notification access mil gaya hai."));return}n.naOpenAccess();msg(tr("Find Pexai in the list, turn it ON, then come back.","List me Pexai dhundo, ON karo, phir wapas aao."))};
     q("#na-bat").onclick=()=>{n.naOpenBattery();msg(tr("Choose Battery > Unrestricted, then come back.","Battery > Unrestricted chuno, phir wapas aao."))};
@@ -99,7 +113,7 @@ const bpHead=(ic,t,n,tone)=>`<div class="bp-h"><span class="bp-hi ${tone||""}">$
 sheets.bell=function(){
   const n=NA(),s=n?naRead():null,st=s?naState(s):null,A=(typeof lastAlerts!=="undefined"&&lastAlerts)||[];
   const allP=orders.filter(o=>o.status==="Pending"||o.status==="Appeal"),pend=allP.slice().sort((a,b)=>(b.time||0)-(a.time||0)).slice(0,5);
-  const ev=(s?naLogRead():[]).filter(x=>x.k!=="TEST").slice(-5).reverse();
+  const ev=(s?naLogRead():[]).filter(x=>x.k!=="TEST"&&x.k!=="ACK"&&x.k!=="MISS").slice(-5).reverse();
   const snz=s&&s.snoozeUntil>Date.now(),urgent=A.filter(a=>a.hi).length;
   const alarm=s?`<div class="bp-card bp-al ${st.c}"><div class="bp-alh"><span class="nap-ic">${NA_BELL}</span><span class="nap-tx"><b>${tr("Night order alarm","Raat ka order alarm")}</b><small><i class="bp-st ${st.c}"></i>${esc(st.t)} · ${esc(st.d)}</small></span>${s.access&&!s.listening?'<button type="button" class="mini primary" id="bl-rb">'+tr("Reconnect","Reconnect")+'</button>':`<label class="tog"><input type="checkbox" id="bl-on" ${s.on?"checked":""}><span></span></label>`}</div>
     <div class="bp-grid"><button type="button" id="bl-ack" ${s.ringing?"":"disabled"}>${BP_IC.seen}<span>${tr("Seen","Dekh liya")}</span></button><button type="button" id="bl-snz" class="${snz?"on":""}">${BP_IC.snz}<span>${snz?tr("Resume","Resume"):tr("Snooze 1h","Snooze 1h")}</span></button><button type="button" id="bl-test">${BP_IC.test}<span>${tr("Test","Test")}</span></button><button type="button" id="bl-set">${BP_IC.set}<span>${tr("Settings","Settings")}</span></button></div>
@@ -112,11 +126,13 @@ sheets.bell=function(){
   const attn=`<div class="bp-card">${bpHead(A.length?BP_IC.warn:BP_IC.ok,tr("Needs attention","Dhyan do"),A.length||"",A.length?(urgent?"bad":"warn"):"ok")}${A.length?A.slice(0,6).map(a=>`<button type="button" class="bp-row bl-al ${a.hi?"hi":""}" ${aAttr(a)}><i class="bp-dot"></i><span>${esc(a.t)}</span><svg viewBox="0 0 24 24" class="bp-ch"><path d="M9 6l6 6-6 6"/></svg></button>`).join(""):`<p class="bp-empty">${tr("All clear. Nothing needs attention.","Sab theek hai. Kuch dhyan dene layak nahi.")}</p>`}</div>`;
   const po=`<div class="bp-card">${bpHead(BP_IC.ord,tr("Open orders","Open orders"),allP.length||"",allP.length?"warn":"")}${pend.length?pend.map(o=>`<button type="button" class="bp-row bl-ord" data-oid="${esc(o.id)}"><span class="bp-sd ${o.side==="BUY"?"b":"s"}">${esc(o.side)}</span><span class="bp-tx"><b>${esc(String(o.qty))} ${esc(o.coin||"USDT")}</b><small>${esc(o.cp||"")}${o.time?" · "+naAgo(o.time):""}</small></span><em class="nap-pill warn">${esc(o.status)}</em></button>`).join(""):`<p class="bp-empty">${tr("No open orders.","Koi open order nahi.")}</p>`}</div>`;
   const hv=s?`<div class="bp-card">${bpHead(BP_IC.sig,tr("KuCoin notifications","KuCoin notifications"))}${ev.length?ev.map(x=>`<div class="bp-row bp-ev"><i class="k-${x.k}">${NA_K[x.k]||x.k}</i><span>${new Date(x.t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span><small>${x.r?tr("alarm rang","alarm baja"):tr("no alarm","alarm nahi")}</small></div>`).join(""):`<p class="bp-empty">${s.seenAt?tr("KuCoin heard ","KuCoin suna ")+naAgo(s.seenAt)+".":tr("Waiting for the first KuCoin order notification. Nothing has been heard yet.","Pehli KuCoin order notification ka intezaar hai. Abhi tak kuch nahi suna.")}</p>`}</div>`:"";
+  const nt=s&&s.on?naNight(s,naLogRead(),orders):null;
+  const night=nt?`<div class="bp-card">${bpHead(BP_IC.sig,nt.live?tr("Tonight so far","Aaj raat abhi tak"):tr("Last night","Kal raat"),"")}${nt.orders||nt.cancel||nt.missed?`<div class="bp-nt"><div><b>${nt.orders}</b><span>${tr("Orders","Orders")}</span></div><div><b>${nt.rang}</b><span>${tr("Alarm rang","Alarm baja")}</span></div><div><b class="${nt.missed?"bad":""}">${nt.missed}</b><span>${tr("Not seen","Nahi dekha")}</span></div><div><b class="${nt.cancel?"warn":""}">${nt.cancel}</b><span>${tr("Cancelled","Cancel")}</span></div></div><p class="note" style="margin:6px 0 0">${nt.seen?tr("Seen in ","Dekha gaya ")+naDur(nt.avg)+tr(" on average, slowest "," average me, sabse der ")+naDur(nt.max)+".":""} ${tr("Cancelled counts only orders marked Cancelled in the app.","Cancel sirf wo hain jo app me Cancelled mark hain.")}</p>`:`<p class="bp-empty">${tr("No orders came in this window.","Is time me koi order nahi aaya.")}</p>`}</div>`:"";
   const unk=(s&&Array.isArray(s.unk)?s.unk:[]);
   const unkCard=unk.length?`<div class="bp-card bp-unk">${bpHead(BP_IC.warn,tr("Unrecognised notification","Pehchani nahi gayi notification"),unk.length,"warn")}<p class="note" style="margin:2px 0 6px">${tr("The alarm rang once because KuCoin sent something new. Tell Pexai what it is and it will remember.","Kuch naya aaya isliye alarm ek baar baja. Batao ye kya hai, Pexai yaad rakhega.")}</p>${unk.map((u,i)=>`<div class="bp-unkr"><b>${esc(u.title)}</b><small>${naAgo(u.t)}${u.n>1?" · ×"+u.n:""}</small><div class="bp-unkb" data-ut="${i}"><button type="button" data-lk="BUY">BUY</button><button type="button" data-lk="SELL">SELL</button><button type="button" data-lk="DONE">${tr("Complete","Complete")}</button><button type="button" data-lk="IGNORE">${tr("Ignore","Ignore")}</button></div></div>`).join("")}</div>`:"";
   const calm=!A.length&&!allP.length;
   const calmCard=`<div class="bp-card bp-calm"><span class="bp-hi ok">${BP_IC.ok}</span><span class="bp-tx"><b>${tr("All clear","Sab theek hai")}</b><small>${tr("No alerts and no open orders.","Koi alert nahi aur koi open order nahi.")}</small></span></div>`;
-  openSheet(`<div class="insw nap bp"><div class="bp-top"><h3>${tr("Alerts and alarm","Alerts aur alarm")}</h3><button type="button" class="bp-x" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>${alarm}${unkCard}${sum}${calm?calmCard:attn+po}${hv}</div>`,el=>{
+  openSheet(`<div class="insw nap bp"><div class="bp-top"><h3>${tr("Alerts and alarm","Alerts aur alarm")}</h3><button type="button" class="bp-x" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>${alarm}${unkCard}${night}${sum}${calm?calmCard:attn+po}${hv}</div>`,el=>{
     const q=x=>el.querySelector(x),msg=t=>{const m=q("#bl-msg");if(m){m.textContent=t;m.hidden=!t}};
     el.querySelectorAll(".bl-ord").forEach(b=>b.onclick=()=>{$("#sheetBg").hidden=true;document.body.style.overflow="";try{orderSheet(b.dataset.oid)}catch(e){}});
     el.querySelectorAll("[data-lk]").forEach(b=>b.onclick=()=>{const w=b.closest("[data-ut]"),u=unk[+w.dataset.ut];if(!u)return;try{n.naLearn(u.title,b.dataset.lk)}catch(e){}toast(tr("Saved. Pexai will remember this.","Save ho gaya. Pexai yaad rakhega."));setTimeout(()=>{sheets.bell();nalHeader()},200)});

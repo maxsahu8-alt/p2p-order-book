@@ -139,3 +139,7 @@ label.bp-ck span{color:var(--fg);font-weight:500}
 .bp-unkb button{padding:9px 2px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:700 .72rem var(--body);cursor:pointer}
 .bp-unkb button[data-lk=BUY]{color:#b91c1c}.bp-unkb button[data-lk=SELL]{color:#15803d}
 .ns-learn{border-top:1px solid var(--line);padding:10px 0}
+
+.bp-nt{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.bp-nt b{display:block;font-size:1.1rem}.bp-nt b.bad{color:#dc2626}.bp-nt b.warn{color:#d97706}
+.bp-nt span{font-size:.68rem;color:var(--muted)}
