@@ -73,6 +73,8 @@ public class NightAlarmService extends NotificationListenerService {
             o.put("lang", p.getString("lang", "en"));
             o.put("err", p.getString("err", ""));
             o.put("diag", p.getString("diag", ""));
+            o.put("unk", unknown(c));
+            o.put("learnedN", learned(c).length());
             o.put("notif", ((NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE)).areNotificationsEnabled());
             o.put("ver", BuildConfig.VERSION_NAME);
             o.put("seenAt", p.getLong("seenAt", 0));
@@ -182,6 +184,63 @@ public class NightAlarmService extends NotificationListenerService {
         return "OTHER";
     }
 
+    // ------------------------------------------------------------------ learning
+    /** A notification title made safe to keep: lower case, numbers become #, only letters and a few signs. */
+    static String normTitle(String t) {
+        if (t == null) return "";
+        String x = t.toLowerCase();
+        x = x.replaceAll("\\d+", "#").replaceAll("[^\\p{L}#:' \\-]", " ").replaceAll("\\s+", " ").trim();
+        return x.length() > 80 ? x.substring(0, 80) : x;
+    }
+
+    /** Looks like a KuCoin P2P notification that the app does not know yet. */
+    static boolean p2pish(String title, String text) {
+        String a = ((title == null ? "" : title) + " " + (text == null ? "" : text)).toLowerCase();
+        return a.contains("p2p");
+    }
+
+    static JSONObject learned(Context c) {
+        try { return new JSONObject(sp(c).getString("learn", "{}")); } catch (Exception e) { return new JSONObject(); }
+    }
+
+    public static JSONArray unknown(Context c) {
+        try { return new JSONArray(sp(c).getString("unk", "[]")); } catch (Exception e) { return new JSONArray(); }
+    }
+
+    static synchronized void addUnknown(Context c, String norm) {
+        try {
+            if (norm.length() == 0) return;
+            JSONArray a = unknown(c), b = new JSONArray();
+            boolean found = false;
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.getJSONObject(i);
+                if (o.optString("title").equals(norm)) { o.put("t", System.currentTimeMillis()); o.put("n", o.optInt("n", 1) + 1); found = true; }
+                b.put(o);
+            }
+            if (!found) { JSONObject o = new JSONObject(); o.put("title", norm); o.put("t", System.currentTimeMillis()); o.put("n", 1); b.put(o); }
+            JSONArray out = new JSONArray();
+            for (int i = Math.max(0, b.length() - 5); i < b.length(); i++) out.put(b.get(i));
+            sp(c).edit().putString("unk", out.toString()).apply();
+        } catch (Exception e) { }
+    }
+
+    /** The person says what an unknown notification is: BUY, SELL, DONE or IGNORE. */
+    public static void learn(Context c, String title, String kind) {
+        try {
+            String k = "BUY".equals(kind) || "SELL".equals(kind) || "DONE".equals(kind) ? kind : "IGNORE";
+            String norm = normTitle(title);
+            if (norm.length() == 0) return;
+            JSONObject l = learned(c);
+            if (!l.has(norm) && l.length() >= 40) return;
+            l.put(norm, k);
+            JSONArray a = unknown(c), b = new JSONArray();
+            for (int i = 0; i < a.length(); i++) if (!a.getJSONObject(i).optString("title").equals(norm)) b.put(a.get(i));
+            sp(c).edit().putString("learn", l.toString()).putString("unk", b.toString()).apply();
+        } catch (Exception e) { }
+    }
+
+    public static void forgetLearned(Context c) { sp(c).edit().putString("learn", "{}").putString("unk", "[]").apply(); }
+
     static boolean fromKucoin(Context c, String pkg) {
         if (pkg == null) return false;
         String want = sp(c).getString("pkg", "kucoin").toLowerCase();
@@ -200,6 +259,14 @@ public class NightAlarmService extends NotificationListenerService {
             CharSequence ti = n.extras.getCharSequence(Notification.EXTRA_TITLE);
             CharSequence tx = n.extras.getCharSequence(Notification.EXTRA_TEXT);
             String kind = classify(ti == null ? "" : ti.toString(), tx == null ? "" : tx.toString());
+            if (kind.equals("OTHER")) {
+                // something the app does not know: use what the person taught it, or ring once and ask
+                String nt = normTitle(ti == null ? "" : ti.toString());
+                String lk = nt.length() > 0 ? learned(this).optString(nt, "") : "";
+                if (lk.equals("IGNORE")) return;
+                if (lk.length() > 0) kind = lk;
+                else if (p2pish(ti == null ? "" : ti.toString(), tx == null ? "" : tx.toString())) { kind = "UNK"; if (p.getBoolean("on", false)) addUnknown(this, nt); }
+            }
             // only the kind, time and app name are kept (this lets the screen show that KuCoin is being heard)
             p.edit().putLong("seenAt", System.currentTimeMillis()).putString("seenKind", kind).putString("seenPkg", sbn.getPackageName()).apply();
             if (!p.getBoolean("on", false)) return;
@@ -211,7 +278,7 @@ public class NightAlarmService extends NotificationListenerService {
             if (last.equals(key + "|" + kind + "|" + pt)) return;
             p.edit().putString("lastKey", key + "|" + kind + "|" + pt).apply();
 
-            boolean want = kind.equals("BUY") ? p.getBoolean("buy", true) : kind.equals("SELL") ? p.getBoolean("sell", true) : false;
+            boolean want = kind.equals("BUY") ? p.getBoolean("buy", true) : kind.equals("SELL") ? p.getBoolean("sell", true) : kind.equals("UNK");
             boolean snoozed = System.currentTimeMillis() < p.getLong("snoozeUntil", 0);
             boolean ring = want && !snoozed && inWindow(p);
             addLog(this, kind, ring);
@@ -227,6 +294,7 @@ public class NightAlarmService extends NotificationListenerService {
             long maxMs = p.getInt("maxMin", 30) * 60000L;
             if (System.currentTimeMillis() - ringStart > maxMs) { stopRing(); return; }
             playOnce();
+            if (ringKind.equals("UNK")) { H.postDelayed(() -> { if (ringKind.equals("UNK")) stopRing(); }, 20000); return; }
             int every = ringKind.equals("BUY") ? p.getInt("buyEvery", 60) : p.getInt("sellEvery", 120);
             H.postDelayed(this, every * 1000L);
         }
@@ -377,11 +445,11 @@ public class NightAlarmService extends NotificationListenerService {
             PendingIntent pi = PendingIntent.getActivity(this, 1, open, fl);
             Intent ack = new Intent(this, NightAlarmAck.class).setAction(ACT_ACK);
             PendingIntent pa = PendingIntent.getBroadcast(this, 2, ack, fl);
-            boolean buy = ringKind.equals("BUY");
+            boolean buy = ringKind.equals("BUY"), unk = ringKind.equals("UNK");
             Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(this, CH) : new Notification.Builder(this);
             b.setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                    .setContentTitle(hi(this) ? (buy ? "BUY order: payment karna hai!" : "SELL order aaya: buyer pay kar raha hai") : (buy ? "BUY order: payment needed!" : "SELL order: buyer is paying"))
-                    .setContentText(hi(this) ? "KuCoin kholo. Dekh liya dabane tak alarm bajega." : "Open KuCoin. The alarm rings until you tap Seen.")
+                    .setContentTitle(unk ? (hi(this) ? "Nayi KuCoin P2P notification" : "New KuCoin P2P notification") : hi(this) ? (buy ? "BUY order: payment karna hai!" : "SELL order aaya: buyer pay kar raha hai") : (buy ? "BUY order: payment needed!" : "SELL order: buyer is paying"))
+                    .setContentText(unk ? (hi(this) ? "Pexai kholo aur batao ye BUY hai ya SELL." : "Open Pexai and tell it if this is BUY or SELL.") : hi(this) ? "KuCoin kholo. Dekh liya dabane tak alarm bajega." : "Open KuCoin. The alarm rings until you tap Seen.")
                     .setCategory(Notification.CATEGORY_ALARM)
                     .setContentIntent(pi)
                     .setDeleteIntent(pa)

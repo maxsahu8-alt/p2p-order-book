@@ -986,6 +986,12 @@ public class MainActivity extends Activity {
         public boolean naTest() { return NightAlarmService.test(MainActivity.this); }
 
         @JavascriptInterface
+        public void naLearn(String title, String kind) { NightAlarmService.learn(MainActivity.this, title, kind); }
+
+        @JavascriptInterface
+        public void naForgetLearned() { NightAlarmService.forgetLearned(MainActivity.this); }
+
+        @JavascriptInterface
         public void naAskNotif() {
             runOnUiThread(() -> {
                 try { if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 77); }
