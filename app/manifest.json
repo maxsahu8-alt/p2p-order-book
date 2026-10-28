@@ -68,6 +68,7 @@
   "js/164-night-quick-search.js",
   "js/170-android-sync.js",
   "js/175-night-alarm.js",
+  "js/176-bank-audit.js",
   "js/180-features-ui.js",
   "tail.html"
  ]

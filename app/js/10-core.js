@@ -296,14 +296,14 @@ function limitLeft(b,m,use){if(m==="Cash")return Infinity;use=use||limitUse();co
   const one=+L[m]?L[m]-(u[m]||0):Infinity, all=+L.ALL?L.ALL-(u.ALL||0):Infinity;return Math.min(one,all)}
 const allocated=o=>(o.splits||[]).reduce((t,x)=>t+(+x.amt||0),0);
 const bankName=id=>(allBanks.find(b=>b.id===id)||{}).name||"Deleted bank";
-let mvCache=null;
+let mvCache=null,__liteOv=null;const liteDirect=()=>__liteOv!=null?__liteOv:pref("liteDirect")===true;
 function movements(){if(mvCache)return mvCache;return mvCache=movementsRaw()}
 function movementsRaw(){
   const m=[];
-  orders.forEach(o=>{if(o.status==="Cancelled"||noBank(o))return;(o.splits||[]).forEach(x=>m.push({bank:x.bank,amt:x.lite?0:(o.side==="SELL"?1:-1)*(+x.amt||0),cp:o.cp||"",time:o.time,label:`${o.side} ${fmtQ(o.qty)} ${o.coin}${o.cp?" · "+o.cp:""} · ${x.lite?"UPI Lite":x.method||methodOf(o.pay)}`,kind:o.side,method:x.method||methodOf(o.pay),pend:o.status==="Pending"||o.status==="Appeal"}))});
+  orders.forEach(o=>{if(o.status==="Cancelled"||noBank(o))return;(o.splits||[]).forEach(x=>m.push({bank:x.bank,amt:x.lite&&!liteDirect()?0:(o.side==="SELL"?1:-1)*(+x.amt||0),cp:o.cp||"",time:o.time,label:`${o.side} ${fmtQ(o.qty)} ${o.coin}${o.cp?" · "+o.cp:""} · ${x.lite?"UPI Lite":x.method||methodOf(o.pay)}`,kind:o.side,method:x.method||methodOf(o.pay),pend:o.status==="Pending"||o.status==="Appeal"}))});
   exps.forEach(x=>{if(!x.bank)return;const c=x.cat==="Bank charges";m.push({bank:x.bank,amt:-(+x.amt||0),time:x.time,label:(c?"Bank charge · "+(x.chg||"Other"):"Expense · "+x.cat)+(x.note?" · "+x.note:""),kind:c?"CHG":"EXP",id:x.id})});
   ppays.forEach(x=>{const pn=(parties.find(p=>p.id===x.party)||{}).name||"party";(x.splits||[]).forEach(sp=>m.push({bank:sp.bank,amt:-(+sp.amt||0),time:x.time,label:"Paid "+pn+" · "+(sp.method||"IMPS"),kind:"PP",method:sp.method||"IMPS"}))});
-  recs.forEach(x=>{if(x.kind==="litemove"&&x.bank&&+x.amt>0&&x.dir!=="spend")m.push(x.dir==="out"?{bank:x.bank,amt:+x.amt,time:x.time,label:"Withdrawn from UPI Lite",kind:"TR"}:{bank:x.bank,amt:-(+x.amt),time:x.time,label:"Loaded to UPI Lite",kind:"TR",method:"UPI"})});
+  recs.forEach(x=>{if(x.kind==="litemove"&&x.bank&&+x.amt>0&&x.dir!=="spend"&&!liteDirect())m.push(x.dir==="out"?{bank:x.bank,amt:+x.amt,time:x.time,label:"Withdrawn from UPI Lite",kind:"TR"}:{bank:x.bank,amt:-(+x.amt),time:x.time,label:"Loaded to UPI Lite",kind:"TR",method:"UPI"})});
   moves.forEach(x=>{m.push({bank:x.from,amt:-((+x.amt||0)+(+x.cost||0)),time:x.time,label:"Transfer to "+bankName(x.to)+" · "+(x.method||"IMPS")+(+x.cost?" · charges ₹"+x.cost:""),kind:"TR",method:x.method||"IMPS"});m.push({bank:x.to,amt:+x.amt||0,time:x.time,label:"Transfer from "+bankName(x.from),kind:"TR"})});
   return m;
 }

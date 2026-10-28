@@ -1,5 +1,5 @@
 // ---------- settings ----------
-const PREF_DEF={biz:"",owner:"",coin:"USDT",mode:"P2P",plat:"Binance",pay:"UPI",status:"Completed",coins:["USDT","BTC","ETH","USDC"],plats:["Binance","Bybit","OKX","KuCoin","Other"],upi:"rolling",week:"Mon",pmin:30,lpct:90,alerts:{pending:true,limits:true,direct:true,unassigned:true,stock:true},lang:"English",len:"Short",learn:true,mem:true,autoIntake:false,night:true,nightAt:"23:00",bkDays:7};
+const PREF_DEF={biz:"",owner:"",coin:"USDT",mode:"P2P",plat:"Binance",liteDirect:false,pay:"UPI",status:"Completed",coins:["USDT","BTC","ETH","USDC"],plats:["Binance","Bybit","OKX","KuCoin","Other"],upi:"rolling",week:"Mon",pmin:30,lpct:90,alerts:{pending:true,limits:true,direct:true,unassigned:true,stock:true},lang:"English",len:"Short",learn:true,mem:true,autoIntake:false,night:true,nightAt:"23:00",bkDays:7};
 function pref(k){const p=(settings&&settings.prefs)||{};return p[k]!=null?p[k]:PREF_DEF[k]}
 const alertOn=k=>(pref("alerts")||{})[k]!==false;
 let prefT=null,prefPending={};

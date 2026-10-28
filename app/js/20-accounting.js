@@ -39,7 +39,7 @@ function coinLedger(c){
 const r2=v=>Math.round((+v||0)*100)/100;
 const doneT=o=>o.doneAt||o.time||0;
 function ACC(){if(accCache)return accCache;
-  const {bal,mv}=balances();let bank=0,cash=0;allBanks.forEach(b=>{const v=bal[b.id]||0;if(b.type==="Cash")cash+=v;else bank+=v+(b.lite&&b.lite.on?Math.max(0,+b.lite.bal||0):0)});
+  const {bal,mv}=balances();let bank=0,cash=0;allBanks.forEach(b=>{const v=bal[b.id]||0;if(b.type==="Cash")cash+=v;else bank+=v+(b.lite&&b.lite.on&&!liteDirect()?Math.max(0,+b.lite.bal||0):0)});
   const known=new Set(allBanks.map(b=>b.id));const orphan=mv.filter(x=>!known.has(x.bank));
   const stock=stockLeft();
   // moving average cost per coin

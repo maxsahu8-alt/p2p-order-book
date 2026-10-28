@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=198;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=199;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00199","28 Oct 2026",["New Bank audit (in the menu). It checks every order against your banks and lists the ones with no bank, a missing bank, a part not assigned, or paid by UPI Lite. A switch makes UPI Lite and GPay payments come out of the bank directly (the separate Lite balance is no longer counted), with a preview of each bank balance before and after. Bulk Set bank fills only what is missing, needs a second tap to confirm, and a backup is saved first. The switch is off until you turn it on."]],
   ["0.0.0.00198","28 Oct 2026",["Menu top redesigned: a cleaner profile card with a thin accent line, outlined status chips, a larger net worth figure, and today profit and the three counters separated by fine lines instead of boxes. The search bar and the four quick actions (New order, Intake, Pay party, Ask AI) are tidier too. Nothing was removed and every button works as before."]],
   ["0.0.0.00197","28 Oct 2026",["Night order alarm: BUY and SELL now have their own payment window (up to 60 min) for the countdown timer on the alarm notification. Needs the new APK (0.0.0.00112)."]],
   ["0.0.0.00196","28 Oct 2026",["Night order alarm upgrades. If an order is not seen for 3 minutes the alarm rings every 25 seconds with longer vibration and says STILL NOT SEEN. You get a loud warning if the alarm loses its connection, and 30 minutes before the night window the app checks access, battery and notifications and warns you if the alarm may not work. The alarm notification shows a countdown of the payment window (set it in alarm settings, default 15 min). New Last night report in the bell panel. BUY and SELL now sound and vibrate differently. Needs the new APK (0.0.0.00111)."]],
