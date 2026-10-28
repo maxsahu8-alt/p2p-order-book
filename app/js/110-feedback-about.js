@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=200;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=201;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00201","28 Oct 2026",["Bank audit: choosing a bank now uses tap buttons inside the screen instead of the phone drop-down, which did not select on some phones. Each order has a Set bank or Change bank button that opens the list of your banks."]],
   ["0.0.0.00200","28 Oct 2026",["Bank audit: every order in the list now has a Change bank menu, so a UPI Lite payment that was added to the wrong bank can be moved to the right one."]],
   ["0.0.0.00199","28 Oct 2026",["New Bank audit (in the menu). It checks every order against your banks and lists the ones with no bank, a missing bank, a part not assigned, or paid by UPI Lite. A switch makes UPI Lite and GPay payments come out of the bank directly (the separate Lite balance is no longer counted), with a preview of each bank balance before and after. Bulk Set bank fills only what is missing, needs a second tap to confirm, and a backup is saved first. The switch is off until you turn it on."]],
   ["0.0.0.00198","28 Oct 2026",["Menu top redesigned: a cleaner profile card with a thin accent line, outlined status chips, a larger net worth figure, and today profit and the three counters separated by fine lines instead of boxes. The search bar and the four quick actions (New order, Intake, Pay party, Ask AI) are tidier too. Nothing was removed and every button works as before."]],

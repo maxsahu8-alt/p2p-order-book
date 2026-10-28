@@ -190,3 +190,9 @@ label.bp-ck span{color:var(--fg);font-weight:500}
 .baor b{display:block;font-size:.84rem}.baor small{display:block;color:var(--muted);font-size:.72rem;margin-top:2px}
 .baiss{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.baiss i{font:700 .64rem var(--body);font-style:normal;padding:3px 7px;border-radius:99px;background:var(--soft)}
 .baiss i.bad{color:#dc2626}.baiss i.warn{color:#d97706}.baiss i.info{color:#3b82f6}
+
+.bapick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.bapick button{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:10px 12px;font:600 .84rem var(--body);cursor:pointer}
+.bapick button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.bapk1{padding:0 0 10px}.bapk1[hidden]{display:none}
+.babig{display:block;width:100%;margin-top:8px;padding:12px}.bachg{flex:none}
