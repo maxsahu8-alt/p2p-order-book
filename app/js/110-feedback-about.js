@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=191;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=192;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00192","28 Oct 2026",["The bell panel does more: a Today card (profit, orders, USDT stock, and a warning when an open order has been waiting more than 30 minutes), Quick actions (New order, Intake, Pay party, Backup) and the Night check list that you can tick without leaving the panel."]],
   ["0.0.0.00191","28 Oct 2026",["Night order alarm settings screen is redesigned like the bell panel: a status card with the main switch, then cards for Setup (tap a row to fix it), Alerts, Schedule and timing, the Test / Seen / Snooze buttons and Activity, with icons and a close button."]],
   ["0.0.0.00190","28 Oct 2026",["If battery is restricted the alarm status now says Almost ready instead of Ready. Bell panel: the four status chips are replaced. When everything is fine you see one calm line, All checks passed. When something is wrong, only that item is shown with a button to fix it (allow access, reconnect, battery, notifications)."]],
   ["0.0.0.00189","28 Oct 2026",["Bell panel: small health chips (Access, Service, Battery, Notifications) show at a glance whether the alarm is ready; when there are no alerts and no open orders the two empty cards become one calm All clear strip; the last-heard tile says Never until KuCoin is heard."]],
