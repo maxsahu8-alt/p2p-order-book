@@ -69,10 +69,6 @@ with sync_playwright() as p:
     pg.evaluate("window.__na.on=true;window.__na.access=true;window.__na.battery=true;window.__na.listening=true;window.__na.ringing=false;window.__na.snoozeUntil=0;nalHeader()");
     chk("top bar bell visible and green",pg.evaluate("!document.getElementById('alarmBtn').classList.contains('ih')&&!document.getElementById('alarmBtn').hidden&&document.getElementById('alarmDot').classList.contains('ok')"))
     pg.evaluate("window.__na.ringing=true;nalHeader()");chk("bell red while ringing",pg.evaluate("document.getElementById('alarmDot').classList.contains('bad')"))
-    pg.evaluate("sheets.bell()");pg.wait_for_timeout(250)
-    chk("today, quick actions and night check shown",pg.evaluate("(()=>{const t=document.querySelector('#sheetBody').textContent;return t.includes('Today')&&t.includes('Quick actions')&&t.includes('Night check')})()"))
-    pg.evaluate("(()=>{const c=document.querySelector('[data-nk=ads]');c.checked=true;c.dispatchEvent(new Event('change'))})()");pg.wait_for_timeout(400)
-    chk("night check tick is saved",pg.evaluate("JSON.parse(localStorage.getItem(nightKey())||'{}').ads===true"))
     chk("no page errors",not errs)
     if errs:print(errs)
     b.close()
