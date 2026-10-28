@@ -126,3 +126,9 @@
 label.bp-ck{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;text-align:left}
 label.bp-ck span{flex:1;text-align:left}
 label.bp-ck span{color:var(--fg);font-weight:500}
+/* bell above search WITHOUT making the header taller */
+.xr{display:block;position:relative;width:38px;height:38px}
+.xr #alarmBtn{position:absolute;top:-9px;right:6px;width:26px;height:17px;border-radius:8px}
+.xr #alarmBtn svg{width:15px;height:15px}
+.xr #alarmBtn .nadot{top:0;right:0}
+.xr #searchBtn{position:absolute;top:8px;left:0;width:38px;height:34px}

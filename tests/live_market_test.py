@@ -32,7 +32,7 @@ async def main():
     t=await pg.inner_text("#mkStrip")
     chk("header shows USDT/INR",("USDT" in t) and ("88.12" in t))
     chk("header shows 24h change","0.31" in t)
-    chk("price chip is in the title row next to search",await pg.evaluate("(()=>{const c=document.querySelector('header.xhead #mkStrip'),s=document.getElementById('searchBtn');return !!c&&c.nextElementSibling===s})()"))
+    chk("price chip is in the title row next to search",await pg.evaluate("(()=>{const c=document.querySelector('header.xhead #mkStrip'),s=document.getElementById('searchBtn');return !!c&&(c.nextElementSibling===s||c.nextElementSibling===s.parentElement)})()"))
     chk("chip is small",await pg.evaluate("document.getElementById('mkStrip').getBoundingClientRect().width<130"))
     await pg.evaluate("sheets.market()");await pg.wait_for_timeout(300)
     s=await pg.inner_text("#sheetBody")

@@ -1651,6 +1651,12 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
 label.bp-ck{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;text-align:left}
 label.bp-ck span{flex:1;text-align:left}
 label.bp-ck span{color:var(--fg);font-weight:500}
+/* bell above search WITHOUT making the header taller */
+.xr{display:block;position:relative;width:38px;height:38px}
+.xr #alarmBtn{position:absolute;top:-9px;right:6px;width:26px;height:17px;border-radius:8px}
+.xr #alarmBtn svg{width:15px;height:15px}
+.xr #alarmBtn .nadot{top:0;right:0}
+.xr #searchBtn{position:absolute;top:8px;left:0;width:38px;height:34px}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -6796,7 +6802,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=193;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=194;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6863,6 +6869,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00194","28 Oct 2026",["Fix: the bell above Search had made the top bar about 13 px taller on every screen, which pushed content down. The top bar is back to its original height."]],
   ["0.0.0.00193","28 Oct 2026",["The bell panel is back to only what matters: the alarm, the summary, alerts, open orders and KuCoin notifications. The Today, Quick actions and Night check cards added in the last update are removed."]],
   ["0.0.0.00192","28 Oct 2026",["The bell panel does more: a Today card (profit, orders, USDT stock, and a warning when an open order has been waiting more than 30 minutes), Quick actions (New order, Intake, Pay party, Backup) and the Night check list that you can tick without leaving the panel."]],
   ["0.0.0.00191","28 Oct 2026",["Night order alarm settings screen is redesigned like the bell panel: a status card with the main switch, then cards for Setup (tap a row to fix it), Alerts, Schedule and timing, the Test / Seen / Snooze buttons and Activity, with icons and a close button."]],
