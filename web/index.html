@@ -6860,7 +6860,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=199;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=200;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6927,6 +6927,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00200","28 Oct 2026",["Bank audit: every order in the list now has a Change bank menu, so a UPI Lite payment that was added to the wrong bank can be moved to the right one."]],
   ["0.0.0.00199","28 Oct 2026",["New Bank audit (in the menu). It checks every order against your banks and lists the ones with no bank, a missing bank, a part not assigned, or paid by UPI Lite. A switch makes UPI Lite and GPay payments come out of the bank directly (the separate Lite balance is no longer counted), with a preview of each bank balance before and after. Bulk Set bank fills only what is missing, needs a second tap to confirm, and a backup is saved first. The switch is off until you turn it on."]],
   ["0.0.0.00198","28 Oct 2026",["Menu top redesigned: a cleaner profile card with a thin accent line, outlined status chips, a larger net worth figure, and today profit and the three counters separated by fine lines instead of boxes. The search bar and the four quick actions (New order, Intake, Pay party, Ask AI) are tidier too. Nothing was removed and every button works as before."]],
   ["0.0.0.00197","28 Oct 2026",["Night order alarm: BUY and SELL now have their own payment window (up to 60 min) for the countdown timer on the alarm notification. Needs the new APK (0.0.0.00112)."]],
@@ -8616,7 +8617,7 @@ sheets.bankaudit=function(){
    <div class="bacard"><div class="bah"><b>Orders to check</b><em>${rows.length}</em></div>
     <div class="bachips"><span>No bank ${cnt("nobank")}</span><span>Part not assigned ${cnt("gap")}</span><span>Bank missing ${cnt("badbank")}</span><span>UPI Lite ${cnt("lite")}</span></div>
     ${need.length?`<div class="babulk"><select id="ba-bk"><option value="">Choose a bank…</option>${bankOpts}</select><button type="button" class="mini" id="ba-all" disabled>Set on ${need.length} order${need.length>1?"s":""}</button></div><p class="note" id="ba-msg" style="margin:6px 0 0">This fills only what is missing. Orders that already have a bank are not moved.</p>`:`<p class="note" style="margin:8px 0 0">${rows.length?"Every order has a bank. The UPI Lite ones are listed below so you can see them.":"Every order has a bank. Nothing to fix."}</p>`}
-    <div class="balist">${rows.slice(0,80).map(o=>{const I=baIssues(o);return`<div class="baor" data-id="${esc(o.id)}"><div><b>${esc(o.side)} ${esc(fmtQ(o.qty))} ${esc(o.coin||"")} · ${inr(Math.round(orderTotal(o)))}</b><small>${dm(o.time)}${o.cp?" · "+esc(o.cp):""}${(o.splits||[]).length?" · "+esc((o.splits||[]).map(x=>bankName(x.bank)).join(", ")):""}</small><div class="baiss">${I.map(k=>`<i class="${ISS[k][1]}">${ISS[k][0]}</i>`).join("")}</div></div>${I.some(k=>k==="nobank"||k==="badbank"||k==="gap")?`<select data-one><option value="">Bank…</option>${bankOpts}</select>`:""}</div>`}).join("")}${rows.length>80?`<p class="note">Showing the latest 80 of ${rows.length}.</p>`:""}</div></div></div>`,el=>{
+    <div class="balist">${rows.slice(0,80).map(o=>{const I=baIssues(o);return`<div class="baor" data-id="${esc(o.id)}"><div><b>${esc(o.side)} ${esc(fmtQ(o.qty))} ${esc(o.coin||"")} · ${inr(Math.round(orderTotal(o)))}</b><small>${dm(o.time)}${o.cp?" · "+esc(o.cp):""}${(o.splits||[]).length?" · "+esc((o.splits||[]).map(x=>bankName(x.bank)).join(", ")):""}</small><div class="baiss">${I.map(k=>`<i class="${ISS[k][1]}">${ISS[k][0]}</i>`).join("")}</div></div><select data-one aria-label="Change bank"><option value="">${I.includes("lite")&&!I.some(k=>k==="nobank"||k==="badbank"||k==="gap")?"Change bank…":"Bank…"}</option>${bankOpts}</select></div>`}).join("")}${rows.length>80?`<p class="note">Showing the latest 80 of ${rows.length}.</p>`:""}</div></div></div>`,el=>{
     const q=x=>el.querySelector(x);
     q("#ba-direct").onchange=async e=>{const on=e.target.checked;await baBackup();setPref("liteDirect",on);mvCache=null;accCache=null;try{render()}catch(err){}toast(on?"UPI Lite now comes out of the bank":"UPI Lite is a separate balance again");setTimeout(()=>sheets.bankaudit(),150)};
     const bk=q("#ba-bk"),all=q("#ba-all");
@@ -8624,7 +8625,8 @@ sheets.bankaudit=function(){
     if(all)all.onclick=async()=>{if(!bk.value)return;if(!all.dataset.sure){all.dataset.sure="1";all.textContent="Tap again to confirm";setTimeout(()=>{if(all.isConnected){delete all.dataset.sure;bk.onchange()}},4000);return}
       all.disabled=true;all.textContent="Saving…";await baBackup();let n=0;for(const o of need){try{await patchRec(o.id,{splits:baFix(o,bk.value)});n++}catch(e){}}
       toast(`Updated ${n} order${n===1?"":"s"}`);setTimeout(()=>sheets.bankaudit(),150)};
-    el.querySelectorAll("[data-one]").forEach(s=>s.onchange=async()=>{if(!s.value)return;const id=s.closest("[data-id]").dataset.id,o=orders.find(x=>x.id===id);if(!o)return;await patchRec(id,{splits:baFix(o,s.value)});toast("Bank set");setTimeout(()=>sheets.bankaudit(),150)});
+    el.querySelectorAll("[data-one]").forEach(s=>s.onchange=async()=>{if(!s.value)return;const id=s.closest("[data-id]").dataset.id,o=orders.find(x=>x.id===id);if(!o)return;const miss=baIssues(o).some(k=>k==="nobank"||k==="badbank"||k==="gap");
+      await patchRec(id,{splits:miss?baFix(o,s.value):(o.splits||[]).map(x=>x.lite?{...x,bank:s.value}:x)});toast("Bank set");setTimeout(()=>sheets.bankaudit(),150)});
   })};
 })();
 // ================= FEATURES: switching parts on/off, licence codes, owner tools =================
