@@ -72,7 +72,8 @@ sheets.nalarm=function(){
     <div class="nap-grid ns-grid">
      <label><small>${tr("BUY rings every","BUY alarm har")}</small><select id="na-be">${opt([30,60,120,180],s.buyEvery,x=>x+" sec")}</select></label>
      <label><small>${tr("SELL rings every","SELL alarm har")}</small><select id="na-se">${opt([60,120,180,300],s.sellEvery,x=>x+" sec")}</select></label>
-     <label><small>${tr("Payment window","Payment time")}</small><select id="na-pm">${opt([0,10,15,20,30],s.payMin,x=>x?x+" min":tr("Off","Band"))}</select></label>
+     <label><small>${tr("BUY payment window","BUY payment time")}</small><select id="na-pb">${opt([0,10,15,20,30,45,60],s.payBuy,x=>x?x+" min":tr("Off","Band"))}</select></label>
+     <label><small>${tr("SELL payment window","SELL payment time")}</small><select id="na-ps">${opt([0,10,15,20,30,45,60],s.paySell,x=>x?x+" min":tr("Off","Band"))}</select></label>
      <label><small>${tr("Stop after","Maximum")}</small><select id="na-mx">${opt([10,20,30,60],s.maxMin,x=>x+" min")}</select></label></div></div>
    <div class="bp-grid ns-act"><button type="button" id="na-test">${BP_IC.test}<span>${tr("Test alarm","Test alarm")}</span></button><button type="button" id="na-ack">${BP_IC.seen}<span>${tr("Seen","Dekh liya")}</span></button><button type="button" id="na-snz" class="${snz?"on":""}">${BP_IC.snz}<span>${snz?tr("Resume","Resume"):tr("Snooze 1h","Snooze 1h")}</span></button></div>
    <p class="note bp-msg" id="na-msg" hidden></p>
@@ -93,7 +94,8 @@ sheets.nalarm=function(){
     q("#na-from").onchange=q("#na-to").onchange=()=>naSet({from:naMin(q("#na-from").value),to:naMin(q("#na-to").value)});
     q("#na-be").onchange=()=>naSet({buyEvery:+q("#na-be").value});
     q("#na-se").onchange=()=>naSet({sellEvery:+q("#na-se").value});
-    q("#na-pm").onchange=()=>naSet({payMin:+q("#na-pm").value});
+    q("#na-pb").onchange=()=>naSet({payBuy:+q("#na-pb").value});
+    q("#na-ps").onchange=()=>naSet({paySell:+q("#na-ps").value});
     q("#na-mx").onchange=()=>naSet({maxMin:+q("#na-mx").value});
     q("#na-acc").onclick=()=>{if(naRead().access){msg(tr("Notification access is already given.","Notification access mil gaya hai."));return}n.naOpenAccess();msg(tr("Find Pexai in the list, turn it ON, then come back.","List me Pexai dhundo, ON karo, phir wapas aao."))};
     q("#na-bat").onclick=()=>{n.naOpenBattery();msg(tr("Choose Battery > Unrestricted, then come back.","Battery > Unrestricted chuno, phir wapas aao."))};

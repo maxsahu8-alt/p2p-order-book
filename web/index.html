@@ -6813,7 +6813,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=196;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=197;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6880,6 +6880,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00197","28 Oct 2026",["Night order alarm: BUY and SELL now have their own payment window (up to 60 min) for the countdown timer on the alarm notification. Needs the new APK (0.0.0.00112)."]],
   ["0.0.0.00196","28 Oct 2026",["Night order alarm upgrades. If an order is not seen for 3 minutes the alarm rings every 25 seconds with longer vibration and says STILL NOT SEEN. You get a loud warning if the alarm loses its connection, and 30 minutes before the night window the app checks access, battery and notifications and warns you if the alarm may not work. The alarm notification shows a countdown of the payment window (set it in alarm settings, default 15 min). New Last night report in the bell panel. BUY and SELL now sound and vibrate differently. Needs the new APK (0.0.0.00111)."]],
   ["0.0.0.00195","28 Oct 2026",["Night order alarm now learns. If KuCoin sends a P2P notification the app does not recognise (for example the wording changed), the alarm rings once instead of staying silent, and the bell panel asks you what it is: BUY, SELL, Complete or Ignore. Pexai remembers the answer for next time. Only the notification title is kept, with numbers removed, never names, amounts or chat. Learned notifications can be forgotten in the alarm settings. Needs the new APK (0.0.0.00110)."]],
   ["0.0.0.00194","28 Oct 2026",["Fix: the bell above Search had made the top bar about 13 px taller on every screen, which pushed content down. The top bar is back to its original height."]],
@@ -8434,7 +8435,8 @@ sheets.nalarm=function(){
     <div class="nap-grid ns-grid">
      <label><small>${tr("BUY rings every","BUY alarm har")}</small><select id="na-be">${opt([30,60,120,180],s.buyEvery,x=>x+" sec")}</select></label>
      <label><small>${tr("SELL rings every","SELL alarm har")}</small><select id="na-se">${opt([60,120,180,300],s.sellEvery,x=>x+" sec")}</select></label>
-     <label><small>${tr("Payment window","Payment time")}</small><select id="na-pm">${opt([0,10,15,20,30],s.payMin,x=>x?x+" min":tr("Off","Band"))}</select></label>
+     <label><small>${tr("BUY payment window","BUY payment time")}</small><select id="na-pb">${opt([0,10,15,20,30,45,60],s.payBuy,x=>x?x+" min":tr("Off","Band"))}</select></label>
+     <label><small>${tr("SELL payment window","SELL payment time")}</small><select id="na-ps">${opt([0,10,15,20,30,45,60],s.paySell,x=>x?x+" min":tr("Off","Band"))}</select></label>
      <label><small>${tr("Stop after","Maximum")}</small><select id="na-mx">${opt([10,20,30,60],s.maxMin,x=>x+" min")}</select></label></div></div>
    <div class="bp-grid ns-act"><button type="button" id="na-test">${BP_IC.test}<span>${tr("Test alarm","Test alarm")}</span></button><button type="button" id="na-ack">${BP_IC.seen}<span>${tr("Seen","Dekh liya")}</span></button><button type="button" id="na-snz" class="${snz?"on":""}">${BP_IC.snz}<span>${snz?tr("Resume","Resume"):tr("Snooze 1h","Snooze 1h")}</span></button></div>
    <p class="note bp-msg" id="na-msg" hidden></p>
@@ -8455,7 +8457,8 @@ sheets.nalarm=function(){
     q("#na-from").onchange=q("#na-to").onchange=()=>naSet({from:naMin(q("#na-from").value),to:naMin(q("#na-to").value)});
     q("#na-be").onchange=()=>naSet({buyEvery:+q("#na-be").value});
     q("#na-se").onchange=()=>naSet({sellEvery:+q("#na-se").value});
-    q("#na-pm").onchange=()=>naSet({payMin:+q("#na-pm").value});
+    q("#na-pb").onchange=()=>naSet({payBuy:+q("#na-pb").value});
+    q("#na-ps").onchange=()=>naSet({paySell:+q("#na-ps").value});
     q("#na-mx").onchange=()=>naSet({maxMin:+q("#na-mx").value});
     q("#na-acc").onclick=()=>{if(naRead().access){msg(tr("Notification access is already given.","Notification access mil gaya hai."));return}n.naOpenAccess();msg(tr("Find Pexai in the list, turn it ON, then come back.","List me Pexai dhundo, ON karo, phir wapas aao."))};
     q("#na-bat").onclick=()=>{n.naOpenBattery();msg(tr("Choose Battery > Unrestricted, then come back.","Battery > Unrestricted chuno, phir wapas aao."))};
