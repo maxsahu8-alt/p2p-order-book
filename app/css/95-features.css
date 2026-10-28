@@ -36,3 +36,9 @@
 .nadot{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:#9ca3af;border:2px solid var(--bg)}
 .nadot.ok{background:#16a34a}.nadot.warn{background:#d97706}.nadot.bad{background:#dc2626;animation:napulse 1s infinite}
 @keyframes napulse{50%{opacity:.35}}
+/* the alarm bell sits small above the search icon */
+.xr{flex-direction:column;align-items:center;gap:0}
+.xr #alarmBtn{width:26px;height:20px;border-radius:8px}
+.xr #alarmBtn svg{width:16px;height:16px}
+.xr #alarmBtn .nadot{top:1px;right:1px;width:7px;height:7px;border-width:1.5px}
+.xr #searchBtn{height:34px}

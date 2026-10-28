@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=185;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=186;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00186","28 Oct 2026",["The Night order alarm bell is now small and sits above the Search icon."]],
   ["0.0.0.00185","28 Oct 2026",["Night order alarm now has a bell in the top bar, next to Search. The dot shows the state: green Ready, grey Off, orange needs attention (setup, not connected, snoozed) and red blinking while it rings. Tap it to open the alarm screen."]],
   ["0.0.0.00184","28 Oct 2026",["Night order alarm: found why the test alarm was silent. The app did not declare the wake lock permission, so Android refused it and the alarm stopped before it made any sound. The permissions (wake lock, vibrate, notifications) are now declared, and a refused wake lock can no longer stop the alarm. Android 13 and newer will ask to allow notifications. Needs the new APK (0.0.0.00109)."]],
   ["0.0.0.00183","28 Oct 2026",["Night order alarm: a backup sound. If the alarm player is not really playing, or the alarm volume is 0, Android now plays the alarm tone through an alarm notification as well. Needs the new APK (0.0.0.00108)."]],

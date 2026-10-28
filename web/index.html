@@ -1561,6 +1561,12 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
 .nadot{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:#9ca3af;border:2px solid var(--bg)}
 .nadot.ok{background:#16a34a}.nadot.warn{background:#d97706}.nadot.bad{background:#dc2626;animation:napulse 1s infinite}
 @keyframes napulse{50%{opacity:.35}}
+/* the alarm bell sits small above the search icon */
+.xr{flex-direction:column;align-items:center;gap:0}
+.xr #alarmBtn{width:26px;height:20px;border-radius:8px}
+.xr #alarmBtn svg{width:16px;height:16px}
+.xr #alarmBtn .nadot{top:1px;right:1px;width:7px;height:7px;border-width:1.5px}
+.xr #searchBtn{height:34px}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -6708,7 +6714,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=185;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=186;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6775,6 +6781,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00186","28 Oct 2026",["The Night order alarm bell is now small and sits above the Search icon."]],
   ["0.0.0.00185","28 Oct 2026",["Night order alarm now has a bell in the top bar, next to Search. The dot shows the state: green Ready, grey Off, orange needs attention (setup, not connected, snoozed) and red blinking while it rings. Tap it to open the alarm screen."]],
   ["0.0.0.00184","28 Oct 2026",["Night order alarm: found why the test alarm was silent. The app did not declare the wake lock permission, so Android refused it and the alarm stopped before it made any sound. The permissions (wake lock, vibrate, notifications) are now declared, and a refused wake lock can no longer stop the alarm. Android 13 and newer will ask to allow notifications. Needs the new APK (0.0.0.00109)."]],
   ["0.0.0.00183","28 Oct 2026",["Night order alarm: a backup sound. If the alarm player is not really playing, or the alarm volume is 0, Android now plays the alarm tone through an alarm notification as well. Needs the new APK (0.0.0.00108)."]],
