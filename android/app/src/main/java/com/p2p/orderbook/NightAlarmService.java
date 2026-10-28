@@ -66,7 +66,8 @@ public class NightAlarmService extends NotificationListenerService {
             o.put("buyEvery", p.getInt("buyEvery", 60));
             o.put("sellEvery", p.getInt("sellEvery", 120));
             o.put("maxMin", p.getInt("maxMin", 30));
-            o.put("payMin", p.getInt("payMin", 15));
+            o.put("payBuy", p.getInt("payBuy", p.getInt("payMin", 15)));
+            o.put("paySell", p.getInt("paySell", p.getInt("payMin", 15)));
             o.put("loud", p.getBoolean("loud", true));
             o.put("snoozeUntil", p.getLong("snoozeUntil", 0));
             o.put("pkg", p.getString("pkg", "kucoin"));
@@ -103,7 +104,8 @@ public class NightAlarmService extends NotificationListenerService {
             if (o.has("buyEvery")) e.putInt("buyEvery", clamp(o.getInt("buyEvery"), 20, 600));
             if (o.has("sellEvery")) e.putInt("sellEvery", clamp(o.getInt("sellEvery"), 20, 900));
             if (o.has("maxMin")) e.putInt("maxMin", clamp(o.getInt("maxMin"), 1, 120));
-            if (o.has("payMin")) e.putInt("payMin", clamp(o.getInt("payMin"), 0, 120));
+            if (o.has("payBuy")) e.putInt("payBuy", clamp(o.getInt("payBuy"), 0, 60));
+            if (o.has("paySell")) e.putInt("paySell", clamp(o.getInt("paySell"), 0, 60));
             if (o.has("lang")) e.putString("lang", "hi".equals(o.getString("lang")) ? "hi" : "en");
             if (o.has("snoozeUntil")) e.putLong("snoozeUntil", o.getLong("snoozeUntil"));
             e.apply();
@@ -538,7 +540,7 @@ public class NightAlarmService extends NotificationListenerService {
                     .addAction(new Notification.Action.Builder(null, hi(this) ? "Dekh liya" : "Seen", pa).build());
             if (escalated && !unk) b.setContentTitle(hi(this) ? "ABHI TAK NAHI DEKHA! " + (buy ? "BUY order" : "SELL order") : "STILL NOT SEEN! " + (buy ? "BUY order" : "SELL order"));
             // a timer on the notification: time left of the payment window (set in the alarm settings), or time passed
-            int pay = sp(this).getInt("payMin", 15);
+            int pay = buy ? sp(this).getInt("payBuy", sp(this).getInt("payMin", 15)) : sp(this).getInt("paySell", sp(this).getInt("payMin", 15));
             if (!unk && pay > 0 && Build.VERSION.SDK_INT >= 24) {
                 long end = orderAt + pay * 60000L;
                 b.setShowWhen(true).setUsesChronometer(true);
