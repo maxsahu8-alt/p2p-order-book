@@ -90,25 +90,36 @@ sheets.nalarm=function(){
     q("#na-snz").onclick=()=>{const on=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:on?0:Date.now()+3600000});q("#na-snz").textContent=on?tr("Snooze 1 hour","1 ghanta snooze"):tr("Cancel snooze","Snooze hatao");msg(on?tr("Snooze cancelled.","Snooze hata diya."):tr("No alarm for 1 hour.","1 ghante tak alarm nahi bajega."))};
     q("#na-clr").onclick=()=>{n.naClearLog();msg(tr("Log cleared.","Log saaf."));setTimeout(()=>sheets.nalarm(),400)}});
 };
-// compact card at the top of the menu: status and an ON/OFF switch, always one tap away
-function nalCard(){
-  if(!NA()||!feat("nightalarm"))return"";const s=naRead();if(!s)return"";
-  const snz=s.snoozeUntil>Date.now();
-  const sub=!s.access?tr("Setup pending: give Notification access","Setup baaki: Notification access do"):!s.listening?tr("Not connected: open to reconnect","Connect nahi hua: kholo aur Reconnect dabao"):s.ringing?tr("Alarm is ringing","Alarm baj raha hai"):!s.on?tr("Off","Band hai"):snz?tr("Snoozed","Snooze me"):"ON · BUY"+(s.sell?" + SELL":"")+" · "+(s.allday?tr("24 hours","24 ghante"):naHM(s.from)+"–"+naHM(s.to));
-  return`<div class="nalc ${s.on&&s.access?"on":""}"><button type="button" class="nalb" id="nalOpen"><span class="nali">🔔</span><span><b>${tr("Night order alarm","Raat ka order alarm")}</b><small>${esc(sub)}</small></span></button>${s.ringing?'<button type="button" class="mini primary" id="nalAck">${tr("Seen","Dekh liya")}</button>':`<label class="tog"><input type="checkbox" id="nalTog" ${s.on&&s.access?"checked":""}><span></span></label>`}</div>`}
-function nalBind(close){
-  const n=NA();if(!n)return;
-  const o=document.querySelector("#nalOpen");if(o)o.onclick=()=>{close();sheets.nalarm()};
-  const a=document.querySelector("#nalAck");if(a)a.onclick=()=>{n.naAck();openDrawer()};
-  const t=document.querySelector("#nalTog");if(t)t.onchange=()=>{
-    if(t.checked&&!naRead().access){t.checked=false;toast(tr("Give Notification access first","Pehle Notification access do"));close();sheets.nalarm();return}
-    naSet({on:t.checked});toast(t.checked?tr("Night alarm ON","Night alarm ON"):tr("Night alarm OFF","Night alarm OFF"));openDrawer()}}
-
+// ---- the bell: alarm control, alerts and open orders in one panel
+sheets.bell=function(){
+  const n=NA(),s=n?naRead():null,st=s?naState(s):null,A=(typeof lastAlerts!=="undefined"&&lastAlerts)||[];
+  const pend=orders.filter(o=>o.status==="Pending"||o.status==="Appeal").sort((a,b)=>(b.time||0)-(a.time||0)).slice(0,5);
+  const ev=(s?naLogRead():[]).filter(x=>x.k!=="TEST").slice(-5).reverse();
+  const snz=s&&s.snoozeUntil>Date.now();
+  const alarm=s?`<div class="nap-hero ${st.c}"><span class="nap-ic">${NA_BELL}</span><span class="nap-tx"><b>${tr("Night order alarm","Raat ka order alarm")} · ${esc(st.t)}</b><small>${esc(st.d)}</small></span>${s.access&&!s.listening?'<button type="button" class="mini primary" id="bl-rb">'+tr("Reconnect","Reconnect")+'</button>':`<label class="tog"><input type="checkbox" id="bl-on" ${s.on?"checked":""}><span></span></label>`}</div>
+   <div class="nap-act"><button type="button" class="mini ghost" id="bl-ack" ${s.ringing?"":"disabled"}>${tr("Seen","Dekh liya")}</button><button type="button" class="mini ghost" id="bl-snz">${snz?tr("Cancel snooze","Snooze hatao"):tr("Snooze 1 hour","1 ghanta snooze")}</button><button type="button" class="mini ghost" id="bl-test">${tr("Test","Test")}</button><button type="button" class="mini ghost" id="bl-set">${tr("Alarm settings","Alarm settings")}</button></div>
+   <p class="note" id="bl-msg" style="margin:4px 0"></p>`
+   :`<div class="nap-hero off"><span class="nap-ic">${NA_BELL}</span><span class="nap-tx"><b>${tr("Night order alarm","Raat ka order alarm")}</b><small>${tr("Works in the Android app only.","Sirf Android app me chalta hai.")}</small></span></div>`;
+  const attn=A.length?`<div class="pcsec">${tr("Needs attention","Dhyan do")} · ${A.length}</div><div class="rml">${A.slice(0,6).map(a=>`<button type="button" class="dal ${a.hi?"hi":""} bl-al" ${aAttr(a)}><span class="dot"></span><span>${esc(a.t)}</span></button>`).join("")}</div>`:`<div class="pcsec">${tr("Needs attention","Dhyan do")}</div><p class="note">${tr("All clear. Nothing needs attention.","Sab theek hai. Kuch dhyan dene layak nahi.")}</p>`;
+  const po=pend.length?`<div class="pcsec">${tr("Open orders","Open orders")} · ${orders.filter(o=>o.status==="Pending"||o.status==="Appeal").length}</div><div class="rml">${pend.map(o=>`<button type="button" class="dqr fsr bl-ord" data-oid="${esc(o.id)}"><span><b>${esc(o.side)} ${esc(String(o.qty))} ${esc(o.coin||"USDT")}</b><small>${esc(o.cp||"")}${o.time?" · "+naAgo(o.time):""}${o.status==="Appeal"?" · Appeal":""}</small></span><em class="nap-pill warn">${esc(o.status)}</em></button>`).join("")}</div>`:`<div class="pcsec">${tr("Open orders","Open orders")}</div><p class="note">${tr("No open orders.","Koi open order nahi.")}</p>`;
+  const hv=s?`<div class="pcsec">${tr("From KuCoin notifications","KuCoin notifications se")}</div>${ev.length?`<div class="nap-evl">${ev.map(x=>`<div class="nap-ev"><i class="k-${x.k}">${NA_K[x.k]||x.k}</i><span>${new Date(x.t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span><small>${x.r?tr("alarm rang","alarm baja"):tr("no alarm","alarm nahi")}</small></div>`).join("")}</div>`:`<p class="note">${s.seenAt?tr("KuCoin heard ","KuCoin suna ")+naAgo(s.seenAt)+".":tr("No KuCoin notification heard yet.","Abhi tak KuCoin ki koi notification nahi suni.")}</p>`}`:"";
+  openSheet(`<div class="insw nap"><h3>${tr("Alerts and alarm","Alerts aur alarm")}</h3>${alarm}${attn}${po}${hv}<div class="cpexp"><button type="button" class="mini ghost" data-close>${tr("Close","Band karo")}</button></div></div>`,el=>{
+    const q=x=>el.querySelector(x),msg=t=>{const m=q("#bl-msg");if(m)m.textContent=t};
+    el.querySelectorAll(".bl-ord").forEach(b=>b.onclick=()=>{$("#sheetBg").hidden=true;document.body.style.overflow="";try{orderSheet(b.dataset.oid)}catch(e){}});
+    if(!n)return;
+    const on=q("#bl-on");if(on)on.onchange=()=>{if(on.checked&&!naRead().access){on.checked=false;msg(tr("Give Notification access first (open Alarm settings).","Pehle Notification access do (Alarm settings kholo)."));return}naSet({on:on.checked});toast(on.checked?"Night alarm ON":"Night alarm OFF");setTimeout(()=>{sheets.bell();nalHeader()},150)};
+    const rb=q("#bl-rb");if(rb)rb.onclick=()=>{n.naRebind();msg(tr("Reconnecting…","Reconnect ho raha hai…"));setTimeout(()=>sheets.bell(),1500)};
+    q("#bl-ack").onclick=()=>{n.naAck();msg(tr("Alarm stopped.","Alarm band."));setTimeout(()=>{sheets.bell();nalHeader()},300)};
+    q("#bl-snz").onclick=()=>{const o=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:o?0:Date.now()+3600000});setTimeout(()=>{sheets.bell();nalHeader()},150)};
+    q("#bl-test").onclick=()=>{if(!naRead().access){msg(tr("Give Notification access first.","Pehle Notification access do."));return}msg(n.naTest()?tr("Alarm is ringing. Tap Seen to stop it.","Alarm baj raha hai. Band karne ko Dekh liya dabao."):tr("The alarm service is not running. Open Alarm settings and tap Reconnect.","Alarm service chalu nahi hai. Alarm settings me Reconnect dabao."));setTimeout(()=>{const b=q("#bl-ack");if(b)b.disabled=false},300)};
+    q("#bl-set").onclick=()=>sheets.nalarm()})};
 // bell in the top bar: shows the alarm state at a glance and opens the alarm screen
 function nalHeader(){
   const b=document.getElementById("alarmBtn"),d=document.getElementById("alarmDot");if(!b||!d)return;
-  if(!NA()||!feat("nightalarm")){b.classList.add("ih");return}
-  const s=naRead();if(!s){b.classList.add("ih");return}
-  b.classList.remove("ih");b.hidden=false;const st=naState(s);d.className="nadot "+st.c;b.title=st.t+" · "+st.d}
-(function(){const b=document.getElementById("alarmBtn");if(b)b.onclick=()=>sheets.nalarm();
-  setTimeout(nalHeader,600);setInterval(nalHeader,20000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)nalHeader()})})();
+  b.classList.remove("ih");b.hidden=false;
+  const A=(typeof lastAlerts!=="undefined"&&lastAlerts)||[],hi=A.some(a=>a.hi);
+  const s=NA()&&feat("nightalarm")?naRead():null;
+  if(s){const st=naState(s);d.className="nadot "+(st.c==="ok"&&hi?"warn":st.c);b.title=st.t+" · "+st.d}
+  else{d.className="nadot "+(A.length?(hi?"bad":"warn"):"off");b.title=A.length?A.length+" alerts":"Alerts"}}
+(function(){const b=document.getElementById("alarmBtn");if(b){b.setAttribute("aria-label","Alerts and alarm");b.onclick=()=>sheets.bell()}
+  [600,1500,3000,6000].forEach(t=>setTimeout(nalHeader,t));setInterval(nalHeader,20000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)nalHeader()})})();

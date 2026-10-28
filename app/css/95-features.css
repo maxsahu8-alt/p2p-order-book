@@ -42,3 +42,8 @@
 .xr #alarmBtn svg{width:16px;height:16px}
 .xr #alarmBtn .nadot{top:1px;right:1px;width:7px;height:7px;border-width:1.5px}
 .xr #searchBtn{height:34px}
+.nadot.off{background:#9ca3af}
+.bl-al{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;font:inherit;color:inherit;cursor:pointer}
+.bl-al .dot{width:8px;height:8px;border-radius:50%;background:#d97706;flex:none}.bl-al.hi .dot{background:#dc2626}
+.bl-ord{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);font:inherit;color:inherit;cursor:pointer}
+.nap-act button:disabled{opacity:.45}

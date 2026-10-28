@@ -175,7 +175,6 @@ function openDrawer(){
     </div>
     <button type="button" class="dsearch" id="dSearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg><span>Search orders, parties, banks…</span></button>
     <div class="dqa dqac">${qa.map(([k,t,svg,l])=>`<button type="button" class="dq" data-dq="${k}"><span class="qri ${t}"><svg viewBox="0 0 24 24">${svg}</svg></span><small>${l}</small></button>`).join("")}</div>
-    ${typeof nalCard==="function"?nalCard():""}
     ${A.length?`<div class="dat ${hi?"hi":""}"><div class="dath"><b>Needs attention</b><span>${A.length}${hi?` · <em>${hi} urgent</em>`:""}</span></div>${A.slice(0,4).map(a=>`<button type="button" class="dal ${a.hi?"hi":""}" ${aAttr(a)}><span class="dot"></span><span>${esc(a.t)}</span></button>`).join("")}${A.length>4?`<button type="button" class="dall" id="dAll">View all ${A.length}</button>`:""}</div>`:`<div class="dok"><span class="dot"></span><b>All clear</b><small>Nothing needs attention</small></div>`}`;
   // live info on each menu row
   const jobs=recs.filter(r=>r.kind==="intakejob"&&(r.status==="new"||r.status==="working")).length;
@@ -206,7 +205,6 @@ function openDrawer(){
   document.querySelectorAll("#drawer [data-th]").forEach(b=>b.onclick=()=>{devSet("p2p_theme",b.dataset.th);applyTheme();const sel=$("#st-theme");if(sel)sel.value=b.dataset.th;document.querySelectorAll("#drawer [data-th]").forEach(x=>x.classList.toggle("on",x===b))});
   $("#dHide").onchange=e=>{hideAmt=e.target.checked;try{localStorage.setItem("p2p_hide",hideAmt?"1":"0")}catch(err){}renderHero();openDrawer()};
   $("#dBk").onclick=()=>{close();$("#bkExport").click()};
-  try{if(typeof nalBind==="function")nalBind(close)}catch(err){}
   const dl=$("#dLock");if(dl)dl.onclick=()=>{close();showLock("unlock")};
 }
 function renderMenuAva(){}
