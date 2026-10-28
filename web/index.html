@@ -1613,6 +1613,12 @@ details.wcoll>summary #chBanks-sub{margin-left:auto;margin-right:6px;font-size:.
 .bp-sum b.mut{color:var(--muted);font-size:.95rem;font-weight:600}
 .bp-calm{display:flex;align-items:center;gap:12px;padding:12px 14px}
 .bp-calm .bp-hi{width:34px;height:34px;border-radius:10px}.bp-calm .bp-hi svg{width:19px;height:19px}
+
+.bp-hc{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.bp-hc.ok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:#15803d;font-size:.8rem;font-weight:600}
+.bp-hc.ok svg{width:17px;height:17px;flex:none}.bp-hc.ok small{width:100%;color:var(--muted);font-weight:500;font-size:.68rem;padding-left:25px;margin-top:-4px}
+.bp-fix{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:.82rem}.bp-fix>span:nth-child(2){flex:1}
+.bp-fix .bp-hi{width:26px;height:26px}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -6758,7 +6764,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=189;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=190;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6825,6 +6831,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00190","28 Oct 2026",["If battery is restricted the alarm status now says Almost ready instead of Ready. Bell panel: the four status chips are replaced. When everything is fine you see one calm line, All checks passed. When something is wrong, only that item is shown with a button to fix it (allow access, reconnect, battery, notifications)."]],
   ["0.0.0.00189","28 Oct 2026",["Bell panel: small health chips (Access, Service, Battery, Notifications) show at a glance whether the alarm is ready; when there are no alerts and no open orders the two empty cards become one calm All clear strip; the last-heard tile says Never until KuCoin is heard."]],
   ["0.0.0.00188","28 Oct 2026",["The bell panel has a cleaner look: an alarm card with the switch and four icon buttons (Seen, Snooze, Test, Settings), a summary row (alerts, open orders, KuCoin last heard), and separate cards for alerts, open orders and KuCoin notifications with counts and tidy empty states."]],
   ["0.0.0.00187","28 Oct 2026",["The bell in the top bar is now a small control centre: the Night order alarm switch with Seen, Snooze, Test and Alarm settings, the list of things that need attention, your open orders (tap one to open it) and the latest KuCoin notifications. The big alarm card in the menu is removed. The bell is always shown; its dot follows the alarm, and in the browser it shows alerts."]],
@@ -8326,6 +8333,7 @@ function naState(s){
   if(s.ringing)return{c:"bad",t:tr("Alarm ringing","Alarm baj raha hai"),d:tr("Tap Seen to stop it.","Band karne ke liye Seen dabao.")};
   if(!s.on)return{c:"off",t:tr("Alarm is off","Alarm band hai"),d:tr("Turn it on to hear new orders.","Naye order sunne ke liye ON karo.")};
   if(s.snoozeUntil>Date.now())return{c:"warn",t:tr("Snoozed","Snooze me"),d:tr("No alarm until ","Alarm nahi bajega: ")+new Date(s.snoozeUntil).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})};
+  if(s.battery===false)return{c:"warn",t:tr("Almost ready","Lagbhag taiyaar"),d:tr("Set battery to Unrestricted so the phone does not stop the alarm at night.","Battery Unrestricted karo, warna phone raat me alarm band kar sakta hai.")};
   return{c:"ok",t:tr("Ready","Taiyaar"),d:"BUY"+(s.buy&&s.sell?" + SELL":s.sell&&!s.buy?" SELL only":"")+" · "+(s.allday?tr("24 hours","24 ghante"):naHM(s.from)+" – "+naHM(s.to))}}
 sheets.nalarm=function(){
   const n=NA(),s=naRead();
@@ -8401,7 +8409,9 @@ sheets.bell=function(){
   const snz=s&&s.snoozeUntil>Date.now(),urgent=A.filter(a=>a.hi).length;
   const alarm=s?`<div class="bp-card bp-al ${st.c}"><div class="bp-alh"><span class="nap-ic">${NA_BELL}</span><span class="nap-tx"><b>${tr("Night order alarm","Raat ka order alarm")}</b><small><i class="bp-st ${st.c}"></i>${esc(st.t)} · ${esc(st.d)}</small></span>${s.access&&!s.listening?'<button type="button" class="mini primary" id="bl-rb">'+tr("Reconnect","Reconnect")+'</button>':`<label class="tog"><input type="checkbox" id="bl-on" ${s.on?"checked":""}><span></span></label>`}</div>
     <div class="bp-grid"><button type="button" id="bl-ack" ${s.ringing?"":"disabled"}>${BP_IC.seen}<span>${tr("Seen","Dekh liya")}</span></button><button type="button" id="bl-snz" class="${snz?"on":""}">${BP_IC.snz}<span>${snz?tr("Resume","Resume"):tr("Snooze 1h","Snooze 1h")}</span></button><button type="button" id="bl-test">${BP_IC.test}<span>${tr("Test","Test")}</span></button><button type="button" id="bl-set">${BP_IC.set}<span>${tr("Settings","Settings")}</span></button></div>
-    <div class="bp-chips">${[[s.access,tr("Access","Access")],[s.listening,tr("Service","Service")],[s.battery,tr("Battery","Battery")],[s.notif!==false,tr("Notifications","Notifications")]].map(([ok,t])=>`<span class="bp-chip ${ok?"ok":"bad"}"><i></i>${esc(t)}</span>`).join("")}</div>
+    ${(()=>{const L=[["access",s.access,tr("Notification access is off","Notification access band hai"),tr("Allow","Allow")],["service",!s.access||s.listening,tr("Alarm service is not connected","Alarm service connect nahi hai"),tr("Reconnect","Reconnect")],["battery",s.battery,tr("Battery is restricted","Battery restricted hai"),tr("Fix","Theek karo")],["notif",s.notif!==false,tr("App notifications are blocked","App notifications band hain"),tr("Allow","Allow")]],bad=L.filter(x=>!x[1]);
+      return bad.length?`<div class="bp-hc">${bad.map(x=>`<div class="bp-fix"><span class="bp-hi warn">${BP_IC.warn}</span><span>${esc(x[2])}</span><button type="button" class="mini primary" data-fx="${x[0]}">${esc(x[3])}</button></div>`).join("")}</div>`
+        :`<div class="bp-hc ok">${BP_IC.ok}<span>${tr("All checks passed","Saari checks pass")}</span><small>${tr("Access · Service · Battery · Notifications","Access · Service · Battery · Notifications")}</small></div>`})()}
     <p class="note bp-msg" id="bl-msg" hidden></p></div>`
    :`<div class="bp-card bp-al off"><div class="bp-alh"><span class="nap-ic">${NA_BELL}</span><span class="nap-tx"><b>${tr("Night order alarm","Raat ka order alarm")}</b><small>${tr("Works in the Android app only.","Sirf Android app me chalta hai.")}</small></span></div></div>`;
   const sum=`<div class="bp-sum"><div><b class="${urgent?"bad":A.length?"warn":"ok"}">${A.length}</b><span>${tr("Alerts","Alerts")}</span></div><div><b class="${allP.length?"warn":"ok"}">${allP.length}</b><span>${tr("Open orders","Open orders")}</span></div><div><b class="${s&&s.seenAt?"":"mut"}">${s?(s.seenAt?naAgo(s.seenAt).replace(" ago","").replace(" pehle",""):tr("Never","Kabhi nahi")):"–"}</b><span>${tr("KuCoin last heard","KuCoin last suna")}</span></div></div>`;
@@ -8419,6 +8429,11 @@ sheets.bell=function(){
     q("#bl-ack").onclick=()=>{n.naAck();setTimeout(()=>{sheets.bell();nalHeader()},300)};
     q("#bl-snz").onclick=()=>{const o=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:o?0:Date.now()+3600000});setTimeout(()=>{sheets.bell();nalHeader()},150)};
     q("#bl-test").onclick=()=>{if(!naRead().access){msg(tr("Give Notification access first.","Pehle Notification access do."));return}msg(n.naTest()?tr("Alarm is ringing. Tap Seen to stop it.","Alarm baj raha hai. Band karne ko Dekh liya dabao."):tr("The alarm service is not running. Open Settings and tap Reconnect.","Alarm service chalu nahi hai. Settings me Reconnect dabao."));setTimeout(()=>{const b=q("#bl-ack");if(b)b.disabled=false},300)};
+    el.querySelectorAll("[data-fx]").forEach(b=>b.onclick=()=>{const k=b.dataset.fx;
+      if(k==="access"){n.naOpenAccess();msg(tr("Find Pexai in the list and turn it ON, then come back.","List me Pexai dhundo, ON karo, phir wapas aao."))}
+      else if(k==="service"){n.naRebind();msg(tr("Reconnecting…","Reconnect ho raha hai…"));setTimeout(()=>sheets.bell(),1500)}
+      else if(k==="battery"){n.naOpenBattery();msg(tr("Choose Battery > Unrestricted, then come back.","Battery > Unrestricted chuno, phir wapas aao."))}
+      else{try{n.naAskNotif()}catch(e){}msg(tr("Allow notifications for Pexai when asked.","Poochne par Pexai ki notifications allow karo."))}});
     q("#bl-set").onclick=()=>sheets.nalarm()})};
 // bell in the top bar: shows the alarm state at a glance and opens the alarm screen
 function nalHeader(){

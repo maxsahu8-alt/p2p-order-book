@@ -88,3 +88,9 @@
 .bp-sum b.mut{color:var(--muted);font-size:.95rem;font-weight:600}
 .bp-calm{display:flex;align-items:center;gap:12px;padding:12px 14px}
 .bp-calm .bp-hi{width:34px;height:34px;border-radius:10px}.bp-calm .bp-hi svg{width:19px;height:19px}
+
+.bp-hc{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.bp-hc.ok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:#15803d;font-size:.8rem;font-weight:600}
+.bp-hc.ok svg{width:17px;height:17px;flex:none}.bp-hc.ok small{width:100%;color:var(--muted);font-weight:500;font-size:.68rem;padding-left:25px;margin-top:-4px}
+.bp-fix{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:.82rem}.bp-fix>span:nth-child(2){flex:1}
+.bp-fix .bp-hi{width:26px;height:26px}

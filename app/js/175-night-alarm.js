@@ -26,6 +26,7 @@ function naState(s){
   if(s.ringing)return{c:"bad",t:tr("Alarm ringing","Alarm baj raha hai"),d:tr("Tap Seen to stop it.","Band karne ke liye Seen dabao.")};
   if(!s.on)return{c:"off",t:tr("Alarm is off","Alarm band hai"),d:tr("Turn it on to hear new orders.","Naye order sunne ke liye ON karo.")};
   if(s.snoozeUntil>Date.now())return{c:"warn",t:tr("Snoozed","Snooze me"),d:tr("No alarm until ","Alarm nahi bajega: ")+new Date(s.snoozeUntil).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})};
+  if(s.battery===false)return{c:"warn",t:tr("Almost ready","Lagbhag taiyaar"),d:tr("Set battery to Unrestricted so the phone does not stop the alarm at night.","Battery Unrestricted karo, warna phone raat me alarm band kar sakta hai.")};
   return{c:"ok",t:tr("Ready","Taiyaar"),d:"BUY"+(s.buy&&s.sell?" + SELL":s.sell&&!s.buy?" SELL only":"")+" · "+(s.allday?tr("24 hours","24 ghante"):naHM(s.from)+" – "+naHM(s.to))}}
 sheets.nalarm=function(){
   const n=NA(),s=naRead();
@@ -101,7 +102,9 @@ sheets.bell=function(){
   const snz=s&&s.snoozeUntil>Date.now(),urgent=A.filter(a=>a.hi).length;
   const alarm=s?`<div class="bp-card bp-al ${st.c}"><div class="bp-alh"><span class="nap-ic">${NA_BELL}</span><span class="nap-tx"><b>${tr("Night order alarm","Raat ka order alarm")}</b><small><i class="bp-st ${st.c}"></i>${esc(st.t)} · ${esc(st.d)}</small></span>${s.access&&!s.listening?'<button type="button" class="mini primary" id="bl-rb">'+tr("Reconnect","Reconnect")+'</button>':`<label class="tog"><input type="checkbox" id="bl-on" ${s.on?"checked":""}><span></span></label>`}</div>
     <div class="bp-grid"><button type="button" id="bl-ack" ${s.ringing?"":"disabled"}>${BP_IC.seen}<span>${tr("Seen","Dekh liya")}</span></button><button type="button" id="bl-snz" class="${snz?"on":""}">${BP_IC.snz}<span>${snz?tr("Resume","Resume"):tr("Snooze 1h","Snooze 1h")}</span></button><button type="button" id="bl-test">${BP_IC.test}<span>${tr("Test","Test")}</span></button><button type="button" id="bl-set">${BP_IC.set}<span>${tr("Settings","Settings")}</span></button></div>
-    <div class="bp-chips">${[[s.access,tr("Access","Access")],[s.listening,tr("Service","Service")],[s.battery,tr("Battery","Battery")],[s.notif!==false,tr("Notifications","Notifications")]].map(([ok,t])=>`<span class="bp-chip ${ok?"ok":"bad"}"><i></i>${esc(t)}</span>`).join("")}</div>
+    ${(()=>{const L=[["access",s.access,tr("Notification access is off","Notification access band hai"),tr("Allow","Allow")],["service",!s.access||s.listening,tr("Alarm service is not connected","Alarm service connect nahi hai"),tr("Reconnect","Reconnect")],["battery",s.battery,tr("Battery is restricted","Battery restricted hai"),tr("Fix","Theek karo")],["notif",s.notif!==false,tr("App notifications are blocked","App notifications band hain"),tr("Allow","Allow")]],bad=L.filter(x=>!x[1]);
+      return bad.length?`<div class="bp-hc">${bad.map(x=>`<div class="bp-fix"><span class="bp-hi warn">${BP_IC.warn}</span><span>${esc(x[2])}</span><button type="button" class="mini primary" data-fx="${x[0]}">${esc(x[3])}</button></div>`).join("")}</div>`
+        :`<div class="bp-hc ok">${BP_IC.ok}<span>${tr("All checks passed","Saari checks pass")}</span><small>${tr("Access · Service · Battery · Notifications","Access · Service · Battery · Notifications")}</small></div>`})()}
     <p class="note bp-msg" id="bl-msg" hidden></p></div>`
    :`<div class="bp-card bp-al off"><div class="bp-alh"><span class="nap-ic">${NA_BELL}</span><span class="nap-tx"><b>${tr("Night order alarm","Raat ka order alarm")}</b><small>${tr("Works in the Android app only.","Sirf Android app me chalta hai.")}</small></span></div></div>`;
   const sum=`<div class="bp-sum"><div><b class="${urgent?"bad":A.length?"warn":"ok"}">${A.length}</b><span>${tr("Alerts","Alerts")}</span></div><div><b class="${allP.length?"warn":"ok"}">${allP.length}</b><span>${tr("Open orders","Open orders")}</span></div><div><b class="${s&&s.seenAt?"":"mut"}">${s?(s.seenAt?naAgo(s.seenAt).replace(" ago","").replace(" pehle",""):tr("Never","Kabhi nahi")):"–"}</b><span>${tr("KuCoin last heard","KuCoin last suna")}</span></div></div>`;
@@ -119,6 +122,11 @@ sheets.bell=function(){
     q("#bl-ack").onclick=()=>{n.naAck();setTimeout(()=>{sheets.bell();nalHeader()},300)};
     q("#bl-snz").onclick=()=>{const o=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:o?0:Date.now()+3600000});setTimeout(()=>{sheets.bell();nalHeader()},150)};
     q("#bl-test").onclick=()=>{if(!naRead().access){msg(tr("Give Notification access first.","Pehle Notification access do."));return}msg(n.naTest()?tr("Alarm is ringing. Tap Seen to stop it.","Alarm baj raha hai. Band karne ko Dekh liya dabao."):tr("The alarm service is not running. Open Settings and tap Reconnect.","Alarm service chalu nahi hai. Settings me Reconnect dabao."));setTimeout(()=>{const b=q("#bl-ack");if(b)b.disabled=false},300)};
+    el.querySelectorAll("[data-fx]").forEach(b=>b.onclick=()=>{const k=b.dataset.fx;
+      if(k==="access"){n.naOpenAccess();msg(tr("Find Pexai in the list and turn it ON, then come back.","List me Pexai dhundo, ON karo, phir wapas aao."))}
+      else if(k==="service"){n.naRebind();msg(tr("Reconnecting…","Reconnect ho raha hai…"));setTimeout(()=>sheets.bell(),1500)}
+      else if(k==="battery"){n.naOpenBattery();msg(tr("Choose Battery > Unrestricted, then come back.","Battery > Unrestricted chuno, phir wapas aao."))}
+      else{try{n.naAskNotif()}catch(e){}msg(tr("Allow notifications for Pexai when asked.","Poochne par Pexai ki notifications allow karo."))}});
     q("#bl-set").onclick=()=>sheets.nalarm()})};
 // bell in the top bar: shows the alarm state at a glance and opens the alarm screen
 function nalHeader(){
