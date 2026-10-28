@@ -47,6 +47,8 @@ public class NightAlarmService extends NotificationListenerService {
     private String ringKind = "";
     private long ringStart = 0;
     private boolean ringing = false;
+    private long orderAt = 0;
+    private boolean escalated = false;
 
     // ------------------------------------------------------------------ settings
     public static SharedPreferences sp(Context c) { return c.getSharedPreferences(PREF, Context.MODE_PRIVATE); }
@@ -64,6 +66,7 @@ public class NightAlarmService extends NotificationListenerService {
             o.put("buyEvery", p.getInt("buyEvery", 60));
             o.put("sellEvery", p.getInt("sellEvery", 120));
             o.put("maxMin", p.getInt("maxMin", 30));
+            o.put("payMin", p.getInt("payMin", 15));
             o.put("loud", p.getBoolean("loud", true));
             o.put("snoozeUntil", p.getLong("snoozeUntil", 0));
             o.put("pkg", p.getString("pkg", "kucoin"));
@@ -100,9 +103,11 @@ public class NightAlarmService extends NotificationListenerService {
             if (o.has("buyEvery")) e.putInt("buyEvery", clamp(o.getInt("buyEvery"), 20, 600));
             if (o.has("sellEvery")) e.putInt("sellEvery", clamp(o.getInt("sellEvery"), 20, 900));
             if (o.has("maxMin")) e.putInt("maxMin", clamp(o.getInt("maxMin"), 1, 120));
+            if (o.has("payMin")) e.putInt("payMin", clamp(o.getInt("payMin"), 0, 120));
             if (o.has("lang")) e.putString("lang", "hi".equals(o.getString("lang")) ? "hi" : "en");
             if (o.has("snoozeUntil")) e.putLong("snoozeUntil", o.getLong("snoozeUntil"));
             e.apply();
+            scheduleCheck(c);
             if (!o.optBoolean("on", sp(c).getBoolean("on", false)) && live != null) live.stopRing();
         } catch (Exception e) { }
     }
@@ -160,16 +165,83 @@ public class NightAlarmService extends NotificationListenerService {
 
     // ------------------------------------------------------------------ listener
     @Override
-    public void onListenerConnected() { live = this; }
+    public void onListenerConnected() {
+        live = this;
+        try { ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancel(NID + 2); } catch (Throwable e) { }
+        scheduleCheck(this);
+    }
 
     @Override
     public void onListenerDisconnected() {
         if (live == this) live = null;
+        if (sp(this).getBoolean("on", false)) warn(this, hi(this) ? "Alarm band ho gaya hai" : "Night alarm lost its connection",
+                hi(this) ? "Pexai kholo, alarm dobara jud jayega. Tab tak naye order par alarm nahi bajega." : "Open Pexai to reconnect it. New orders will not ring until then.");
         try { if (Build.VERSION.SDK_INT >= 24) requestRebind(new android.content.ComponentName(this, NightAlarmService.class)); } catch (Exception e) { }
     }
 
     @Override
     public void onDestroy() { stopRing(); if (live == this) live = null; super.onDestroy(); }
+
+    // ------------------------------------------------------------------ warnings and the nightly readiness check
+    static final String CH_WARN = "na_warn";
+    static final String ACT_CHECK = "com.p2p.orderbook.NA_CHECK";
+
+    /** A loud heads-up notification that says the alarm may not work. */
+    static void warn(Context c, String title, String text) {
+        try {
+            NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel(CH_WARN) == null)
+                nm.createNotificationChannel(new NotificationChannel(CH_WARN, "Night alarm warnings", NotificationManager.IMPORTANCE_HIGH));
+            Intent open = new Intent(c, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent pi = PendingIntent.getActivity(c, 3, open, PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
+            Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(c, CH_WARN) : new Notification.Builder(c);
+            b.setSmallIcon(android.R.drawable.ic_dialog_alert).setContentTitle(title).setContentText(text)
+                    .setStyle(new Notification.BigTextStyle().bigText(text)).setContentIntent(pi).setAutoCancel(true);
+            if (Build.VERSION.SDK_INT < 26) { b.setPriority(Notification.PRIORITY_HIGH); b.setDefaults(Notification.DEFAULT_ALL); }
+            nm.notify(NID + 2, b.build());
+        } catch (Throwable e) { }
+    }
+
+    /** Why the alarm would not work tonight, or "" when everything is fine. */
+    static String problem(Context c) {
+        boolean h = hi(c);
+        if (!hasAccess(c)) return h ? "Notification access band hai" : "Notification access is off";
+        if (live == null) return h ? "Alarm service jud nahi paayi" : "The alarm service is not connected";
+        if (!ignoringBattery(c)) return h ? "Battery restriction laga hai, raat me app so sakti hai" : "Battery limit is on, the app may sleep at night";
+        try { if (!((NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE)).areNotificationsEnabled()) return h ? "Pexai ki notifications band hain" : "Pexai notifications are off"; } catch (Throwable e) { }
+        return "";
+    }
+
+    /** Runs 30 minutes before the night window starts: warns if the alarm would not work tonight. */
+    static void runCheck(Context c) {
+        SharedPreferences p = sp(c);
+        if (p.getBoolean("on", false)) {
+            String pr = problem(c);
+            if (pr.length() > 0) {
+                rebind(c);
+                warn(c, hi(c) ? "Aaj raat alarm kaam nahi karega" : "Tonight's alarm may not work", pr + (hi(c) ? ". Pexai kholkar theek karo." : ". Open Pexai to fix it."));
+            }
+        }
+        scheduleCheck(c);
+    }
+
+    /** Plan the next check (30 minutes before the window starts; 22:30 if the alarm is on all day). */
+    public static void scheduleCheck(Context c) {
+        try {
+            SharedPreferences p = sp(c);
+            android.app.AlarmManager am = (android.app.AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+            Intent i = new Intent(c, NightAlarmAck.class).setAction(ACT_CHECK);
+            PendingIntent pi = PendingIntent.getBroadcast(c, 4, i, PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
+            if (!p.getBoolean("on", false)) { am.cancel(pi); return; }
+            int startMin = p.getBoolean("allday", true) ? 23 * 60 : p.getInt("from", 23 * 60);
+            int at = ((startMin - 30) % 1440 + 1440) % 1440;
+            Calendar t = Calendar.getInstance();
+            t.set(Calendar.HOUR_OF_DAY, at / 60); t.set(Calendar.MINUTE, at % 60); t.set(Calendar.SECOND, 0); t.set(Calendar.MILLISECOND, 0);
+            if (t.getTimeInMillis() <= System.currentTimeMillis() + 60000) t.add(Calendar.DAY_OF_YEAR, 1);
+            if (Build.VERSION.SDK_INT >= 23) am.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, t.getTimeInMillis(), pi);
+            else am.set(android.app.AlarmManager.RTC_WAKEUP, t.getTimeInMillis(), pi);
+        } catch (Throwable e) { }
+    }
 
     /** Which kind of KuCoin notification is this? Only the title and text are looked at, and they are not kept. */
     static String classify(String title, String text) {
@@ -282,7 +354,7 @@ public class NightAlarmService extends NotificationListenerService {
             boolean snoozed = System.currentTimeMillis() < p.getLong("snoozeUntil", 0);
             boolean ring = want && !snoozed && inWindow(p);
             addLog(this, kind, ring);
-            if (ring) startRing(kind);
+            if (ring) startRing(kind, pt);
         } catch (Throwable e) { }
     }
 
@@ -292,15 +364,18 @@ public class NightAlarmService extends NotificationListenerService {
             if (!ringing) return;
             SharedPreferences p = sp(NightAlarmService.this);
             long maxMs = p.getInt("maxMin", 30) * 60000L;
-            if (System.currentTimeMillis() - ringStart > maxMs) { stopRing(); return; }
+            if (System.currentTimeMillis() - ringStart > maxMs) { addLog(NightAlarmService.this, "MISS", true); stopRing(); return; }
+            boolean esc = System.currentTimeMillis() - ringStart >= 180000L;
+            if (esc && !escalated) { escalated = true; showNote(); }
             playOnce();
             if (ringKind.equals("UNK")) { H.postDelayed(() -> { if (ringKind.equals("UNK")) stopRing(); }, 20000); return; }
             int every = ringKind.equals("BUY") ? p.getInt("buyEvery", 60) : p.getInt("sellEvery", 120);
+            if (esc) every = Math.min(every, 25); // not seen for 3 minutes: ring much more often
             H.postDelayed(this, every * 1000L);
         }
     };
 
-    private void startRing(String kind) {
+    private void startRing(String kind, long at) {
         H.post(() -> {
             try {
                 // a BUY order is more urgent than a SELL one
@@ -308,6 +383,8 @@ public class NightAlarmService extends NotificationListenerService {
                 boolean wasRinging = ringing;
                 ringKind = kind;
                 ringStart = System.currentTimeMillis();
+                orderAt = at > 0 && at <= ringStart ? at : ringStart;
+                escalated = false;
                 ringing = true;
                 // the wake lock only keeps the phone awake; the alarm must still ring if it is refused
                 try {
@@ -338,7 +415,10 @@ public class NightAlarmService extends NotificationListenerService {
         releasePlayer();
         AudioAttributes aa = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build();
         boolean ok = false;
-        int[] types = {RingtoneManager.TYPE_ALARM, RingtoneManager.TYPE_RINGTONE, RingtoneManager.TYPE_NOTIFICATION};
+        // BUY (you must pay) uses the alarm sound, SELL uses the ringtone, so the two can be told apart without looking
+        int[] types = ringKind.equals("SELL") ? new int[]{RingtoneManager.TYPE_RINGTONE, RingtoneManager.TYPE_NOTIFICATION, RingtoneManager.TYPE_ALARM}
+                : ringKind.equals("UNK") ? new int[]{RingtoneManager.TYPE_NOTIFICATION, RingtoneManager.TYPE_ALARM, RingtoneManager.TYPE_RINGTONE}
+                : new int[]{RingtoneManager.TYPE_ALARM, RingtoneManager.TYPE_RINGTONE, RingtoneManager.TYPE_NOTIFICATION};
         for (int ty : types) {
             if (ok) break;
             try {
@@ -387,7 +467,8 @@ public class NightAlarmService extends NotificationListenerService {
         try {
             Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             if (v != null) {
-                long[] pat = {0, 700, 400, 700, 400, 700};
+                long[] pat = ringKind.equals("SELL") ? new long[]{0, 250, 150, 250, 150, 250, 150, 250}
+                        : escalated ? new long[]{0, 1500, 200, 1500, 200, 1500} : new long[]{0, 900, 300, 900, 300, 900};
                 if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createWaveform(pat, -1), aa);
                 else v.vibrate(pat, -1);
             }
@@ -455,6 +536,15 @@ public class NightAlarmService extends NotificationListenerService {
                     .setDeleteIntent(pa)
                     .setAutoCancel(true)
                     .addAction(new Notification.Action.Builder(null, hi(this) ? "Dekh liya" : "Seen", pa).build());
+            if (escalated && !unk) b.setContentTitle(hi(this) ? "ABHI TAK NAHI DEKHA! " + (buy ? "BUY order" : "SELL order") : "STILL NOT SEEN! " + (buy ? "BUY order" : "SELL order"));
+            // a timer on the notification: time left of the payment window (set in the alarm settings), or time passed
+            int pay = sp(this).getInt("payMin", 15);
+            if (!unk && pay > 0 && Build.VERSION.SDK_INT >= 24) {
+                long end = orderAt + pay * 60000L;
+                b.setShowWhen(true).setUsesChronometer(true);
+                if (end > System.currentTimeMillis()) { b.setWhen(end); b.setChronometerCountDown(true); }
+                else { b.setWhen(orderAt); b.setChronometerCountDown(false); }
+            }
             if (Build.VERSION.SDK_INT < 26) b.setPriority(Notification.PRIORITY_MAX);
             nm.notify(NID, b.build());
         } catch (Throwable e) { }
@@ -473,7 +563,19 @@ public class NightAlarmService extends NotificationListenerService {
 
     /** "Dekh liya": stop the alarm. */
     public static void ack(Context c) {
-        if (live != null) live.stopRing();
+        if (live != null) {
+            if (live.ringing) {
+                try {
+                    JSONObject o = new JSONObject();
+                    JSONArray a = log(c);
+                    o.put("t", System.currentTimeMillis()); o.put("k", "ACK"); o.put("r", 1);
+                    o.put("d", (int) ((System.currentTimeMillis() - live.ringStart) / 1000L));
+                    a.put(o);
+                    sp(c).edit().putString("log", a.toString()).apply();
+                } catch (Exception e) { }
+            }
+            live.stopRing();
+        }
         else { try { ((NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(NID); } catch (Exception e) { } }
     }
 
@@ -481,7 +583,7 @@ public class NightAlarmService extends NotificationListenerService {
     public static boolean test(Context c) {
         if (live == null) return false;
         addLog(c, "TEST", true);
-        live.startRing("BUY");
+        live.startRing("BUY", System.currentTimeMillis());
         return true;
     }
 
