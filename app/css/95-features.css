@@ -94,3 +94,24 @@
 .bp-hc.ok svg{width:17px;height:17px;flex:none}.bp-hc.ok small{width:100%;color:var(--muted);font-weight:500;font-size:.68rem;padding-left:25px;margin-top:-4px}
 .bp-fix{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:.82rem}.bp-fix>span:nth-child(2){flex:1}
 .bp-fix .bp-hi{width:26px;height:26px}
+
+/* alarm settings screen */
+.ns-sec{font:700 .68rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:6px 4px -4px}
+.ns-card{padding:4px 14px}
+.ns-row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 0;background:none;border:0;border-top:1px solid var(--line);font:inherit;color:inherit;text-align:left}
+.ns-card>.ns-row:first-child{border-top:0}
+.ns-go{cursor:pointer}
+.ns-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;background:rgba(120,120,120,.13);color:var(--muted)}.ns-ic svg{width:18px;height:18px}
+.ns-tx{flex:1;min-width:0}.ns-tx b{display:block;font-size:.9rem}.ns-tx small{display:block;color:var(--muted);font-size:.74rem;margin-top:1px;line-height:1.3}
+.ns-cap{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:.74rem;color:var(--muted);line-height:1.45}
+.ns-win{margin:0 0 10px;padding-top:10px;border-top:1px solid var(--line)}
+.ns-grid{margin:0 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+.ns-act{grid-template-columns:repeat(3,1fr);margin:0}
+.ns-act2{padding:12px 14px}.ns-act2 .nap-heard{margin:0 0 6px;font-size:.8rem}
+.ns-diag{font-family:ui-monospace,monospace;font-size:.7rem;margin:0 0 8px;color:var(--muted)}
+.ns-evl{border-top:1px solid var(--line);margin:6px 0}
+.ns-evl .bp-row:first-child{border-top:0}
+.ns-sum{margin:6px 0 0;font-size:.74rem}
+.ns-foot{display:flex;justify-content:space-between;gap:8px;margin-top:2px}
+
+.bp-card.nap-hero{display:block;margin:0;padding:12px}

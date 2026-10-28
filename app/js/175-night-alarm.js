@@ -28,54 +28,53 @@ function naState(s){
   if(s.snoozeUntil>Date.now())return{c:"warn",t:tr("Snoozed","Snooze me"),d:tr("No alarm until ","Alarm nahi bajega: ")+new Date(s.snoozeUntil).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})};
   if(s.battery===false)return{c:"warn",t:tr("Almost ready","Lagbhag taiyaar"),d:tr("Set battery to Unrestricted so the phone does not stop the alarm at night.","Battery Unrestricted karo, warna phone raat me alarm band kar sakta hai.")};
   return{c:"ok",t:tr("Ready","Taiyaar"),d:"BUY"+(s.buy&&s.sell?" + SELL":s.sell&&!s.buy?" SELL only":"")+" · "+(s.allday?tr("24 hours","24 ghante"):naHM(s.from)+" – "+naHM(s.to))}}
+const NS_IC={acc:'<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',bat:'<rect x="3" y="8" width="16" height="9" rx="2"/><path d="M21 11v3M7 12v1M11 12v1"/>',dnd:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',buy:'<path d="M12 5v14M6 13l6 6 6-6"/>',sell:'<path d="M12 19V5M6 11l6-6 6 6"/>',vol:'<path d="M4 10v4h4l5 4V6l-5 4zM16.5 9a4 4 0 0 1 0 6"/>',clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',log:'<path d="M5 6h14M5 12h14M5 18h9"/>'};
+const nsI=k=>`<span class="ns-ic">${BI(NS_IC[k])}</span>`;
 sheets.nalarm=function(){
   const n=NA(),s=naRead();
-  if(!n||!s){openSheet(`<div class="insw"><h3>${tr("Night order alarm","Raat ka order alarm")}</h3><p class="note">${tr("This alarm works only in the Android app. Install the latest APK, then come back here.","Ye alarm sirf Android app me chalta hai. Latest APK install karo, phir yahan aao.")}</p><div class="cpexp"><button type="button" class="mini ghost" data-close>${tr("Close","Band karo")}</button></div></div>`);return}
+  if(!n||!s){openSheet(`<div class="insw nap bp"><div class="bp-top"><h3>${tr("Night order alarm","Raat ka order alarm")}</h3><button type="button" class="bp-x" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="bp-card"><p class="bp-empty">${tr("This alarm works only in the Android app. Install the latest APK, then come back here.","Ye alarm sirf Android app me chalta hai. Latest APK install karo, phir yahan aao.")}</p></div></div>`);return}
   try{naSet({lang:LANG()})}catch(e){}
   try{if(s.notif===false&&typeof n.naAskNotif==="function")n.naAskNotif()}catch(e){}
   const st=naState(s);
-  const tg=(k,t,d,on)=>`<div class="dqr fsr"><span><b>${esc(t)}</b><small>${esc(d)}</small></span><label class="tog"><input type="checkbox" data-na="${k}" ${on?"checked":""}><span></span></label></div>`;
   const opt=(arr,v,f)=>arr.map(x=>`<option value="${x}" ${x==v?"selected":""}>${f(x)}</option>`).join("");
   const since=Date.now()-12*3600000,all=naLogRead(),sm=naSummary(all,orders,since);
   const snz=s.snoozeUntil>Date.now();
-  const row=(pill,cls,t,d,id,b)=>`<div class="dqr fsr nap-r"><span><b>${esc(t)}</b><small>${esc(d)}</small></span><span class="nap-end"><em class="nap-pill ${cls}">${esc(pill)}</em>${id?`<button type="button" class="mini ghost" id="${id}">${esc(b)}</button>`:""}</span></div>`;
-  const ev=all.slice(-8).reverse().map(x=>`<div class="nap-ev"><i class="k-${x.k}">${NA_K[x.k]||x.k}</i><span>${new Date(x.t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span><small>${x.r?tr("alarm rang","alarm baja"):tr("no alarm","alarm nahi")}</small></div>`).join("");
+  const tg=(k,ic,t,d,on)=>`<div class="ns-row">${nsI(ic)}<span class="ns-tx"><b>${esc(t)}</b><small>${esc(d)}</small></span><label class="tog"><input type="checkbox" data-na="${k}" ${on?"checked":""}><span></span></label></div>`;
+  const go=(id,ic,t,d,pill,cls)=>`<button type="button" class="ns-row ns-go" id="${id}">${nsI(ic)}<span class="ns-tx"><b>${esc(t)}</b><small>${esc(d)}</small></span><em class="nap-pill ${cls}">${esc(pill)}</em><svg viewBox="0 0 24 24" class="bp-ch"><path d="M9 6l6 6-6 6"/></svg></button>`;
+  const ev=all.slice(-6).reverse().map(x=>`<div class="bp-row bp-ev"><i class="k-${x.k}">${NA_K[x.k]||x.k}</i><span>${new Date(x.t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span><small>${x.r?tr("alarm rang","alarm baja"):tr("no alarm","alarm nahi")}</small></div>`).join("");
   const heard=s.seenAt?`${tr("KuCoin heard","KuCoin suna")} ${naAgo(s.seenAt)}${s.seenKind&&s.seenKind!=="OTHER"?" · "+(NA_K[s.seenKind]||s.seenKind):""}${s.seenPkg?` · <span class="nap-pkg">${esc(s.seenPkg)}</span>`:""}`:tr("No KuCoin notification heard yet.","Abhi tak KuCoin ki koi notification nahi suni.");
-  openSheet(`<div class="insw nap"><h3>${tr("Night order alarm","Raat ka order alarm")}</h3>
-   <div class="nap-hero ${st.c}"><span class="nap-ic">${NA_BELL}</span><span class="nap-tx"><b>${esc(st.t)}</b><small>${esc(st.d)}</small></span>${s.access&&!s.listening?'<button type="button" class="mini primary" id="na-rb">'+tr("Reconnect","Reconnect")+'</button>':`<label class="tog"><input type="checkbox" data-na="on" ${s.on?"checked":""}><span></span></label>`}</div>
-   <p class="note nap-priv">${tr(`Rings a loud alarm for a new KuCoin BUY or SELL order until you tap Seen. Only the type and time of a notification are kept. Names and chat messages are never read.`,`KuCoin ka naya BUY ya SELL order aate hi tez alarm bajega, jab tak Seen na dabao. Sirf notification ka type aur time yaad rehta hai. Naam ya chat kabhi nahi padhi jaati.`)}</p>
-   <div class="pcsec">${tr("Setup","Setup")}</div><div class="rml">
-    ${row(s.access?tr("Granted","Mil gaya"):tr("Required","Zaroori"),s.access?"ok":"bad",tr("Notification access","Notification access"),tr("Lets Pexai see KuCoin notifications","Pexai ko KuCoin ki notification dekhne do"),"na-acc",s.access?tr("Check","Check"):tr("Open","Kholo"))}
-    ${row(s.battery?tr("Unrestricted","Unrestricted"):tr("Restricted","Restricted"),s.battery?"ok":"warn",tr("Battery","Battery"),tr("Set to Unrestricted so the phone does not stop the app at night","Unrestricted rakho, warna phone raat me app band kar sakta hai"),"na-bat",tr("Open","Kholo"))}
-    ${row(tr("Check","Check"),"info",tr("Do Not Disturb","Do Not Disturb"),tr("Keep Alarms allowed so it rings in silent or DND mode","Alarms allow rakho taaki silent ya DND me bhi bajey"),"na-dnd",tr("Open","Kholo"))}
-   </div>
-   <div class="pcsec">${tr("Alerts","Alerts")}</div><div class="rml">
-    ${tg("buy",tr("BUY order","BUY order"),tr("You must pay: loud alarm every time","Payment karna hai: har baar tez alarm"),s.buy)}
-    ${tg("sell",tr("SELL order","SELL order"),tr("Buyer is paying: alarm","Buyer pay kar raha hai: alarm"),s.sell)}
-    ${tg("loud",tr("Full volume","Full awaaz"),tr("Alarm volume goes to maximum","Alarm ki awaaz apne aap max ho jati hai"),s.loud)}
-   </div>
-   <div class="pcsec">${tr("Schedule","Schedule")}</div><div class="rml">
-    ${tg("allday",tr("24 hours","24 ghante"),tr("Turn off to use only the time below","Band karo to sirf neeche ka time"),s.allday)}
-   </div>
-   <div class="nap-win" id="na-win" ${s.allday?"hidden":""}><label><small>${tr("From","Se")}</small><input type="time" id="na-from" value="${naHM(s.from)}"></label><label><small>${tr("To","Tak")}</small><input type="time" id="na-to" value="${naHM(s.to)}"></label></div>
-   <div class="nap-grid">
-    <label><small>${tr("BUY rings every","BUY alarm har")}</small><select id="na-be">${opt([30,60,120,180],s.buyEvery,x=>x+" sec")}</select></label>
-    <label><small>${tr("SELL rings every","SELL alarm har")}</small><select id="na-se">${opt([60,120,180,300],s.sellEvery,x=>x+" sec")}</select></label>
-    <label><small>${tr("Stop after","Maximum")}</small><select id="na-mx">${opt([10,20,30,60],s.maxMin,x=>x+" min")}</select></label></div>
-   <div class="nap-act"><button type="button" class="primary" id="na-test">${tr("Test alarm","Test alarm")}</button><button type="button" class="mini ghost" id="na-ack">${tr("Seen","Dekh liya")}</button><button type="button" class="mini ghost" id="na-snz">${snz?tr("Cancel snooze","Snooze hatao"):tr("Snooze 1 hour","1 ghanta snooze")}</button></div>
-   <p class="note" id="na-msg" style="margin:6px 0"></p>
-   <div class="pcsec">${tr("Activity","Activity")}</div>
-   <p class="note nap-heard">${heard}</p>
-   <p class="note" id="na-diag" ${s.diag?"":"hidden"}>${s.diag?tr("Sound check: ","Sound check: ")+esc(s.diag):""}</p>
-   ${s.err?`<p class="note warnline">${tr("Last sound problem: ","Aakhri sound problem: ")}${esc(s.err)}</p>`:""}
-   ${ev?`<div class="nap-evl">${ev}</div>`:""}
-   <p class="note">${tr(`Last 12 hours — Notifications: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. Orders added in the app: <b>${sm.made}</b>.`,`Pichle 12 ghante — Notification: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. App me daale gaye order: <b>${sm.made}</b>.`)}${sm.missing?` <span class="warnline">${tr(`Maybe ${sm.missing} order(s) are not added in the app. Please check.`,`Shayad ${sm.missing} order app me nahi daale. Check karo.`)}</span>`:""}</p>
-   <p class="note">${tr("This is only an estimate. The notification time can differ from the real order time.","Ye sirf andaza hai. Notification ka time order ke asli time se alag ho sakta hai.")}</p>
-   <div class="cpexp"><button type="button" class="mini ghost" id="na-clr">${tr("Clear log","Log saaf karo")}</button><button type="button" class="mini ghost" data-close>${tr("Close","Band karo")}</button></div></div>`,el=>{
-    const q=x=>el.querySelector(x),msg=t=>{q("#na-msg").textContent=t};
+  openSheet(`<div class="insw nap bp"><div class="bp-top"><h3>${tr("Night order alarm","Raat ka order alarm")}</h3><button type="button" class="bp-x" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+   <div class="bp-card bp-al nap-hero ${st.c}"><div class="bp-alh"><span class="nap-ic">${NA_BELL}</span><span class="nap-tx"><b>${esc(st.t)}</b><small>${esc(st.d)}</small></span>${s.access&&!s.listening?'<button type="button" class="mini primary" id="na-rb">'+tr("Reconnect","Reconnect")+'</button>':`<label class="tog"><input type="checkbox" data-na="on" ${s.on?"checked":""}><span></span></label>`}</div>
+    <p class="ns-cap">${tr("Rings a loud alarm for a new KuCoin BUY or SELL order until you tap Seen. Only the type and time of a notification are kept. Names and chat messages are never read.","KuCoin ka naya BUY ya SELL order aate hi tez alarm bajega, jab tak Seen na dabao. Sirf notification ka type aur time yaad rehta hai. Naam ya chat kabhi nahi padhi jaati.")}</p></div>
+   <div class="ns-sec">${tr("Setup","Setup")}</div><div class="bp-card ns-card">
+    ${go("na-acc","acc",tr("Notification access","Notification access"),tr("Lets Pexai see KuCoin notifications","Pexai ko KuCoin ki notification dekhne do"),s.access?tr("Granted","Mil gaya"):tr("Required","Zaroori"),s.access?"ok":"bad")}
+    ${go("na-bat","bat",tr("Battery","Battery"),tr("Unrestricted, so the phone does not stop the app at night","Unrestricted rakho, warna phone raat me app band kar sakta hai"),s.battery?tr("Unrestricted","Unrestricted"):tr("Restricted","Restricted"),s.battery?"ok":"warn")}
+    ${go("na-dnd","dnd",tr("Do Not Disturb","Do Not Disturb"),tr("Keep Alarms allowed so it rings in silent or DND mode","Alarms allow rakho taaki silent ya DND me bhi bajey"),tr("Check","Check"),"info")}</div>
+   <div class="ns-sec">${tr("Alerts","Alerts")}</div><div class="bp-card ns-card">
+    ${tg("buy","buy",tr("BUY order","BUY order"),tr("You must pay: loud alarm every time","Payment karna hai: har baar tez alarm"),s.buy)}
+    ${tg("sell","sell",tr("SELL order","SELL order"),tr("Buyer is paying: alarm","Buyer pay kar raha hai: alarm"),s.sell)}
+    ${tg("loud","vol",tr("Full volume","Full awaaz"),tr("Alarm volume goes to maximum","Alarm ki awaaz apne aap max ho jati hai"),s.loud)}</div>
+   <div class="ns-sec">${tr("Schedule and timing","Schedule aur timing")}</div><div class="bp-card ns-card">
+    ${tg("allday","clock",tr("24 hours","24 ghante"),tr("Turn off to ring only in the time window","Band karo to sirf neeche ke time me bajega"),s.allday)}
+    <div class="nap-win ns-win" id="na-win" ${s.allday?"hidden":""}><label><small>${tr("From","Se")}</small><input type="time" id="na-from" value="${naHM(s.from)}"></label><label><small>${tr("To","Tak")}</small><input type="time" id="na-to" value="${naHM(s.to)}"></label></div>
+    <div class="nap-grid ns-grid">
+     <label><small>${tr("BUY rings every","BUY alarm har")}</small><select id="na-be">${opt([30,60,120,180],s.buyEvery,x=>x+" sec")}</select></label>
+     <label><small>${tr("SELL rings every","SELL alarm har")}</small><select id="na-se">${opt([60,120,180,300],s.sellEvery,x=>x+" sec")}</select></label>
+     <label><small>${tr("Stop after","Maximum")}</small><select id="na-mx">${opt([10,20,30,60],s.maxMin,x=>x+" min")}</select></label></div></div>
+   <div class="bp-grid ns-act"><button type="button" id="na-test">${BP_IC.test}<span>${tr("Test alarm","Test alarm")}</span></button><button type="button" id="na-ack">${BP_IC.seen}<span>${tr("Seen","Dekh liya")}</span></button><button type="button" id="na-snz" class="${snz?"on":""}">${BP_IC.snz}<span>${snz?tr("Resume","Resume"):tr("Snooze 1h","Snooze 1h")}</span></button></div>
+   <p class="note bp-msg" id="na-msg" hidden></p>
+   <div class="ns-sec">${tr("Activity","Activity")}</div><div class="bp-card ns-card ns-act2">
+    <p class="nap-heard">${heard}</p>
+    <p class="note ns-diag" id="na-diag" ${s.diag?"":"hidden"}>${s.diag?tr("Sound check: ","Sound check: ")+esc(s.diag):""}</p>
+    ${s.err?`<p class="note warnline">${tr("Last sound problem: ","Aakhri sound problem: ")}${esc(s.err)}</p>`:""}
+    ${ev?`<div class="ns-evl">${ev}</div>`:""}
+    <p class="note ns-sum">${tr(`Last 12 hours — Notifications: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. Orders added in the app: <b>${sm.made}</b>.`,`Pichle 12 ghante — Notification: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. App me daale gaye order: <b>${sm.made}</b>.`)}${sm.missing?` <span class="warnline">${tr(`Maybe ${sm.missing} order(s) are not added in the app. Please check.`,`Shayad ${sm.missing} order app me nahi daale. Check karo.`)}</span>`:""}</p>
+    <p class="note ns-sum">${tr("This is only an estimate. The notification time can differ from the real order time.","Ye sirf andaza hai. Notification ka time order ke asli time se alag ho sakta hai.")}</p></div>
+   <div class="ns-foot"><button type="button" class="mini ghost" id="na-clr">${tr("Clear log","Log saaf karo")}</button><button type="button" class="mini ghost" data-close>${tr("Close","Band karo")}</button></div></div>`,el=>{
+    const q=x=>el.querySelector(x),msg=t=>{const m=q("#na-msg");m.textContent=t;m.hidden=!t};
     el.querySelectorAll("[data-na]").forEach(c=>c.onchange=()=>{
       const k=c.dataset.na;if(k==="on"&&c.checked&&!naRead().access){c.checked=false;msg(tr("Give Notification access first (setup step 1).","Pehle Notification access do (setup ka step 1)."));return}
-      naSet({[k]:c.checked});if(k==="allday")q("#na-win").hidden=c.checked;if(k==="on")setTimeout(()=>sheets.nalarm(),150);toast(c.checked?"ON":"OFF")});
+      naSet({[k]:c.checked});if(k==="allday")q("#na-win").hidden=c.checked;if(k==="on")setTimeout(()=>{sheets.nalarm();nalHeader()},150);toast(c.checked?"ON":"OFF")});
     const rb=q("#na-rb");if(rb)rb.onclick=()=>{n.naRebind();msg(tr("Reconnecting…","Reconnect ho raha hai…"));setTimeout(()=>sheets.nalarm(),1500)};
     q("#na-from").onchange=q("#na-to").onchange=()=>naSet({from:naMin(q("#na-from").value),to:naMin(q("#na-to").value)});
     q("#na-be").onchange=()=>naSet({buyEvery:+q("#na-be").value});
@@ -88,7 +87,7 @@ sheets.nalarm=function(){
       setTimeout(()=>{try{const r=naRead(),d=q("#na-diag");if(d&&r){d.hidden=!r.diag&&!r.err;d.textContent=(r.diag?tr("Sound check: ","Sound check: ")+r.diag:"")+(r.err?" · "+tr("problem: ","problem: ")+r.err:"")}}catch(e){}},1600);
       msg(n.naTest()?tr("Alarm is ringing. Tap 'Seen' to stop it.","Alarm baj raha hai. Band karne ko 'Dekh liya' dabao."):tr("The alarm service is not running yet. Tap Reconnect or reopen the app.","Alarm service abhi chalu nahi hai. Reconnect dabao ya app dobara kholo."))};
     q("#na-ack").onclick=()=>{n.naAck();msg(tr("Alarm stopped.","Alarm band."))};
-    q("#na-snz").onclick=()=>{const on=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:on?0:Date.now()+3600000});q("#na-snz").textContent=on?tr("Snooze 1 hour","1 ghanta snooze"):tr("Cancel snooze","Snooze hatao");msg(on?tr("Snooze cancelled.","Snooze hata diya."):tr("No alarm for 1 hour.","1 ghante tak alarm nahi bajega."))};
+    q("#na-snz").onclick=()=>{const on=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:on?0:Date.now()+3600000});q("#na-snz span").textContent=on?tr("Snooze 1h","Snooze 1h"):tr("Resume","Resume");msg(on?tr("Snooze cancelled.","Snooze hata diya."):tr("No alarm for 1 hour.","1 ghante tak alarm nahi bajega."));nalHeader()};
     q("#na-clr").onclick=()=>{n.naClearLog();msg(tr("Log cleared.","Log saaf."));setTimeout(()=>sheets.nalarm(),400)}});
 };
 // ---- the bell: alarm control, alerts and open orders in one panel
