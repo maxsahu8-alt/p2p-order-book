@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=194;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=195;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00195","28 Oct 2026",["Night order alarm now learns. If KuCoin sends a P2P notification the app does not recognise (for example the wording changed), the alarm rings once instead of staying silent, and the bell panel asks you what it is: BUY, SELL, Complete or Ignore. Pexai remembers the answer for next time. Only the notification title is kept, with numbers removed, never names, amounts or chat. Learned notifications can be forgotten in the alarm settings. Needs the new APK (0.0.0.00110)."]],
   ["0.0.0.00194","28 Oct 2026",["Fix: the bell above Search had made the top bar about 13 px taller on every screen, which pushed content down. The top bar is back to its original height."]],
   ["0.0.0.00193","28 Oct 2026",["The bell panel is back to only what matters: the alarm, the summary, alerts, open orders and KuCoin notifications. The Today, Quick actions and Night check cards added in the last update are removed."]],
   ["0.0.0.00192","28 Oct 2026",["The bell panel does more: a Today card (profit, orders, USDT stock, and a warning when an open order has been waiting more than 30 minutes), Quick actions (New order, Intake, Pay party, Backup) and the Night check list that you can tick without leaving the panel."]],

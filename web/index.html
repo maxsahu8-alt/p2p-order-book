@@ -1657,6 +1657,13 @@ label.bp-ck span{color:var(--fg);font-weight:500}
 .xr #alarmBtn svg{width:15px;height:15px}
 .xr #alarmBtn .nadot{top:0;right:0}
 .xr #searchBtn{position:absolute;top:8px;left:0;width:38px;height:34px}
+
+.bp-unkr{border-top:1px solid var(--line);padding:10px 0}
+.bp-unkr b{display:block;font-size:.84rem;word-break:break-word}.bp-unkr small{display:block;color:var(--muted);font-size:.7rem;margin:2px 0 8px}
+.bp-unkb{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.bp-unkb button{padding:9px 2px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:700 .72rem var(--body);cursor:pointer}
+.bp-unkb button[data-lk=BUY]{color:#b91c1c}.bp-unkb button[data-lk=SELL]{color:#15803d}
+.ns-learn{border-top:1px solid var(--line);padding:10px 0}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -6802,7 +6809,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=194;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=195;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6869,6 +6876,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00195","28 Oct 2026",["Night order alarm now learns. If KuCoin sends a P2P notification the app does not recognise (for example the wording changed), the alarm rings once instead of staying silent, and the bell panel asks you what it is: BUY, SELL, Complete or Ignore. Pexai remembers the answer for next time. Only the notification title is kept, with numbers removed, never names, amounts or chat. Learned notifications can be forgotten in the alarm settings. Needs the new APK (0.0.0.00110)."]],
   ["0.0.0.00194","28 Oct 2026",["Fix: the bell above Search had made the top bar about 13 px taller on every screen, which pushed content down. The top bar is back to its original height."]],
   ["0.0.0.00193","28 Oct 2026",["The bell panel is back to only what matters: the alarm, the summary, alerts, open orders and KuCoin notifications. The Today, Quick actions and Night check cards added in the last update are removed."]],
   ["0.0.0.00192","28 Oct 2026",["The bell panel does more: a Today card (profit, orders, USDT stock, and a warning when an open order has been waiting more than 30 minutes), Quick actions (New order, Intake, Pay party, Backup) and the Night check list that you can tick without leaving the panel."]],
@@ -8366,7 +8374,7 @@ function naSummary(log,ords,since){
 }
 const NA_BELL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>';
 function naAgo(t){if(!t)return"";const m=Math.round((Date.now()-t)/60000);return m<1?tr("just now","abhi abhi"):m<60?m+tr(" min ago"," min pehle"):m<1440?Math.round(m/60)+tr(" h ago"," ghante pehle"):Math.round(m/1440)+tr(" d ago"," din pehle")}
-const NA_K={BUY:"BUY",SELL:"SELL",DONE:"Complete",TEST:"Test",CHAT:"Chat",OTHER:"Other"};
+const NA_K={UNK:"New",BUY:"BUY",SELL:"SELL",DONE:"Complete",TEST:"Test",CHAT:"Chat",OTHER:"Other"};
 // the state shown at the top of the screen
 function naState(s){
   if(!s.ver)return{c:"warn",t:tr("Old APK installed","Purana APK laga hai"),d:tr("Install the latest APK (0.0.0.00107 or newer) for the alarm to work properly.","Alarm sahi chalane ke liye latest APK (0.0.0.00107 ya naya) install karo.")};
@@ -8418,6 +8426,7 @@ sheets.nalarm=function(){
     ${s.err?`<p class="note warnline">${tr("Last sound problem: ","Aakhri sound problem: ")}${esc(s.err)}</p>`:""}
     ${ev?`<div class="ns-evl">${ev}</div>`:""}
     <p class="note ns-sum">${tr(`Last 12 hours — Notifications: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. Orders added in the app: <b>${sm.made}</b>.`,`Pichle 12 ghante — Notification: <b>${sm.buy}</b> BUY, <b>${sm.sell}</b> SELL, <b>${sm.done}</b> complete. App me daale gaye order: <b>${sm.made}</b>.`)}${sm.missing?` <span class="warnline">${tr(`Maybe ${sm.missing} order(s) are not added in the app. Please check.`,`Shayad ${sm.missing} order app me nahi daale. Check karo.`)}</span>`:""}</p>
+    ${s.learnedN>0?`<div class="ns-row ns-learn"><span class="ns-tx"><b>${tr("Learned notifications","Seekhi hui notifications")}: ${s.learnedN}</b><small>${tr("Notifications you taught Pexai to recognise","Jo notifications tumne Pexai ko sikhayi")}</small></span><button type="button" class="mini ghost" id="na-forget">${tr("Forget all","Sab bhulo")}</button></div>`:""}
     <p class="note ns-sum">${tr("This is only an estimate. The notification time can differ from the real order time.","Ye sirf andaza hai. Notification ka time order ke asli time se alag ho sakta hai.")}</p></div>
    <div class="ns-foot"><button type="button" class="mini ghost" id="na-clr">${tr("Clear log","Log saaf karo")}</button><button type="button" class="mini ghost" data-close>${tr("Close","Band karo")}</button></div></div>`,el=>{
     const q=x=>el.querySelector(x),msg=t=>{const m=q("#na-msg");m.textContent=t;m.hidden=!t};
@@ -8437,6 +8446,7 @@ sheets.nalarm=function(){
       msg(n.naTest()?tr("Alarm is ringing. Tap 'Seen' to stop it.","Alarm baj raha hai. Band karne ko 'Dekh liya' dabao."):tr("The alarm service is not running yet. Tap Reconnect or reopen the app.","Alarm service abhi chalu nahi hai. Reconnect dabao ya app dobara kholo."))};
     q("#na-ack").onclick=()=>{n.naAck();msg(tr("Alarm stopped.","Alarm band."))};
     q("#na-snz").onclick=()=>{const on=naRead().snoozeUntil>Date.now();naSet({snoozeUntil:on?0:Date.now()+3600000});q("#na-snz span").textContent=on?tr("Snooze 1h","Snooze 1h"):tr("Resume","Resume");msg(on?tr("Snooze cancelled.","Snooze hata diya."):tr("No alarm for 1 hour.","1 ghante tak alarm nahi bajega."));nalHeader()};
+    const fg=q("#na-forget");if(fg)fg.onclick=()=>{n.naForgetLearned();msg(tr("Forgot everything it had learned.","Jo seekha tha sab bhula diya."));setTimeout(()=>sheets.nalarm(),400)};
     q("#na-clr").onclick=()=>{n.naClearLog();msg(tr("Log cleared.","Log saaf."));setTimeout(()=>sheets.nalarm(),400)}});
 };
 // ---- the bell: alarm control, alerts and open orders in one panel
@@ -8459,11 +8469,14 @@ sheets.bell=function(){
   const attn=`<div class="bp-card">${bpHead(A.length?BP_IC.warn:BP_IC.ok,tr("Needs attention","Dhyan do"),A.length||"",A.length?(urgent?"bad":"warn"):"ok")}${A.length?A.slice(0,6).map(a=>`<button type="button" class="bp-row bl-al ${a.hi?"hi":""}" ${aAttr(a)}><i class="bp-dot"></i><span>${esc(a.t)}</span><svg viewBox="0 0 24 24" class="bp-ch"><path d="M9 6l6 6-6 6"/></svg></button>`).join(""):`<p class="bp-empty">${tr("All clear. Nothing needs attention.","Sab theek hai. Kuch dhyan dene layak nahi.")}</p>`}</div>`;
   const po=`<div class="bp-card">${bpHead(BP_IC.ord,tr("Open orders","Open orders"),allP.length||"",allP.length?"warn":"")}${pend.length?pend.map(o=>`<button type="button" class="bp-row bl-ord" data-oid="${esc(o.id)}"><span class="bp-sd ${o.side==="BUY"?"b":"s"}">${esc(o.side)}</span><span class="bp-tx"><b>${esc(String(o.qty))} ${esc(o.coin||"USDT")}</b><small>${esc(o.cp||"")}${o.time?" · "+naAgo(o.time):""}</small></span><em class="nap-pill warn">${esc(o.status)}</em></button>`).join(""):`<p class="bp-empty">${tr("No open orders.","Koi open order nahi.")}</p>`}</div>`;
   const hv=s?`<div class="bp-card">${bpHead(BP_IC.sig,tr("KuCoin notifications","KuCoin notifications"))}${ev.length?ev.map(x=>`<div class="bp-row bp-ev"><i class="k-${x.k}">${NA_K[x.k]||x.k}</i><span>${new Date(x.t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span><small>${x.r?tr("alarm rang","alarm baja"):tr("no alarm","alarm nahi")}</small></div>`).join(""):`<p class="bp-empty">${s.seenAt?tr("KuCoin heard ","KuCoin suna ")+naAgo(s.seenAt)+".":tr("Waiting for the first KuCoin order notification. Nothing has been heard yet.","Pehli KuCoin order notification ka intezaar hai. Abhi tak kuch nahi suna.")}</p>`}</div>`:"";
+  const unk=(s&&Array.isArray(s.unk)?s.unk:[]);
+  const unkCard=unk.length?`<div class="bp-card bp-unk">${bpHead(BP_IC.warn,tr("Unrecognised notification","Pehchani nahi gayi notification"),unk.length,"warn")}<p class="note" style="margin:2px 0 6px">${tr("The alarm rang once because KuCoin sent something new. Tell Pexai what it is and it will remember.","Kuch naya aaya isliye alarm ek baar baja. Batao ye kya hai, Pexai yaad rakhega.")}</p>${unk.map((u,i)=>`<div class="bp-unkr"><b>${esc(u.title)}</b><small>${naAgo(u.t)}${u.n>1?" · ×"+u.n:""}</small><div class="bp-unkb" data-ut="${i}"><button type="button" data-lk="BUY">BUY</button><button type="button" data-lk="SELL">SELL</button><button type="button" data-lk="DONE">${tr("Complete","Complete")}</button><button type="button" data-lk="IGNORE">${tr("Ignore","Ignore")}</button></div></div>`).join("")}</div>`:"";
   const calm=!A.length&&!allP.length;
   const calmCard=`<div class="bp-card bp-calm"><span class="bp-hi ok">${BP_IC.ok}</span><span class="bp-tx"><b>${tr("All clear","Sab theek hai")}</b><small>${tr("No alerts and no open orders.","Koi alert nahi aur koi open order nahi.")}</small></span></div>`;
-  openSheet(`<div class="insw nap bp"><div class="bp-top"><h3>${tr("Alerts and alarm","Alerts aur alarm")}</h3><button type="button" class="bp-x" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>${alarm}${sum}${calm?calmCard:attn+po}${hv}</div>`,el=>{
+  openSheet(`<div class="insw nap bp"><div class="bp-top"><h3>${tr("Alerts and alarm","Alerts aur alarm")}</h3><button type="button" class="bp-x" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>${alarm}${unkCard}${sum}${calm?calmCard:attn+po}${hv}</div>`,el=>{
     const q=x=>el.querySelector(x),msg=t=>{const m=q("#bl-msg");if(m){m.textContent=t;m.hidden=!t}};
     el.querySelectorAll(".bl-ord").forEach(b=>b.onclick=()=>{$("#sheetBg").hidden=true;document.body.style.overflow="";try{orderSheet(b.dataset.oid)}catch(e){}});
+    el.querySelectorAll("[data-lk]").forEach(b=>b.onclick=()=>{const w=b.closest("[data-ut]"),u=unk[+w.dataset.ut];if(!u)return;try{n.naLearn(u.title,b.dataset.lk)}catch(e){}toast(tr("Saved. Pexai will remember this.","Save ho gaya. Pexai yaad rakhega."));setTimeout(()=>{sheets.bell();nalHeader()},200)});
     if(!n)return;
     const on=q("#bl-on");if(on)on.onchange=()=>{if(on.checked&&!naRead().access){on.checked=false;msg(tr("Give Notification access first (open Settings).","Pehle Notification access do (Settings kholo)."));return}naSet({on:on.checked});toast(on.checked?"Night alarm ON":"Night alarm OFF");setTimeout(()=>{sheets.bell();nalHeader()},150)};
     const rb=q("#bl-rb");if(rb)rb.onclick=()=>{n.naRebind();msg(tr("Reconnecting…","Reconnect ho raha hai…"));setTimeout(()=>sheets.bell(),1500)};
@@ -8482,7 +8495,7 @@ function nalHeader(){
   b.classList.remove("ih");b.hidden=false;
   const A=(typeof lastAlerts!=="undefined"&&lastAlerts)||[],hi=A.some(a=>a.hi);
   const s=NA()&&feat("nightalarm")?naRead():null;
-  if(s){const st=naState(s);d.className="nadot "+(st.c==="ok"&&hi?"warn":st.c);b.title=st.t+" · "+st.d}
+  if(s){const st=naState(s),uk=Array.isArray(s.unk)&&s.unk.length>0;d.className="nadot "+(st.c==="ok"&&(hi||uk)?"warn":st.c);b.title=st.t+" · "+st.d}
   else{d.className="nadot "+(A.length?(hi?"bad":"warn"):"off");b.title=A.length?A.length+" alerts":"Alerts"}}
 (function(){const b=document.getElementById("alarmBtn");if(b){b.setAttribute("aria-label","Alerts and alarm");b.onclick=()=>sheets.bell()}
   [600,1500,3000,6000].forEach(t=>setTimeout(nalHeader,t));setInterval(nalHeader,20000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)nalHeader()})})();

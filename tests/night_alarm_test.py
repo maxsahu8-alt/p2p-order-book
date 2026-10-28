@@ -12,7 +12,7 @@ window.__calls=[];
 window.__log=[{t:%d,k:"BUY",r:1},{t:%d,k:"SELL",r:1},{t:%d,k:"DONE",r:0},{t:%d,k:"TEST",r:1},{t:%d,k:"BUY",r:1}];
 window.P2PNative={appReady(){},naGet(){return JSON.stringify(window.__na)},naSet(j){window.__calls.push(['set',j]);Object.assign(window.__na,JSON.parse(j))},
  naLog(){return JSON.stringify(window.__log)},naClearLog(){window.__log=[]},naAck(){window.__calls.push(['ack'])},naTest(){window.__calls.push(['test']);return true},
- naRebind(){window.__calls.push(["rb"])},naOpenAccess(){window.__calls.push(['acc'])},naOpenBattery(){window.__calls.push(['bat'])},naOpenDnd(){window.__calls.push(['dnd'])}};
+ naRebind(){window.__calls.push(["rb"])},naLearn(t,k){window.__calls.push(["learn",t,k]);window.__na.unk=[]},naForgetLearned(){window.__calls.push(["forget"])},naOpenAccess(){window.__calls.push(['acc'])},naOpenBattery(){window.__calls.push(['bat'])},naOpenDnd(){window.__calls.push(['dnd'])}};
 """%(now-3600000,now-7200000,now-1800000,now-60000,now-20*3600000)
 with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':900});errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
@@ -69,6 +69,15 @@ with sync_playwright() as p:
     pg.evaluate("window.__na.on=true;window.__na.access=true;window.__na.battery=true;window.__na.listening=true;window.__na.ringing=false;window.__na.snoozeUntil=0;nalHeader()");
     chk("top bar bell visible and green",pg.evaluate("!document.getElementById('alarmBtn').classList.contains('ih')&&!document.getElementById('alarmBtn').hidden&&document.getElementById('alarmDot').classList.contains('ok')"))
     pg.evaluate("window.__na.ringing=true;nalHeader()");chk("bell red while ringing",pg.evaluate("document.getElementById('alarmDot').classList.contains('bad')"))
+    pg.evaluate("window.__na.unk=[{title:'seller appealed your p#p order',t:Date.now()-60000,n:2}];window.__na.on=true;window.__na.access=true;window.__na.battery=true;window.__na.listening=true;window.__na.ringing=false;window.__na.snoozeUntil=0;sheets.bell()");pg.wait_for_timeout(300)
+    chk("unrecognised card shown",pg.evaluate("document.querySelector('#sheetBody').textContent.includes('Unrecognised notification')&&document.querySelector('#sheetBody').textContent.includes('seller appealed')"))
+    pg.evaluate("document.querySelector('[data-lk=SELL]').click()");pg.wait_for_timeout(100)
+    chk("learn SELL sent to the app",pg.evaluate("window.__calls.some(c=>c[0]==='learn'&&c[2]==='SELL'&&c[1].includes('appealed'))"))
+    pg.wait_for_timeout(400)
+    chk("card gone after learning",pg.evaluate("!document.querySelector('.bp-unk')"))
+    pg.evaluate("window.__na.learnedN=2;sheets.nalarm()");pg.wait_for_timeout(200)
+    pg.evaluate("document.querySelector('#na-forget').click()");chk("forget learned",pg.evaluate("window.__calls.some(c=>c[0]==='forget')"))
+    pg.wait_for_timeout(500)
     chk("no page errors",not errs)
     if errs:print(errs)
     b.close()
