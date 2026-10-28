@@ -81,3 +81,10 @@
 .bp-tx{flex:1;min-width:0}.bp-tx b{display:block;font-size:.88rem}.bp-tx small{display:block;color:var(--muted);font-size:.74rem}
 .bp-empty{margin:2px 0 4px;padding:6px 0 2px;color:var(--muted);font-size:.8rem}
 .bp-ev{cursor:default;font-size:.78rem}.bp-ev i{font-style:normal;font-weight:700;font-size:.66rem;padding:2px 7px;border-radius:6px;background:rgba(120,120,120,.16)}.bp-ev i.k-BUY{background:rgba(220,38,38,.16);color:#b91c1c}.bp-ev i.k-SELL{background:rgba(22,163,74,.16);color:#15803d}.bp-ev small{color:var(--muted)}
+
+.bp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.bp-chip{display:inline-flex;align-items:center;gap:6px;font-size:.68rem;font-weight:600;padding:4px 9px;border-radius:99px;background:rgba(120,120,120,.12);color:var(--muted)}
+.bp-chip i{width:6px;height:6px;border-radius:50%;background:#9ca3af}.bp-chip.ok i{background:#16a34a}.bp-chip.bad{background:rgba(217,119,6,.14);color:#b45309}.bp-chip.bad i{background:#d97706}
+.bp-sum b.mut{color:var(--muted);font-size:.95rem;font-weight:600}
+.bp-calm{display:flex;align-items:center;gap:12px;padding:12px 14px}
+.bp-calm .bp-hi{width:34px;height:34px;border-radius:10px}.bp-calm .bp-hi svg{width:19px;height:19px}
