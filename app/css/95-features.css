@@ -233,3 +233,12 @@ label.bp-ck span{color:var(--fg);font-weight:500}
 .mkx-cn i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:800 .68rem var(--body);font-style:normal;background:var(--soft);color:var(--fg)}
 .mkx-note{color:var(--muted);font-size:.7rem;line-height:1.45;margin:14px 2px 0}
 .mkx-tag{min-width:40px;text-align:center;box-sizing:border-box}
+
+.mkx-pill.warn{color:#d97706;background:color-mix(in srgb,#d97706 15%,transparent)}
+.mkx-rl small{line-height:1.35}
+.mkx-sp{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--soft) 55%,transparent)}
+.mkx-sp span{font-size:.78rem;color:var(--muted);font-weight:600}.mkx-sp b{font-size:.98rem;font-variant-numeric:tabular-nums}.mkx-sp b.pos{color:#16a34a}.mkx-sp b.neg{color:#dc2626}
+.mkx-cn i{background:color-mix(in srgb,var(--k,#64748b) 18%,transparent);color:var(--k,#64748b)}
+.mkx-hero{position:relative;overflow:hidden}
+.mkx-hero::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 16%,transparent),transparent 70%);pointer-events:none}
+.mkx-ch,.mkx-cr{grid-template-columns:1fr 1.15fr 1.55fr .95fr}
