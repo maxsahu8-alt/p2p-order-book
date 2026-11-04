@@ -196,3 +196,40 @@ label.bp-ck span{color:var(--fg);font-weight:500}
 .bapick button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .bapk1{padding:0 0 10px}.bapk1[hidden]{display:none}
 .babig{display:block;width:100%;margin-top:8px;padding:12px}.bachg{flex:none}
+
+/* Live market sheet: professional layout (build 202) */
+.mkx-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.mkx-top h3{margin:0;font-size:1.25rem}
+.mkx-sub{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.74rem;margin-top:4px}
+.mkx-ref{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:8px 12px;font:600 .8rem var(--body);cursor:pointer;flex:none}
+.mkx-ref svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mkx-hero{border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,var(--surface),var(--bg));padding:16px 18px 14px;margin-bottom:6px}
+.mkx-lab{display:block;font:700 .66rem var(--body);letter-spacing:.1em;color:var(--muted)}
+.mkx-pr{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+.mkx-pr b{font-size:2.3rem;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.mkx-eq{display:block;margin-top:8px;color:var(--muted);font-size:.74rem}
+.mkx-pill{font-style:normal;font:700 .7rem var(--body);padding:3px 8px;border-radius:99px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mkx-pill.big{font-size:.78rem;padding:5px 10px}
+.mkx-pill.up{color:#16a34a;background:color-mix(in srgb,#16a34a 14%,transparent)}
+.mkx-pill.dn{color:#dc2626;background:color-mix(in srgb,#dc2626 14%,transparent)}
+.mkx-sec{font:700 .68rem var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:18px 2px 8px}
+.mkx-card{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden}
+.mkx-rt{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:13px 14px}
+.mkx-rt+.mkx-rt{border-top:1px solid var(--line)}
+.mkx-tag{font:800 .62rem var(--body);letter-spacing:.06em;padding:4px 7px;border-radius:7px}
+.mkx-tag.sell{color:#16a34a;background:color-mix(in srgb,#16a34a 14%,transparent)}
+.mkx-tag.buy{color:#dc2626;background:color-mix(in srgb,#dc2626 14%,transparent)}
+.mkx-rl b{display:block;font-size:.86rem}.mkx-rl small{display:block;color:var(--muted);font-size:.72rem;margin-top:2px}
+.mkx-rv{text-align:right}.mkx-rv b{display:block;font-size:1.02rem;font-variant-numeric:tabular-nums}.mkx-rv .mkx-pill{display:inline-block;margin-top:3px}
+.mkx-ad{display:flex;justify-content:space-between;gap:10px;padding:12px 14px;align-items:center}
+.mkx-ad+.mkx-ad{border-top:1px solid var(--line)}
+.mkx-ad b{display:block;font-size:.95rem}.mkx-ad small{color:var(--muted);font-size:.72rem}.mkx-lim{text-align:right;white-space:nowrap}
+.mkx-ch,.mkx-cr{display:grid;grid-template-columns:1.1fr 1.2fr 1.5fr .9fr;gap:6px;align-items:center;padding:11px 14px}
+.mkx-ch{font:700 .64rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-top:10px;padding-bottom:10px}
+.mkx-ch span:not(:first-child),.mkx-cr>span:not(:first-child){text-align:right}
+.mkx-cr+.mkx-cr{border-top:1px solid var(--line)}
+.mkx-cr>span{font-size:.82rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mkx-cn{display:flex;align-items:center;gap:8px}.mkx-cn b{font-size:.86rem}
+.mkx-cn i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:800 .68rem var(--body);font-style:normal;background:var(--soft);color:var(--fg)}
+.mkx-note{color:var(--muted);font-size:.7rem;line-height:1.45;margin:14px 2px 0}
+.mkx-tag{min-width:40px;text-align:center;box-sizing:border-box}

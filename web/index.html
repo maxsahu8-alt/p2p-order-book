@@ -1721,6 +1721,43 @@ label.bp-ck span{color:var(--fg);font-weight:500}
 .bapick button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .bapk1{padding:0 0 10px}.bapk1[hidden]{display:none}
 .babig{display:block;width:100%;margin-top:8px;padding:12px}.bachg{flex:none}
+
+/* Live market sheet: professional layout (build 202) */
+.mkx-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.mkx-top h3{margin:0;font-size:1.25rem}
+.mkx-sub{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.74rem;margin-top:4px}
+.mkx-ref{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:8px 12px;font:600 .8rem var(--body);cursor:pointer;flex:none}
+.mkx-ref svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mkx-hero{border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,var(--surface),var(--bg));padding:16px 18px 14px;margin-bottom:6px}
+.mkx-lab{display:block;font:700 .66rem var(--body);letter-spacing:.1em;color:var(--muted)}
+.mkx-pr{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+.mkx-pr b{font-size:2.3rem;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.mkx-eq{display:block;margin-top:8px;color:var(--muted);font-size:.74rem}
+.mkx-pill{font-style:normal;font:700 .7rem var(--body);padding:3px 8px;border-radius:99px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mkx-pill.big{font-size:.78rem;padding:5px 10px}
+.mkx-pill.up{color:#16a34a;background:color-mix(in srgb,#16a34a 14%,transparent)}
+.mkx-pill.dn{color:#dc2626;background:color-mix(in srgb,#dc2626 14%,transparent)}
+.mkx-sec{font:700 .68rem var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:18px 2px 8px}
+.mkx-card{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden}
+.mkx-rt{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:13px 14px}
+.mkx-rt+.mkx-rt{border-top:1px solid var(--line)}
+.mkx-tag{font:800 .62rem var(--body);letter-spacing:.06em;padding:4px 7px;border-radius:7px}
+.mkx-tag.sell{color:#16a34a;background:color-mix(in srgb,#16a34a 14%,transparent)}
+.mkx-tag.buy{color:#dc2626;background:color-mix(in srgb,#dc2626 14%,transparent)}
+.mkx-rl b{display:block;font-size:.86rem}.mkx-rl small{display:block;color:var(--muted);font-size:.72rem;margin-top:2px}
+.mkx-rv{text-align:right}.mkx-rv b{display:block;font-size:1.02rem;font-variant-numeric:tabular-nums}.mkx-rv .mkx-pill{display:inline-block;margin-top:3px}
+.mkx-ad{display:flex;justify-content:space-between;gap:10px;padding:12px 14px;align-items:center}
+.mkx-ad+.mkx-ad{border-top:1px solid var(--line)}
+.mkx-ad b{display:block;font-size:.95rem}.mkx-ad small{color:var(--muted);font-size:.72rem}.mkx-lim{text-align:right;white-space:nowrap}
+.mkx-ch,.mkx-cr{display:grid;grid-template-columns:1.1fr 1.2fr 1.5fr .9fr;gap:6px;align-items:center;padding:11px 14px}
+.mkx-ch{font:700 .64rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-top:10px;padding-bottom:10px}
+.mkx-ch span:not(:first-child),.mkx-cr>span:not(:first-child){text-align:right}
+.mkx-cr+.mkx-cr{border-top:1px solid var(--line)}
+.mkx-cr>span{font-size:.82rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mkx-cn{display:flex;align-items:center;gap:8px}.mkx-cn b{font-size:.86rem}
+.mkx-cn i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:800 .68rem var(--body);font-style:normal;background:var(--soft);color:var(--fg)}
+.mkx-note{color:var(--muted);font-size:.7rem;line-height:1.45;margin:14px 2px 0}
+.mkx-tag{min-width:40px;text-align:center;box-sizing:border-box}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -6866,7 +6903,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=201;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=202;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -6933,6 +6970,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00202","4 Nov 2026",["Live market screen redesigned: a clear USDT/INR price card with the 24h change, your last sell and buy rate shown against the market with a SELL or BUY tag and the difference, P2P ads and the coin list in clean cards with rounded change pills, and a tidy refresh button. Nothing was removed."]],
   ["0.0.0.00201","28 Oct 2026",["Bank audit: choosing a bank now uses tap buttons inside the screen instead of the phone drop-down, which did not select on some phones. Each order has a Set bank or Change bank button that opens the list of your banks."]],
   ["0.0.0.00200","28 Oct 2026",["Bank audit: every order in the list now has a Change bank menu, so a UPI Lite payment that was added to the wrong bank can be moved to the right one."]],
   ["0.0.0.00199","28 Oct 2026",["New Bank audit (in the menu). It checks every order against your banks and lists the ones with no bank, a missing bank, a part not assigned, or paid by UPI Lite. A switch makes UPI Lite and GPay payments come out of the bank directly (the separate Lite balance is no longer counted), with a preview of each bank balance before and after. Bulk Set bank fills only what is missing, needs a second tap to confirm, and a backup is saved first. The switch is off until you turn it on."]],
@@ -7562,12 +7600,19 @@ function mkStrip(){const el=document.getElementById("mkStrip");if(!el)return;con
 sheets.market=function(){const draw=()=>{const m=MK,ago=m.t?Math.max(0,Math.round((Date.now()-m.t)/1000)):null;const yb=lastRate("USDT","BUY"),ys=lastRate("USDT","SELL");
   const ads=(L,lab)=>L&&L.length?`<div class="pcsec">${lab}</div>`+L.slice(0,4).map(a=>`<div class="mkad"><span><b>₹${mkP(a.price)}</b><small>${esc(a.name||"")}${a.pay&&a.pay.length?" · "+esc(a.pay.join(", ")):""}</small></span><span style="text-align:right"><small>₹${mkP(a.min)} – ₹${mkP(a.max)}</small></span></div>`).join(""):"";
   const cmp=(y,lab)=>y&&m.usdtInr?`<div class="dqr"><span>${lab}<small>market ₹${mkP(m.usdtInr)}</small></span><b>₹${mkP(y)} <small class="${y-m.usdtInr>=0?"p7pos":"p7neg"}">${y-m.usdtInr>=0?"+":""}${(y-m.usdtInr).toFixed(2)}</small></b></div>`:"";
-  openSheet(`<div class="insw"><div class="insh"><h3>Live market</h3><button type="button" class="mini ghost" id="mk-r">${mkBusy?"Updating…":"Refresh"}</button></div>
-   ${m.usdtInr?`<div class="mkhero"><span class="note">1 USDT =</span><b>₹${mkP(m.usdtInr)}</b>${m.chg!=null?`<span class="${m.chg>=0?"p7pos":"p7neg"}">${mkPct(m.chg)} · 24h</span>`:""}<div class="note" style="margin-top:4px">${ago==null?"":ago<90?"updated just now":ago<3600?"updated "+Math.round(ago/60)+" min ago":"old price, updated "+new Date(m.t).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})} · ${esc(m.src||"")}${m.err?" · offline":""}</div></div>`:`<p class="note">${m.err==="offline"||navigator.onLine===false?"No internet. The price will show when you are online.":"Loading the price…"}</p>`}
-   ${cmp(ys,"Your last sell rate")}${cmp(yb,"Your last buy rate")}
-   ${ads(m.p2pBuy,"P2P: buy USDT from (lowest first)")}${ads(m.p2pSell,"P2P: sell USDT to (highest first)")}
-   ${m.coins&&m.coins.length?`<div class="pcsec">Coins</div><div class="mkc h"><span>Coin</span><span class="r">In USDT</span><span class="r">In ₹</span><span class="r">24h</span></div>${m.coins.map(c=>`<div class="mkc"><b>${c.s}</b><span class="r">${mkP(c.usdt)}</span><span class="r">₹${mkP(c.inr)}</span><span class="r ${c.chg>=0?"p7pos":"p7neg"}">${c.chg==null?"":mkPct(c.chg)}</span></div>`).join("")}`:""}
-   <p class="note">Market prices only, not your trade rates. ₹ price of a coin = its USDT price × USDT/INR. P2P ads may not load on some networks.</p></div>`,el=>{el.querySelector("#mk-r").onclick=async()=>{await mkRefresh();if($("#sheetBody").querySelector("#mk-r"))draw()}})};
+  const tm=m.t?new Date(m.t).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}):"";
+  const when=ago==null?"":ago<90?"Updated just now":ago<3600?"Updated "+Math.round(ago/60)+" min ago":"Old price, updated "+tm;
+  const stale=ago!=null&&ago>=600;
+  const pill=v=>v==null?"":`<em class="mkx-pill ${v>=0?"up":"dn"}">${mkPct(v)}</em>`;
+  const rate=(y,lab,tag)=>y&&m.usdtInr?`<div class="mkx-rt"><span class="mkx-tag ${tag}">${tag.toUpperCase()}</span><span class="mkx-rl"><b>${lab}</b><small>Market ₹${mkP(m.usdtInr)}</small></span><span class="mkx-rv"><b>₹${mkP(y)}</b><em class="mkx-pill ${y-m.usdtInr>=0?"up":"dn"}">${y-m.usdtInr>=0?"+":""}${(y-m.usdtInr).toFixed(2)}</em></span></div>`:"";
+  const rates=rate(ys,"Your last sell rate","sell")+rate(yb,"Your last buy rate","buy");
+  const adL=(L,lab)=>L&&L.length?`<div class="mkx-sec">${lab}</div><div class="mkx-card">${L.slice(0,4).map(a=>`<div class="mkx-ad"><span><b>₹${mkP(a.price)}</b><small>${esc(a.name||"")}${a.pay&&a.pay.length?" · "+esc(a.pay.join(", ")):""}</small></span><small class="mkx-lim">₹${mkP(a.min)} – ₹${mkP(a.max)}</small></div>`).join("")}</div>`:"";
+  openSheet(`<div class="insw mkx"><div class="mkx-top"><div><h3>Live market</h3><div class="mkx-sub"><i class="mkdot${stale||m.err?" old":""}"></i>${when?esc(when):"Waiting for price"}${m.src?" · "+esc(m.src):""}${m.err?" · offline":""}</div></div><button type="button" class="mkx-ref" id="mk-r"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg><span>${mkBusy?"Updating…":"Refresh"}</span></button></div>
+   ${m.usdtInr?`<div class="mkx-hero"><span class="mkx-lab">USDT / INR</span><div class="mkx-pr"><b>₹${mkP(m.usdtInr)}</b>${m.chg!=null?`<em class="mkx-pill big ${m.chg>=0?"up":"dn"}">${mkPct(m.chg)} · 24h</em>`:""}</div><span class="mkx-eq">1 USDT = ₹${mkP(m.usdtInr)}</span></div>`:`<p class="note">${m.err==="offline"||navigator.onLine===false?"No internet. The price will show when you are online.":"Loading the price…"}</p>`}
+   ${rates?`<div class="mkx-sec">Your rates vs market</div><div class="mkx-card">${rates}</div>`:""}
+   ${adL(m.p2pBuy,"P2P: buy USDT from (lowest first)")}${adL(m.p2pSell,"P2P: sell USDT to (highest first)")}
+   ${m.coins&&m.coins.length?`<div class="mkx-sec">Coins</div><div class="mkx-card mkx-coins"><div class="mkx-ch"><span>Coin</span><span>In USDT</span><span>In ₹</span><span>24h</span></div>${m.coins.map(c=>`<div class="mkx-cr"><span class="mkx-cn"><i>${esc(String(c.s).slice(0,1))}</i><b>${esc(c.s)}</b></span><span>${mkP(c.usdt)}</span><span>₹${mkP(c.inr)}</span><span>${c.chg==null?"":pill(c.chg)}</span></div>`).join("")}</div>`:""}
+   <p class="mkx-note">Market prices only, not your trade rates. ₹ price of a coin = its USDT price × USDT/INR. P2P ads may not load on some networks.</p></div>`,el=>{el.querySelector("#mk-r").onclick=async()=>{await mkRefresh();if($("#sheetBody").querySelector("#mk-r"))draw()}})};
  draw();if(!mkBusy&&Date.now()-MK.t>15e3)mkRefresh().then(()=>{if($("#sheetBody")&&$("#sheetBody").querySelector("#mk-r")&&!$("#sheetBg").hidden)draw()})};
 function mkStart(){try{const h=document.querySelector("header.xhead"),sb=document.getElementById("searchBtn");if(h&&sb&&!document.getElementById("mkStrip")){const d=document.createElement("button");d.type="button";d.className="mkchip";d.id="mkStrip";d.setAttribute("data-sheet","market");d.setAttribute("aria-label","Live USDT price in rupees");h.insertBefore(d,sb.closest(".xr")||sb);h.classList.add("mk")}mkStrip();mkRefresh();clearInterval(mkTimer);mkTimer=setInterval(()=>{if(!document.hidden)mkRefresh()},60e3);document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-MK.t>45e3)mkRefresh()});window.addEventListener("online",()=>mkRefresh())}catch(e){}}
 
