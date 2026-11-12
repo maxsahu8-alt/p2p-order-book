@@ -53,7 +53,7 @@ async def main():
     for _ in range(120):
         if await pg.evaluate("!ixS.busy&&ixS.groups.length>0&&!!document.querySelector('.ixrep')"):break
         await pg.wait_for_timeout(250)
-    chk("full run: report counts all screenshots",f">{N}<" in await pg.inner_html(".ixrep") )
+    chk("full run: report counts all screenshots",f"{N} screenshots read" in await pg.inner_text(".ixrep") )
     chk("no page errors",not errs)
     if errs:print(errs)
     await b.close()
