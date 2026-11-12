@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=205;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=206;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00206","12 Nov 2026",["Update screen now shows file size the same way Android does (48 MB instead of 46 MB for the same file)."]],
   ["0.0.0.00205","12 Nov 2026",["Update screen redesigned: it shows your version and the new one, the file size, a What's new list, a real progress bar with MB downloaded and a Cancel button. Errors now say what went wrong in plain words, and a notification shows download progress. Needs APK 0.0.0.00116 for Cancel and the notification."]],
   ["0.0.0.00204","12 Nov 2026",["In-app update is now safer and cleaner: the downloaded APK is checked with a SHA-256 fingerprint before the install screen opens, the leftover file is deleted after the update, and Pexai shows Updated to the new version once it lands. Needs APK 0.0.0.00115."]],
   ["0.0.0.00203","12 Nov 2026",["Update inside the app: the new Download update button now downloads the APK with a progress percentage and opens the Android install screen, no browser needed. The first time Android asks you to allow Install unknown apps for Pexai. This works from APK 0.0.0.00113 onward, so install that one by hand once."]],

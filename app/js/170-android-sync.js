@@ -23,7 +23,7 @@ if(APK){const N=window.P2PNative;document.body.classList.add("apk");
   // called by the Android side
   window.P2PUpdated=v=>{const t=document.createElement("div");t.className="apkup";t.innerHTML=`<b>✓ ${APP_NAME} updated · v${esc(String(v))}</b><button type="button">Reload</button>`;t.querySelector("button").onclick=()=>location.reload();document.body.appendChild(t);setTimeout(()=>t.remove(),20000)};
   window.P2PApkDone=v=>{const t=document.createElement("div");t.className="apkup";t.innerHTML=`<b>✓ ${APP_NAME} updated to ${esc(String(v))}</b>`;document.body.appendChild(t);setTimeout(()=>t.remove(),8000)};
-  window.P2PApkUpdate=info=>{info=info||{};const cur=(apkInfo().apk||""),mb=n=>(n/1048576).toFixed(n>=1.05e7?0:1)+" MB";
+  window.P2PApkUpdate=info=>{info=info||{};const cur=(apkInfo().apk||""),mb=n=>(n/1e6).toFixed(n>=1e7?0:1)+" MB";
     const bl=String(info.notes||"").split("\n").map(x=>x.replace(/^[-•*\s]+/,"").trim()).filter(Boolean).slice(0,5);
     openSheet(`<div class="insw apu"><div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span><b>Update available</b><small>${cur?esc(cur)+" → ":""}${esc(info.name||"")}${info.size?" · "+mb(info.size):""}</small></div>
     ${bl.length?`<div class="icard"><b style="font-size:12px">What's new</b><ul class="apu-l">${bl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
