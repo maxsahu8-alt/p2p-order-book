@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=226;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=227;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00227","12 Nov 2026",["Smart Intake: a BUY paid from your own bank still showed Sender and Buyer as a name mismatch (bank name vs your nickname) when the account digits on the receipt did not match your saved account number. The app now also recognises your bank by its name (when only one of your banks has it) and by your saved UPI IDs, so the payment counts as yours."]],
   ["0.0.0.00226","12 Nov 2026",["Smart Intake: the AI double-check was slow because full-size phone screenshots were uploaded as they are. They are now shrunk to a 2000 px JPEG before the AI sees them, so the upload is many times smaller and the check finishes sooner."]],
   ["0.0.0.00225","12 Nov 2026",["Smart Intake reads two screenshots at the same time on the phone reader, so a batch of screenshots finishes sooner."]],
   ["0.0.0.00224","12 Nov 2026",["Smart Intake: a BUY paid from your own bank could show Sender and Buyer as a name mismatch (bank name vs your nickname) when the payment screenshot did not say whether money went out or came in. The app now treats such a payment as paid by you when the account matches one of your banks, so your banking name and your nickname are no longer compared as strangers."]],
