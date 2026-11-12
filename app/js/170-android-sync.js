@@ -24,7 +24,16 @@ if(APK){const N=window.P2PNative;document.body.classList.add("apk");
   window.P2PUpdated=v=>{const t=document.createElement("div");t.className="apkup";t.innerHTML=`<b>✓ ${APP_NAME} updated · v${esc(String(v))}</b><button type="button">Reload</button>`;t.querySelector("button").onclick=()=>location.reload();document.body.appendChild(t);setTimeout(()=>t.remove(),20000)};
   window.P2PApkUpdate=info=>{info=info||{};openSheet(`<div class="insw"><div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span><b>New ${APP_NAME} version</b><small>${esc(info.name||"")}</small></div>
     ${info.notes?`<div class="icard"><p class="note" style="margin:0;white-space:pre-wrap">${esc(info.notes)}</p></div>`:""}<p class="note">Download, then tap Install. It installs over this app — your data stays.</p>
-    <div class="row2"><button type="button" class="mini ghost" data-close>Later</button><button type="button" class="mini psdl" id="apk-dl">Download update</button></div></div>`,el=>{el.querySelector("#apk-dl").onclick=()=>{N.openUrl(info.url||"");closeSheet()}})};
+    <div class="row2"><button type="button" class="mini ghost" data-close>Later</button><button type="button" class="mini psdl" id="apk-dl">Download update</button></div></div>`,el=>{const b=el.querySelector("#apk-dl"),nt=el.querySelector(".note");b.onclick=()=>{
+      if(typeof N.apkInstall!=="function"){N.openUrl(info.url||"");closeSheet();return}
+      b.disabled=true;b.textContent="Downloading… 0%";N.apkInstall(info.url||"");
+      const t=setInterval(()=>{let st={};try{st=JSON.parse(N.apkState())}catch(e){}
+        if(!document.body.contains(b)){clearInterval(t);return}
+        if(st.s==="downloading")b.textContent="Downloading… "+(st.pct||0)+"%";
+        else if(st.s==="error"){clearInterval(t);b.disabled=false;b.textContent="Retry";nt.textContent="Download failed: "+(st.err||"unknown")+". Tap Retry."}
+        else if(st.s==="perm"){clearInterval(t);b.disabled=false;b.textContent="Install";nt.textContent="Allow 'Install unknown apps' for this app, come back, then tap Install.";b.onclick=()=>{N.apkInstallAgain()}}
+        else if(st.s==="installing"){clearInterval(t);b.disabled=false;b.textContent="Install again";nt.textContent="Android install screen opened. Tap Install there. Your data stays.";b.onclick=()=>{N.apkInstallAgain()}}
+      },400)}})};
   window.P2PBack=()=>{const lk=$("#lock");if(lk&&!lk.hidden)return false;const fo=$("#dFold");if(fo&&!fo.hidden){closeFolder();return true}
     if(!$("#sheetBg").hidden){closeSheet();return true}if(!$("#drawer").hidden){$("#drawer").hidden=true;return true}const ap=$("#aiPop");if(ap&&!ap.hidden){closeAiPop();return true}
     const us=$("#us");if(us&&!us.hidden&&typeof closeUS==="function"){closeUS();return true}if($("#p-home").hidden){goPage("home");return true}return false};
