@@ -1809,6 +1809,18 @@ button.abrow2,.abrow2>summary{display:flex;justify-content:space-between;align-i
 .abinf{padding:0 16px 10px}
 
 .abft .abv{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+.fsw .fsh{display:flex;align-items:center;justify-content:space-between;gap:10px}.fsw .fsh h3{margin:0}
+.fsp{font:700 .72rem var(--body);padding:5px 11px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}.fsp.ok{background:rgba(16,150,105,.14);border-color:transparent;color:#0f9669}
+.fsum{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface)}.fsum b{font:800 1.4rem var(--display);margin-right:6px;font-variant-numeric:tabular-nums}.fsum small{color:var(--muted);font-size:.8rem}.fsum>div:first-child{display:flex;align-items:baseline}.fsbt{display:flex;gap:6px}
+.fsl{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden}
+.fsx{display:flex;align-items:center;gap:12px;padding:12px 14px}.fsx+.fsx{border-top:1px solid var(--line)}
+.fsb{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);font:800 .95rem var(--display)}
+.fst{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.fst b{font-size:.92rem;font-weight:650}.fst small{font-size:.75rem;color:var(--muted);font-weight:500;line-height:1.35}
+.fsc{font-style:normal;font:600 .7rem var(--body);color:var(--muted);background:var(--bg);border-radius:99px;padding:4px 9px;white-space:nowrap}
+.fsx.lk{opacity:.65}
+.fsbar{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px -4px 0;padding:12px 14px;border-radius:16px;background:var(--fg);color:var(--bg);box-shadow:0 8px 24px rgba(0,0,0,.25)}.fsbar[hidden]{display:none}.fsbar span{font:600 .85rem var(--body)}.fsbar .primary{width:auto;padding:9px 16px;background:var(--bg);color:var(--fg)}
+.fslic{margin-top:16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:0 14px 12px}.fslic>summary{cursor:pointer;list-style:none;padding:14px 0;font:650 .92rem var(--body)}.fslic>summary::-webkit-details-marker{display:none}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -2294,6 +2306,11 @@ const FEATURES=[
  {k:"market",n:"Live market and coins",d:"USDT price, P2P ads and coins",tier:"business",go:["coins"],sheets:["market","coinledger"],css:[".mkchip"]},
  {k:"nightalarm",n:"Night order alarm",d:"Loud alarm for new KuCoin orders (Android app)",tier:"pro",sheets:["nalarm"]},
  {k:"audit",n:"Audit log",d:"Full history of every change",tier:"business",sheets:["auditlog"]},
+ {k:"bankaudit",n:"Bank audit",d:"Check every bank balance against your orders and fix mismatches",tier:"pro",sheets:["bankaudit"]},
+ {k:"bankcharges",n:"Bank charges",d:"Record fees and charges taken by banks",tier:"pro",sheets:["bankcharge"]},
+ {k:"payqr",n:"Pay card and UPI QR",d:"Payment cards for parties and your UPI QR",tier:"pro",sheets:["paycard","upiqr"]},
+ {k:"notes",n:"Notes",d:"Quick notes you can pin and search",tier:"pro",sheets:["notes"]},
+ {k:"risk",n:"Risk checks",d:"Warnings about risky payments and parties",tier:"pro",sheets:["risk"]},
  {k:"sync",n:"Phone database sync",d:"Keep a copy on your always-on phone",tier:"business",sheets:["dbphone"]}
 ];
 // App language (this phone only): "en" English, "hi" Hinglish (Hindi in English letters). tr(english, hinglish) picks the text.
@@ -6954,7 +6971,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=220;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=221;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -7021,6 +7038,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00221","12 Nov 2026",["Features page redesigned: every optional function has its own on/off switch (5 more added: Bank audit, Bank charges, Pay card and UPI QR, Notes, Risk checks), All on and All off, a save bar that shows how many changes, and a Core list of what is always on."]],
   ["0.0.0.00220","12 Nov 2026",["Copyright line is back in About."]],
   ["0.0.0.00219","12 Nov 2026",["Removed the copyright line from About."]],
   ["0.0.0.00218","12 Nov 2026",["About footer says APK instead of Android app."]],
@@ -8835,18 +8853,29 @@ featLoad=(old=>function(){old();try{const pub=JSON.parse(localStorage.getItem("p
 // ---- the screen
 sheets.features=function(){const owner=FS.owner,lic=licOk(),setup=!LIC_PUB;
   const st=setup?["Open","This build does not ask for a licence code. Every part is on unless you switch it off here."]:owner?["Owner","Your phone has the licence key. Every part works here."]:lic?["Licensed",(lic.n?lic.n+" · ":"")+(lic.exp?"valid till "+lic.exp:"no end date")]:["No licence","Only the basic parts work. Enter a licence code to unlock more."];
-  const row=f=>{const locked=!setup&&!owner&&!(lic&&(lic.f==="*"||(lic.f||[]).indexOf(f.k)>=0));const on=FS.off.indexOf(f.k)<0&&!locked;
-    return`<div class="dqr fsr"><span><b>${esc(f.n)}</b><small>${esc(f.d)}</small></span>${locked?'<em class="cpp risk">Locked</em>':`<label class="tog"><input type="checkbox" data-fk="${f.k}" ${on?"checked":""}><span></span></label>`}</div>`};
-  const grp=(t,n)=>`<div class="pcsec">${n}</div><div class="rml">${FEATURES.filter(f=>f.tier===t).map(row).join("")}</div>`;
-  openSheet(`<div class="insw"><h3>Features and licence</h3>
-    <div class="fstat"><b>${st[0]}</b><small>${esc(st[1])}</small></div>
-    <p class="note" style="margin:8px 0 0">Basic parts (orders, banks, wallet, expenses, profit, backup, lock) are always on.</p>
+  const lockedF=f=>!setup&&!owner&&!(lic&&(lic.f==="*"||(lic.f||[]).indexOf(f.k)>=0));
+  const row=f=>{const locked=lockedF(f);const on=FS.off.indexOf(f.k)<0&&!locked;
+    return`<div class="fsx${locked?" lk":""}"><span class="fsb">${esc(f.n.charAt(0))}</span><span class="fst"><b>${esc(f.n)}</b><small>${esc(f.d)}</small></span>${locked?'<em class="cpp risk">Locked</em>':`<label class="tog"><input type="checkbox" data-fk="${f.k}" ${on?"checked":""}><span></span></label>`}</div>`};
+  const grp=(t,n)=>`<div class="pcsec">${n}</div><div class="rml fsl">${FEATURES.filter(f=>f.tier===t).map(row).join("")}</div>`;
+  const CORE=[["Orders","Add, edit and track every order"],["Banks","Bank accounts and balances"],["Wallet and stock","USDT stock and cost"],["Expenses","Spending and charges"],["Profit","Daily and monthly profit"],["Backup","Save and restore your data"],["App lock","PIN and biometric lock"],["Settings","Preferences and connections"]];
+  const tot=FEATURES.length;
+  openSheet(`<div class="insw fsw"><div class="fsh"><h3>Features</h3><span class="fsp ${setup||owner||lic?"ok":"no"}">${esc(st[0])}</span></div>
+    <p class="note" style="margin:2px 0 10px">${esc(st[1])}</p>
+    <div class="fsum"><div><b id="fs-n">0</b><small>of ${tot} features on</small></div><div class="fsbt"><button type="button" class="mini ghost" id="fs-all">All on</button><button type="button" class="mini ghost" id="fs-none">All off</button></div></div>
     ${grp("pro","Pro")}${grp("business","Business")}
-    <div class="cpexp"><button type="button" class="primary" id="fs-save">Save and restart</button></div>
+    <div class="pcsec">Core · always on</div><div class="rml fsl">${CORE.map(c=>`<div class="fsx"><span class="fsb">${esc(c[0].charAt(0))}</span><span class="fst"><b>${c[0]}</b><small>${c[1]}</small></span><em class="fsc">Always on</em></div>`).join("")}</div>
+    <div class="fsbar" id="fs-bar" hidden><span id="fs-bt"></span><button type="button" class="primary" id="fs-save">Save and restart</button></div>
+    <details class="fslic"><summary>Licence code and owner tools</summary>
     <div class="pcsec">Licence code</div><div class="tgf"><input id="fs-code" placeholder="PX1…" autocomplete="off" autocapitalize="off"><button type="button" class="mini ghost" id="fs-act">Activate</button></div><p class="note" id="fs-msg" style="margin:6px 0 0"></p>
     ${setup||owner?`<div class="pcsec">Owner tools</div><div id="fs-own"></div>`:""}
+    </details>
     <div class="cpexp"><button type="button" class="mini ghost" data-close>Close</button></div></div>`,el=>{
     const q=s=>el.querySelector(s),msg=t=>{q("#fs-msg").textContent=t};
+    const boxes=()=>[...el.querySelectorAll("[data-fk]")],start=boxes().map(c=>c.checked).join();
+    const upd=()=>{const bs=boxes(),n=bs.filter(c=>c.checked).length,tl=bs.length,ch=bs.map((c,i)=>c.checked!==(start.split(",")[i]==="true")).filter(Boolean).length;
+      q("#fs-n").textContent=n;q("#fs-bar").hidden=!ch;q("#fs-bt").textContent=ch+(ch===1?" change":" changes")};
+    el.addEventListener("change",e=>{if(e.target.matches("[data-fk]"))upd()});
+    q("#fs-all").onclick=()=>{boxes().forEach(c=>c.checked=true);upd()};q("#fs-none").onclick=()=>{boxes().forEach(c=>c.checked=false);upd()};upd();
     q("#fs-save").onclick=()=>{const off=[...el.querySelectorAll("[data-fk]")].filter(c=>!c.checked).map(c=>c.dataset.fk);try{localStorage.setItem("p2p_feat_off",JSON.stringify(off))}catch(e){}toast("Saved. Restarting…");setTimeout(()=>location.reload(),350)};
     q("#fs-act").onclick=async()=>{const r=await licActivate(q("#fs-code").value);if(!r.ok){msg(r.why);return}msg("Licence accepted. Restarting…");setTimeout(()=>location.reload(),500)};
     if(q("#fs-own"))featOwner(q("#fs-own"))})};

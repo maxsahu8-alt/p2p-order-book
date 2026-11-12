@@ -45,18 +45,29 @@ featLoad=(old=>function(){old();try{const pub=JSON.parse(localStorage.getItem("p
 // ---- the screen
 sheets.features=function(){const owner=FS.owner,lic=licOk(),setup=!LIC_PUB;
   const st=setup?["Open","This build does not ask for a licence code. Every part is on unless you switch it off here."]:owner?["Owner","Your phone has the licence key. Every part works here."]:lic?["Licensed",(lic.n?lic.n+" · ":"")+(lic.exp?"valid till "+lic.exp:"no end date")]:["No licence","Only the basic parts work. Enter a licence code to unlock more."];
-  const row=f=>{const locked=!setup&&!owner&&!(lic&&(lic.f==="*"||(lic.f||[]).indexOf(f.k)>=0));const on=FS.off.indexOf(f.k)<0&&!locked;
-    return`<div class="dqr fsr"><span><b>${esc(f.n)}</b><small>${esc(f.d)}</small></span>${locked?'<em class="cpp risk">Locked</em>':`<label class="tog"><input type="checkbox" data-fk="${f.k}" ${on?"checked":""}><span></span></label>`}</div>`};
-  const grp=(t,n)=>`<div class="pcsec">${n}</div><div class="rml">${FEATURES.filter(f=>f.tier===t).map(row).join("")}</div>`;
-  openSheet(`<div class="insw"><h3>Features and licence</h3>
-    <div class="fstat"><b>${st[0]}</b><small>${esc(st[1])}</small></div>
-    <p class="note" style="margin:8px 0 0">Basic parts (orders, banks, wallet, expenses, profit, backup, lock) are always on.</p>
+  const lockedF=f=>!setup&&!owner&&!(lic&&(lic.f==="*"||(lic.f||[]).indexOf(f.k)>=0));
+  const row=f=>{const locked=lockedF(f);const on=FS.off.indexOf(f.k)<0&&!locked;
+    return`<div class="fsx${locked?" lk":""}"><span class="fsb">${esc(f.n.charAt(0))}</span><span class="fst"><b>${esc(f.n)}</b><small>${esc(f.d)}</small></span>${locked?'<em class="cpp risk">Locked</em>':`<label class="tog"><input type="checkbox" data-fk="${f.k}" ${on?"checked":""}><span></span></label>`}</div>`};
+  const grp=(t,n)=>`<div class="pcsec">${n}</div><div class="rml fsl">${FEATURES.filter(f=>f.tier===t).map(row).join("")}</div>`;
+  const CORE=[["Orders","Add, edit and track every order"],["Banks","Bank accounts and balances"],["Wallet and stock","USDT stock and cost"],["Expenses","Spending and charges"],["Profit","Daily and monthly profit"],["Backup","Save and restore your data"],["App lock","PIN and biometric lock"],["Settings","Preferences and connections"]];
+  const tot=FEATURES.length;
+  openSheet(`<div class="insw fsw"><div class="fsh"><h3>Features</h3><span class="fsp ${setup||owner||lic?"ok":"no"}">${esc(st[0])}</span></div>
+    <p class="note" style="margin:2px 0 10px">${esc(st[1])}</p>
+    <div class="fsum"><div><b id="fs-n">0</b><small>of ${tot} features on</small></div><div class="fsbt"><button type="button" class="mini ghost" id="fs-all">All on</button><button type="button" class="mini ghost" id="fs-none">All off</button></div></div>
     ${grp("pro","Pro")}${grp("business","Business")}
-    <div class="cpexp"><button type="button" class="primary" id="fs-save">Save and restart</button></div>
+    <div class="pcsec">Core · always on</div><div class="rml fsl">${CORE.map(c=>`<div class="fsx"><span class="fsb">${esc(c[0].charAt(0))}</span><span class="fst"><b>${c[0]}</b><small>${c[1]}</small></span><em class="fsc">Always on</em></div>`).join("")}</div>
+    <div class="fsbar" id="fs-bar" hidden><span id="fs-bt"></span><button type="button" class="primary" id="fs-save">Save and restart</button></div>
+    <details class="fslic"><summary>Licence code and owner tools</summary>
     <div class="pcsec">Licence code</div><div class="tgf"><input id="fs-code" placeholder="PX1…" autocomplete="off" autocapitalize="off"><button type="button" class="mini ghost" id="fs-act">Activate</button></div><p class="note" id="fs-msg" style="margin:6px 0 0"></p>
     ${setup||owner?`<div class="pcsec">Owner tools</div><div id="fs-own"></div>`:""}
+    </details>
     <div class="cpexp"><button type="button" class="mini ghost" data-close>Close</button></div></div>`,el=>{
     const q=s=>el.querySelector(s),msg=t=>{q("#fs-msg").textContent=t};
+    const boxes=()=>[...el.querySelectorAll("[data-fk]")],start=boxes().map(c=>c.checked).join();
+    const upd=()=>{const bs=boxes(),n=bs.filter(c=>c.checked).length,tl=bs.length,ch=bs.map((c,i)=>c.checked!==(start.split(",")[i]==="true")).filter(Boolean).length;
+      q("#fs-n").textContent=n;q("#fs-bar").hidden=!ch;q("#fs-bt").textContent=ch+(ch===1?" change":" changes")};
+    el.addEventListener("change",e=>{if(e.target.matches("[data-fk]"))upd()});
+    q("#fs-all").onclick=()=>{boxes().forEach(c=>c.checked=true);upd()};q("#fs-none").onclick=()=>{boxes().forEach(c=>c.checked=false);upd()};upd();
     q("#fs-save").onclick=()=>{const off=[...el.querySelectorAll("[data-fk]")].filter(c=>!c.checked).map(c=>c.dataset.fk);try{localStorage.setItem("p2p_feat_off",JSON.stringify(off))}catch(e){}toast("Saved. Restarting…");setTimeout(()=>location.reload(),350)};
     q("#fs-act").onclick=async()=>{const r=await licActivate(q("#fs-code").value);if(!r.ok){msg(r.why);return}msg("Licence accepted. Restarting…");setTimeout(()=>location.reload(),500)};
     if(q("#fs-own"))featOwner(q("#fs-own"))})};

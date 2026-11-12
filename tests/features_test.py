@@ -48,7 +48,7 @@ with sync_playwright() as p:
     chk("no page errors",not errs);b.close()
     # ---------- the switches screen
     b,pg,errs=page(p)
-    pg.evaluate("sheets.features()");pg.wait_for_timeout(300)
+    pg.evaluate("sheets.features();document.querySelector('.fslic').open=true");pg.wait_for_timeout(300)
     chk("switch list has every part",pg.evaluate("document.querySelectorAll('[data-fk]').length")==pg.evaluate("FEATURES.length"))
     pg.evaluate("document.querySelector('[data-fk=ai]').click()")
     pg.click("#fs-save")
@@ -62,7 +62,7 @@ with sync_playwright() as p:
     chk("no page errors (switch screen)",not errs);b.close()
     # ---------- licence codes
     b,pg,errs=page(p)
-    pg.evaluate("sheets.features()");pg.wait_for_timeout(300)
+    pg.evaluate("sheets.features();document.querySelector('.fslic').open=true");pg.wait_for_timeout(300)
     chk("owner tools offered while the build is open",pg.evaluate("!!document.querySelector('#fo-gen')"))
     pg.click("#fo-gen");pg.wait_for_timeout(800)
     chk("signing keys made on the phone",pg.evaluate("!!localStorage.getItem('p2p_lic_priv')&&!!document.querySelector('#fo-pub')"))

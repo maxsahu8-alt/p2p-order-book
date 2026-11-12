@@ -18,6 +18,11 @@ const FEATURES=[
  {k:"market",n:"Live market and coins",d:"USDT price, P2P ads and coins",tier:"business",go:["coins"],sheets:["market","coinledger"],css:[".mkchip"]},
  {k:"nightalarm",n:"Night order alarm",d:"Loud alarm for new KuCoin orders (Android app)",tier:"pro",sheets:["nalarm"]},
  {k:"audit",n:"Audit log",d:"Full history of every change",tier:"business",sheets:["auditlog"]},
+ {k:"bankaudit",n:"Bank audit",d:"Check every bank balance against your orders and fix mismatches",tier:"pro",sheets:["bankaudit"]},
+ {k:"bankcharges",n:"Bank charges",d:"Record fees and charges taken by banks",tier:"pro",sheets:["bankcharge"]},
+ {k:"payqr",n:"Pay card and UPI QR",d:"Payment cards for parties and your UPI QR",tier:"pro",sheets:["paycard","upiqr"]},
+ {k:"notes",n:"Notes",d:"Quick notes you can pin and search",tier:"pro",sheets:["notes"]},
+ {k:"risk",n:"Risk checks",d:"Warnings about risky payments and parties",tier:"pro",sheets:["risk"]},
  {k:"sync",n:"Phone database sync",d:"Keep a copy on your always-on phone",tier:"business",sheets:["dbphone"]}
 ];
 // App language (this phone only): "en" English, "hi" Hinglish (Hindi in English letters). tr(english, hinglish) picks the text.
