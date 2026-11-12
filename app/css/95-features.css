@@ -262,3 +262,10 @@ label.bp-ck span{color:var(--fg);font-weight:500}
 .abw .abl{width:72px!important;height:72px!important;border-radius:22px!important;margin:0 0 8px;box-shadow:none!important;border:1px solid var(--line)}.abw .abl svg{width:44px;height:44px}
 .abw .abm{align-items:center;gap:3px}.abw .abm b{font:800 1.4rem var(--display)}.abw .abm .abt{display:block;font-size:.82rem}.abw .abm small{font-size:.74rem}
 .abst1{border-bottom:0;padding-bottom:4px}
+
+.abck0{text-align:center;padding:2px 0 6px}.abck0 .abst1{justify-content:center;padding:0 0 10px}.abck0 .abck{width:100%;margin-top:0}.abln{display:block;margin-top:8px;color:var(--muted);font-size:.76rem}
+.ablist{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden;margin-top:14px}
+.abrow2{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:0;color:var(--fg);font:600 .92rem var(--body)}.ablist>.abrow2:last-child{border-bottom:0}
+button.abrow2,.abrow2>summary{display:flex;justify-content:space-between;align-items:center;padding:15px 16px;cursor:pointer;list-style:none}.abrow2>summary::-webkit-details-marker{display:none}
+.abrow2 i{font-style:normal;color:var(--muted);font-size:1.2rem;line-height:1;transition:transform .2s}details.abrow2[open]>summary i{transform:rotate(90deg)}
+.abrow2>.ablog,.abrow2>.wahelp{padding:0 12px 14px}.abrow2 .wahelp{font-size:.84rem;line-height:1.5;color:var(--muted)}.abrow2 .wahelp ol{margin:0;padding-left:18px}

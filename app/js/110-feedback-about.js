@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=209;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=210;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00210","12 Nov 2026",["About page now works like a settings list: status, Check for updates, then simple rows."]],
   ["0.0.0.00209","12 Nov 2026",["About page: centred header, one main button, shorter notes."]],
   ["0.0.0.00208","12 Nov 2026",["About page: cleaner header and update status."]],
   ["0.0.0.00207","12 Nov 2026",["About page redesigned with separate update and feedback cards."]],
@@ -284,29 +285,24 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
   openSheet(`<div class="insw abw">
     <div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span>
       <div class="abm"><b>${pxWord()}</b><em class="abt">Your P2P business, always in order</em><small>v${APP_VER}${APK?" · APK "+esc(apkInfo().apk||""):""}</small></div></div>
-    <div class="pcsec">App updates</div>
-    <div class="icard abu">
+    <div class="abck0">
+      <div class="abst1"><span class="abs ${st[1]}">${st[1]==="ok"?"✓ ":""}${st[0]}</span></div>
       ${prev.length?`<div class="abnew"><b>🎉 New version ready</b><small>${prev.length} change${prev.length>1?"s":""} from your feedback:</small><ul>${prev.slice(0,5).map(x=>`<li>${esc(x.reply||x.text)}</li>`).join("")}</ul><div class="fbact"><a class="mini ghost" href="${esc(pv)}" target="_blank" rel="noopener">Try preview</a><button type="button" class="mini psdl" id="ab-apply">Apply update</button></div></div>`:""}
-      <div class="abst1"><span class="abs ${st[1]}">${st[1]==="ok"?"✓ ":""}${st[0]}</span><small>${st[1]==="ok"?"You have the latest version":st[1]==="ready"?"A new version is waiting":"A new version is being built"}</small></div>
-      ${APK?(()=>{const I=apkInfo();const lc=+I.lastCheck||0,ago=lc?Math.max(0,Math.round((Date.now()-lc)/60000)):-1,rel=ago<0?"Never":ago<1?"Just now":ago<60?ago+" min ago":ago<1440?Math.round(ago/60)+" hr ago":new Date(lc).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
-        return`<div class="abr"><span>Last checked</span><b>${rel}</b></div><button type="button" class="mini psdl abck" id="ab-chk">Check for updates</button>`})():""}
+      ${APK?(()=>{const I=apkInfo();const lc=+I.lastCheck||0,ago=lc?Math.max(0,Math.round((Date.now()-lc)/60000)):-1,rel=ago<0?"never":ago<1?"just now":ago<60?ago+" min ago":ago<1440?Math.round(ago/60)+" hr ago":new Date(lc).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
+        return`<button type="button" class="mini psdl abck" id="ab-chk">Check for updates</button><small class="abln">Last checked ${rel}</small>`})():""}
     </div>
-    <div class="pcsec">Feedback and weekly improvements</div>
-    <div class="icard">
-      <div class="abr"><span>Next weekly update</span><b>${esc(nxs)}</b></div>
-      <div class="abr"><span>Feedback waiting</span><b>${wait}${work?` · ${work} in progress`:""}</b></div>
-      <div class="abbtn">${mcp?`<button type="button" class="mini ghost" id="ab-now" ${wait?"":"disabled"}>${wait?"Update now":"Nothing to update"}</button>`:""}<button type="button" class="mini ghost" id="ab-fb">Send feedback</button></div>
-      <details class="wahelp"><summary>How updates work</summary><ol><li>Send feedback any time: problems, ideas, changes.</li><li>Every Sunday ${nx.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})} (or when you tap Update now), Claude builds a new version.</li><li>You get a notification with a preview. Your app does not change yet.</li><li>Try it. Happy? Tap <b>Apply update</b> here. Your data stays as it is.</li></ol></details>
+    ${(wait||work)?`<div class="icard"><div class="abr"><span>Next weekly update</span><b>${esc(nxs)}</b></div><div class="abr"><span>Feedback waiting</span><b>${wait}${work?` · ${work} in progress`:""}</b></div>${mcp?`<div class="abbtn"><button type="button" class="mini ghost" id="ab-now" ${wait?"":"disabled"}>${wait?"Update now":"Nothing to update"}</button></div>`:""}</div>`:""}
+    <div class="ablist">
+      <details class="abrow2"><summary><span>What's new</span><i>›</i></summary><div class="ablog">${APP_LOG.slice(0,3).map(([v,d,L],i)=>`<details ${i===0?"open":""}><summary><b>v${v}</b>${i===0?'<em>Current</em>':""}<small>${esc(d)}</small></summary><ul>${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}
+        ${APP_LOG.length>3?`<details class="abold"><summary><b>Older versions</b><small>${APP_LOG.length-3} more</small></summary><div class="ablog" style="margin-top:8px">${APP_LOG.slice(3).map(([v,d,L])=>`<details><summary><b>v${v}</b><small>${esc(d)}</small></summary><ul>${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}</div></details>`:""}</div></details>
+      <button type="button" class="abrow2" id="ab-fb"><span>Send feedback</span><i>›</i></button>
+      <details class="abrow2"><summary><span>How updates work</span><i>›</i></summary><div class="wahelp"><ol><li>Send feedback any time: problems, ideas, changes.</li><li>Every Sunday ${nx.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})} (or when you tap Update now), Claude builds a new version.</li><li>You get a notification with a preview. Your app does not change yet.</li><li>Try it. Happy? Tap <b>Apply update</b> here. Your data stays as it is.</li></ol></div></details>
+      <button type="button" class="abrow2" id="ab-bk"><span>Backup now</span><i>›</i></button>
+      <button type="button" class="abrow2" data-sheet="imphist"><span>Import history</span><i>›</i></button>
+      <button type="button" class="abrow2" data-feat="nightalarm" data-sheet="nalarm"><span>Night order alarm</span><i>›</i></button>
+      <button type="button" class="abrow2" data-sheet="features"><span>Features and licence</span><i>›</i></button>
     </div>
-    <div class="pcsec">What's new</div>
-    <div class="ablog">${APP_LOG.slice(0,4).map(([v,d,L],i)=>`<details ${i===0?"open":""}><summary><b>v${v}</b>${i===0?'<em>Current</em>':""}<small>${esc(d)}</small></summary><ul>${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}
-      ${APP_LOG.length>4?`<details class="abold"><summary><b>Older versions</b><small>${APP_LOG.length-4} more</small></summary><div class="ablog" style="margin-top:8px">${APP_LOG.slice(4).map(([v,d,L])=>`<details><summary><b>v${v}</b><small>${esc(d)}</small></summary><ul>${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}</div></details>`:""}</div>
-    <div class="pcsec">Your data</div>
-    <div class="abst"><div><b>${orders.length.toLocaleString("en-IN")}</b><span>Orders</span></div><div><b>${parties.length}</b><span>Parties</span></div><div><b>${banks.length}</b><span>Banks</span></div></div>
-    <div class="icard">${cl?`<div class="abr"><span>Client history</span><b>${cl.toLocaleString("en-IN")} clients</b></div>`:""}
-      <div class="abr"><span>Saved on</span><b>${col?"Cloud sync":"This device"}</b></div>
-      ${col?`<div class="abr"><span>Space used</span><b>${used.toLocaleString("en-IN")} / ${cap.toLocaleString("en-IN")}</b></div><div class="pvbar"><i style="width:${Math.min(100,used/cap*100).toFixed(1)}%"></i></div>`:""}
-      <div class="abbtn"><button type="button" class="mini ghost" id="ab-bk">Backup now</button><button type="button" class="mini ghost" data-sheet="imphist">Import history</button><button type="button" class="mini ghost" data-feat="nightalarm" data-sheet="nalarm">Night order alarm</button><button type="button" class="mini ghost" data-sheet="features">Features and licence</button></div></div>
+    <p class="note abf" style="margin-top:14px">${orders.length.toLocaleString("en-IN")} orders · ${parties.length} parties · ${banks.length} banks · saved on ${col?"cloud sync":"this device"}${col?`<br>Space used ${used.toLocaleString("en-IN")} / ${cap.toLocaleString("en-IN")}`:""}</p>
     <p class="note abf">Made for P2P merchants${pref("owner")?" · "+esc(pref("owner")):""}<br>${APP_NAME} v${APP_VER}</p></div>`,el=>{const q=s=>el.querySelector(s);
     if(q("#ab-apply"))q("#ab-apply").onclick=e=>appApply(pv,e.currentTarget);
     if(q("#ab-chk"))q("#ab-chk").onclick=e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Checking…";setTimeout(()=>{if(b.isConnected&&b.disabled){b.disabled=false;b.textContent="Check for updates";toast("No answer yet. Close the app fully, open it again and try on wifi.")}},150000);try{window.P2PNative.checkUpdate()}catch(err){b.disabled=false;b.textContent="Check for updates"}};
