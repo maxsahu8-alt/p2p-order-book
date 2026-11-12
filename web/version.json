@@ -1,17 +1,18 @@
 {
- "web": "0.0203",
- "build": 203,
- "display": "0.0.0.00203",
+ "web": "0.0204",
+ "build": 204,
+ "display": "0.0.0.00204",
  "files": {
-  "index.html": "7f21b494a7bcd1a305704d5b889ce0d56cdcd2bc",
+  "index.html": "bee207cec0e7e9f2077e947768cb4f47876fb4c2",
   "lib/jspdf.umd.min.js": "5aaf5dee4fbef433502214738b3eb1b4e7182e6b",
   "lib/qrcode.js": "e84be42f244b74760ad9e8447670c818c8c4f6bb",
   "ocr/eng-traineddata.wasm": "31abd495e0f719db4f524c447e9d855124a0b0d6"
  },
  "apk": {
-  "code": 36,
-  "name": "0.0.0.00114",
+  "code": 37,
+  "name": "0.0.0.00115",
   "url": "https://github.com/maxsahu8-alt/p2p-order-book/releases/latest/download/P2P-Order-Book.apk",
-  "notes": ""
+  "notes": "",
+  "sha256": "b02ba7786b14b5fd7cf545977b15e537d65b31b666577d462e90c0de74f22468"
  }
 }

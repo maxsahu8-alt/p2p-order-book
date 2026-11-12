@@ -22,11 +22,12 @@ if(APK){const N=window.P2PNative;document.body.classList.add("apk");
   try{const o=document.querySelector('#ai-prov option[value="builtin"]');if(o)o.remove();if(aiCfg.prov==="builtin"){aiCfg.prov="brain";localStorage.setItem(AIK,JSON.stringify(aiCfg))}$("#ai-prov").value=aiCfg.prov;aiFormSync()}catch(e){}
   // called by the Android side
   window.P2PUpdated=v=>{const t=document.createElement("div");t.className="apkup";t.innerHTML=`<b>✓ ${APP_NAME} updated · v${esc(String(v))}</b><button type="button">Reload</button>`;t.querySelector("button").onclick=()=>location.reload();document.body.appendChild(t);setTimeout(()=>t.remove(),20000)};
+  window.P2PApkDone=v=>{const t=document.createElement("div");t.className="apkup";t.innerHTML=`<b>✓ ${APP_NAME} updated to ${esc(String(v))}</b>`;document.body.appendChild(t);setTimeout(()=>t.remove(),8000)};
   window.P2PApkUpdate=info=>{info=info||{};openSheet(`<div class="insw"><div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span><b>New ${APP_NAME} version</b><small>${esc(info.name||"")}</small></div>
     ${info.notes?`<div class="icard"><p class="note" style="margin:0;white-space:pre-wrap">${esc(info.notes)}</p></div>`:""}<p class="note">Download, then tap Install. It installs over this app — your data stays.</p>
     <div class="row2"><button type="button" class="mini ghost" data-close>Later</button><button type="button" class="mini psdl" id="apk-dl">Download update</button></div></div>`,el=>{const b=el.querySelector("#apk-dl"),nt=el.querySelector(".note");b.onclick=()=>{
       if(typeof N.apkInstall!=="function"){N.openUrl(info.url||"");closeSheet();return}
-      b.disabled=true;b.textContent="Downloading… 0%";N.apkInstall(info.url||"");
+      b.disabled=true;b.textContent="Downloading… 0%";try{N.apkInstall(info.url||"",info.sha256||"",info.code||0,info.name||"")}catch(e){N.apkInstall(info.url||"")}
       const t=setInterval(()=>{let st={};try{st=JSON.parse(N.apkState())}catch(e){}
         if(!document.body.contains(b)){clearInterval(t);return}
         if(st.s==="downloading")b.textContent="Downloading… "+(st.pct||0)+"%";
