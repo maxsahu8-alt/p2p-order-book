@@ -6,6 +6,9 @@ FX=os.path.dirname(os.path.abspath(__file__))+"/fixtures/"
 T={"o.png":open(FX+"order_kucoin_sell_22000.txt").read(),"p.png":open(FX+"pay_paytm_from_rishabh.txt").read()}
 now=int(time.time()*1000)
 RECS=[{"id":"B1","kind":"bank","name":"Axis","bankName":"Axis Bank","accNo":"917020037417410","vpas":["svdeep@axisbank"],"type":"Bank","opening":100000,"time":now-30*864e5}]
+BUY_ORD=open(FX+"order_kucoin_buy_10731.txt").read().replace("10,731.19","22,000")
+async def buy(pg):
+  pass
 async def main():
   ok=True
   def chk(n,c):
@@ -30,6 +33,13 @@ async def main():
     chk("your bank is found from your UPI ID",r["own"]=="B1")
     chk("UTR read from the grouped reference",r["utr"]=="219216309656")
     chk("verified without AI",r["overall"]=="VERIFIED" and r["ai"]==0)
+    # same Paytm layout for a BUY: "From" is YOUR account, so the digits are yours and money went out
+    await pg.evaluate("window.__T=%s"%json.dumps({"o.png":BUY_ORD,"p.png":open(FX+"pay_paytm_from_me.txt").read()}))
+    await pg.evaluate("ixS.groups=[];ixS.items=[];ixS.files=[]");await pg.evaluate("goPage('intake')");await pg.wait_for_timeout(300)
+    await pg.set_input_files("#i2-file",[mk("o.png",5),mk("p.png",6)]);await pg.wait_for_timeout(3500)
+    r2=await pg.evaluate("(()=>{const g=ixS.groups[0],P=g.X.pay;const bk=ixBankOf({last4:P.last4,bank:P.bank||'',dir:P.dir,vpa:P.vpa},ixSide(g));return{side:ixSide(g),dir:P.dir,last4:P.last4,own:bk&&bk.id,sender:P.sender}})()")
+    print(r2)
+    chk("BUY: money went out and the digits are yours",r2["dir"]=="out" and r2["last4"]=="7410" and r2["own"]=="B1")
     chk("no page errors",not errs)
     if errs:print(errs)
     await b.close()

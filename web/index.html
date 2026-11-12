@@ -3597,7 +3597,11 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
       if(l4){lab=lab.replace(/[^A-Za-z0-9 .&'\-]/g," ").replace(/\s+/g," ").trim();P.fromLabel=lab.slice(0,40);P.fromLast4=l4.slice(-4);if(!P.last4||/^(?:debited from|paid from)\b/i.test(lines[i]))P.last4=l4.slice(-4);
         const w=(lab.toLowerCase().match(/[a-z]{3,}/g)||[]);if(P.sender&&w.some(x=>P.sender.toLowerCase().includes(x)))P.sender="";break}}}
   // Paytm style: a bare "From" divider, then the SENDER's name and the SENDER's bank with its last digits ("Kotak Mahindra Bank - 1612"). That account is the payer's, not yours
-  for(let i=0;i<lines.length-2;i++){if(!/^[^A-Za-z]*from[^A-Za-z]*$/i.test(lines[i]))continue;const bl=lines[i+2],d=(bl.match(/(\d{4})\D*$/)||[])[1];if(d&&/bank/i.test(bl)&&!/[xX*•]/.test(bl)){P.fromLast4=d;P.fromLabel=bl.replace(/[^A-Za-z .&]/g," ").replace(/\s+/g," ").trim().slice(0,40);if(P.last4===d)P.last4="";const w=(P.fromLabel.toLowerCase().match(/[a-z]{4,}/g)||[]);if(P.bank&&w.some(x=>P.bank.toLowerCase().includes(x)))P.bank="";P.senderBank=true;
+  for(let i=0;i<lines.length-2;i++){if(!/^[^A-Za-z]*from[^A-Za-z]*$/i.test(lines[i]))continue;const bl=lines[i+2],d=(bl.match(/(\d{4})\D*$/)||[])[1];if(d&&/bank/i.test(bl)&&!/[*•]|[xX]{2,}\s*\d/.test(bl)){
+    // whose account is it? If the name under "From" is you, or the digits are one of your accounts, you paid (a BUY): keep the account as yours
+    const fn=lines[i+1]||"",mineD=(typeof ixIsMe==="function"&&ixIsMe(fn))||(typeof banks!=="undefined"&&banks.some(b=>b.type!=="Cash"&&b.accNo&&String(b.accNo).replace(/\D/g,"").endsWith(d)));
+    if(mineD){P.fromLast4=d;P.fromLabel=bl.replace(/[^A-Za-z .&]/g," ").replace(/\s+/g," ").trim().slice(0,40);if(!P.last4)P.last4=d;if(!P.dir)P.dir="out";if(!P.receiver&&lines[0]&&/@/.test(lines[1]||"")){const rn=nameOf(lines[0]);if(rn)P.receiver=rn}break}
+    P.fromLast4=d;P.fromLabel=bl.replace(/[^A-Za-z .&]/g," ").replace(/\s+/g," ").trim().slice(0,40);if(P.last4===d)P.last4="";const w=(P.fromLabel.toLowerCase().match(/[a-z]{4,}/g)||[]);if(P.bank&&w.some(x=>P.bank.toLowerCase().includes(x)))P.bank="";P.senderBank=true;
     // "Paid Successfully" with the sender under "From": this receipt is for money you RECEIVED; the name at the top is the receiver
     if(!P.dir)P.dir="in";if(!P.receiver&&lines[0]&&/@/.test(lines[1]||"")){const rn=nameOf(lines[0]);if(rn)P.receiver=rn}}break}
   // SMS style (one line): "... credited to RAVI KUMAR VPA ..." / "... received from AMIT SHARMA ..."
@@ -7026,7 +7030,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=232;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=233;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -7093,6 +7097,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00233","13 Nov 2026",["Smart Intake: the Paytm \"From\" block now depends on who paid. If the name or the digits under \"From\" are yours (a BUY), the account stays yours and the receipt is read as money sent. If they belong to someone else (a SELL, money received), they are kept as the payer's and never shown as your account."]],
   ["0.0.0.00232","13 Nov 2026",["Smart Intake: a Paytm receipt for money you received showed the SENDER's bank digits (Kotak - 1612) as your own account (\"Axis bank 1612\"). The bank and digits printed under \"From\" are now kept as the payer's, your account is found from your UPI ID, and the receipt is read as money received. The grouped Paytm reference (2192 1630 9656) is now read as the UTR, so the AI is not needed for it."]],
   ["0.0.0.00231","13 Nov 2026",["Smart Intake learns so the AI is needed less. (1) Intake memory now shows how many deals the phone read alone, why the AI was needed and for which app. (2) Each AI use keeps a small case file with the screenshot text; Copy it and send it to Claude and it becomes a fixed rule. (3) When only the order or only the payment was missing something, just that screenshot goes to the AI. (4) A screenshot type you pick by hand is remembered. (5) KuCoin order pages are recognised even when the word KuCoin is not on the screen."]],
   ["0.0.0.00230","12 Nov 2026",["Smart Intake checks the nickname and the real name together before linking an order to a party. A hidden nickname (like aff***@gmail.com) can belong to more than one person, so when it comes with a different real name you get a warning to check, instead of a hard stop. A clear nickname with a different real name still sends the order to review."]],

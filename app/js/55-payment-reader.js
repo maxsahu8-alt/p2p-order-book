@@ -82,7 +82,11 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
       if(l4){lab=lab.replace(/[^A-Za-z0-9 .&'\-]/g," ").replace(/\s+/g," ").trim();P.fromLabel=lab.slice(0,40);P.fromLast4=l4.slice(-4);if(!P.last4||/^(?:debited from|paid from)\b/i.test(lines[i]))P.last4=l4.slice(-4);
         const w=(lab.toLowerCase().match(/[a-z]{3,}/g)||[]);if(P.sender&&w.some(x=>P.sender.toLowerCase().includes(x)))P.sender="";break}}}
   // Paytm style: a bare "From" divider, then the SENDER's name and the SENDER's bank with its last digits ("Kotak Mahindra Bank - 1612"). That account is the payer's, not yours
-  for(let i=0;i<lines.length-2;i++){if(!/^[^A-Za-z]*from[^A-Za-z]*$/i.test(lines[i]))continue;const bl=lines[i+2],d=(bl.match(/(\d{4})\D*$/)||[])[1];if(d&&/bank/i.test(bl)&&!/[xX*•]/.test(bl)){P.fromLast4=d;P.fromLabel=bl.replace(/[^A-Za-z .&]/g," ").replace(/\s+/g," ").trim().slice(0,40);if(P.last4===d)P.last4="";const w=(P.fromLabel.toLowerCase().match(/[a-z]{4,}/g)||[]);if(P.bank&&w.some(x=>P.bank.toLowerCase().includes(x)))P.bank="";P.senderBank=true;
+  for(let i=0;i<lines.length-2;i++){if(!/^[^A-Za-z]*from[^A-Za-z]*$/i.test(lines[i]))continue;const bl=lines[i+2],d=(bl.match(/(\d{4})\D*$/)||[])[1];if(d&&/bank/i.test(bl)&&!/[*•]|[xX]{2,}\s*\d/.test(bl)){
+    // whose account is it? If the name under "From" is you, or the digits are one of your accounts, you paid (a BUY): keep the account as yours
+    const fn=lines[i+1]||"",mineD=(typeof ixIsMe==="function"&&ixIsMe(fn))||(typeof banks!=="undefined"&&banks.some(b=>b.type!=="Cash"&&b.accNo&&String(b.accNo).replace(/\D/g,"").endsWith(d)));
+    if(mineD){P.fromLast4=d;P.fromLabel=bl.replace(/[^A-Za-z .&]/g," ").replace(/\s+/g," ").trim().slice(0,40);if(!P.last4)P.last4=d;if(!P.dir)P.dir="out";if(!P.receiver&&lines[0]&&/@/.test(lines[1]||"")){const rn=nameOf(lines[0]);if(rn)P.receiver=rn}break}
+    P.fromLast4=d;P.fromLabel=bl.replace(/[^A-Za-z .&]/g," ").replace(/\s+/g," ").trim().slice(0,40);if(P.last4===d)P.last4="";const w=(P.fromLabel.toLowerCase().match(/[a-z]{4,}/g)||[]);if(P.bank&&w.some(x=>P.bank.toLowerCase().includes(x)))P.bank="";P.senderBank=true;
     // "Paid Successfully" with the sender under "From": this receipt is for money you RECEIVED; the name at the top is the receiver
     if(!P.dir)P.dir="in";if(!P.receiver&&lines[0]&&/@/.test(lines[1]||"")){const rn=nameOf(lines[0]);if(rn)P.receiver=rn}}break}
   // SMS style (one line): "... credited to RAVI KUMAR VPA ..." / "... received from AMIT SHARMA ..."
