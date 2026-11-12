@@ -1838,6 +1838,18 @@ button.abrow2,.abrow2>summary{display:flex;justify-content:space-between;align-i
 
 .ixmore{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}.ixmore>summary{cursor:pointer;color:var(--muted);font:600 .82rem var(--body);padding:6px 0;list-style:none}.ixmore>summary::-webkit-details-marker{display:none}.ixmore>summary::before{content:"▸ "}.ixmore[open]>summary::before{content:"▾ "}
 .ixbar{position:sticky;bottom:calc(var(--nav-h,64px) + 10px);z-index:5;display:flex;align-items:center;gap:12px;justify-content:space-between;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);box-shadow:0 6px 24px rgba(0,0,0,.18)}.ixbar>div{display:flex;flex-direction:column;gap:1px;min-width:0}.ixbar b{font:800 .95rem var(--display)}.ixbar small{color:var(--muted);font-size:.74rem}.ixbar .primary{flex:none;width:auto;padding:10px 16px;margin:0}
+
+/* Smart Intake: number check and a little motion */
+.ixnum{margin:12px 0;padding:14px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--fg) 3%,transparent)}.ixnt{display:flex;flex-direction:column;gap:1px;margin-bottom:10px}.ixnt b{font:800 .95rem var(--display)}.ixnt small,.ixnh2,.ixnf{color:var(--muted);font-size:.74rem;line-height:1.4}
+.ixnb{padding:10px 0;border-top:1px solid var(--line)}.ixnb:first-of-type{border-top:0;padding-top:0}.ixnh{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font:700 .68rem var(--body);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}.ixnh .mini{text-transform:none;letter-spacing:0}
+.ixnv{display:block;font:600 1.02rem var(--mono);letter-spacing:.02em;word-break:break-all;margin:2px 0 8px}.ixnv b{color:var(--accent);font-weight:800;background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:6px;padding:1px 5px}
+.ixncs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.ixnc{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:3px 10px 3px 6px;font:600 .72rem var(--body);background:color-mix(in srgb,var(--muted) 14%,transparent);color:var(--muted)}.ixnc i{font-style:normal;display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;font-size:.62rem;font-weight:800;background:color-mix(in srgb,var(--muted) 25%,transparent)}
+.ixnc.ok{background:color-mix(in srgb,var(--buy) 14%,transparent);color:var(--buy)}.ixnc.ok i{background:var(--buy);color:var(--bg)}.ixnc.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}.ixnc.warn i{background:var(--warn);color:var(--bg)}.ixnf{display:block;margin-top:8px}
+@keyframes ixin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ixfresh .ixg{animation:ixin .32s cubic-bezier(.2,.7,.2,1) both}.ixg:nth-child(2){animation-delay:.03s}.ixg:nth-child(3){animation-delay:.06s}.ixg:nth-child(4){animation-delay:.09s}.ixg:nth-child(5){animation-delay:.12s}.ixg:nth-child(6){animation-delay:.15s}.ixg:nth-child(n+7){animation-delay:.18s}
+.ixg>summary.ixsum{transition:transform .12s ease}.ixg>summary.ixsum:active{transform:scale(.985)}.ixchips button,.ixbar .primary{transition:transform .12s ease,background .2s ease}.ixchips button:active,.ixbar .primary:active{transform:scale(.96)}
+.ixs2.VERIFIED::before{content:"✓ "}.ixs2.REVIEW::before{content:"! "}.ixs2.MISMATCH::before{content:"✕ "}
+@media (prefers-reduced-motion:reduce){.ixfresh .ixg{animation:none}.ixg>summary.ixsum,.ixchips button,.ixbar .primary{transition:none}}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -6408,6 +6420,7 @@ function ixCardHtml(g,many){const X=g.X,P=X.pay,O=X.ord,T=VER_TXT[g.cmp.overall]
     ${g.autoT&&g.target?`<div class="ixmine ok"><b>Matched to your open order</b><ul><li class="ok">${esc(shortO(g.target))} · ${inr(orderTotal(g.target))}</li></ul></div>`:g.autoTHint?`<div class="ixmine warn"><b>Which order?</b><ul><li class="warn">${g.autoTHint} open orders have this amount. Choose the right one below.</li></ul></div>`:""}
     ${g.auto&&g.saved?`<div class="ixmine ok"><b>Saved automatically</b><ul><li class="ok">Verified and low risk. Use Undo auto-save at the top if it is wrong.</li></ul></div>`:""}
     ${M.lines.length?`<div class="ixmine ${M.verdict}"><b>Your account check</b><ul>${M.lines.map(l=>`<li class="${l.s}">${esc(l.t)}${l.own?ixOwnRow(l.own):""}${l.mine?ixMineRow(l.mine):""}</li>`).join("")}</ul></div>`:""}
+    ${typeof ixNumsHtml==="function"?ixNumsHtml(g):""}
     <div class="ixwhy"><b>WHY</b><ul>${ixWhy(g).map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>
     <div class="ixai">${g.ai==="ok"?"✨ Checked by AI vision on top of the phone reading":g.ai==="unavailable"?"⚠ Cloud AI unavailable"+(g.aiErr==="bad_key"?" (key rejected)":g.aiErr==="rate_limited"?" (no free requests left)":g.aiErr==="busy"?" (busy or slow)":g.aiMsg&&g.aiMsg!=="slow"?" ("+esc(g.aiMsg)+")":"")+": results below are from on-device analysis":g.ai==="na"?"AI not connected: results are from on-device analysis":"📷 Read on your phone"}${g.items[0]&&g.items[0].ocr?` · ${esc(g.items.map(x=>x.ocr&&x.ocr.engine).filter((v,i,a)=>v&&a.indexOf(v)===i).join(" + "))}`:""}${(()=>{const A=[...new Set(g.items.map(x=>x.app).filter(Boolean))];return A.length?" · "+esc(A.join(" + ")):""})()}</div>
     ${aiNote&&g.ai!=="unavailable"&&g.ai!=="na"&&partial?`<div class="note" style="margin:6px 0 0"><b>PARTIAL READING</b><br>Some information could not be confidently read.</div>`:""}
@@ -6436,7 +6449,7 @@ function ixRowSum(g,i){try{const X=g.X,sd=ixSide(g)||"",who=(sd==="SELL"?(X.ord.
   const ov=g.cmp.overall,lab=ov==="VERIFIED"?"Verified":ov==="REVIEW"?"Needs review":"Mismatch";
   const why=ov==="VERIFIED"?"":((g.risk.reasons&&g.risk.reasons[0])||(g.cmp.fields.find(f=>f.res==="MISMATCH"||f.res==="UNCLEAR")||{}).note||(g.cmp.fields.find(f=>f.res==="MISMATCH"||f.res==="UNCLEAR")||{}).label||"Check the details");
   return`<summary class="ixsum"><span class="ixsd ${sd}">${sd||"?"}</span><span class="ixsn"><b>${esc(String(who).slice(0,28))}</b><small>${esc(t||g.items.length+" screenshots")}</small>${why?`<small class="ixsw">${esc(String(why).slice(0,70))}</small>`:""}</span><span class="ixsa"><b>${amt!=null?inr(amt):"—"}</b><em class="ixs2 ${ov}">${g.saved?"Saved":lab}</em></span></summary>`}catch(e){return`<summary><b>Deal ${i+1}</b></summary>`}}
-function ixDraw(){try{ixRail()}catch(e){}try{i2Thumbs()}catch(e){}const out=$("#i2-ix");if(!out)return;out.innerHTML="";const G=ixS.groups;try{const ca=$("#ix-auto");if(ca)ca.checked=pref("ixAuto")!=="0";ixDrawExtras(out)}catch(e){console.error(e)}
+function ixDraw(){try{ixRail()}catch(e){}try{i2Thumbs()}catch(e){}const out=$("#i2-ix");if(!out)return;out.innerHTML="";const G=ixS.groups;{const ids=G.map(g=>g.id).join();out.classList.toggle("ixfresh",ixS.shown!==ids);ixS.shown=ids}try{const ca=$("#ix-auto");if(ca)ca.checked=pref("ixAuto")!=="0";ixDrawExtras(out)}catch(e){console.error(e)}
   if(G.length>1){const h=document.createElement("div");h.className="acard ixhead";const cnt=k=>G.filter(g=>g.cmp.overall===k).length,nV=cnt("VERIFIED"),nR=cnt("REVIEW"),nM=cnt("MISMATCH"),nS=G.filter(g=>g.saved).length;
     h.innerHTML=`<div class="ixht"><b>${G.length} deals found</b><small>${G.reduce((a,g)=>a+g.items.length,0)} screenshots read${nS?` · ${nS} saved`:""}</small></div>
       <div class="ixchips" role="tablist"><button type="button" class="on" data-ixf="all">All <i>${G.length}</i></button><button type="button" data-ixf="VERIFIED">Verified <i>${nV}</i></button><button type="button" data-ixf="REVIEW">Needs review <i>${nR}</i></button><button type="button" data-ixf="MISMATCH">Mismatch <i>${nM}</i></button></div>
@@ -6451,6 +6464,7 @@ async function ixAct(g,a,btn){
   if(a==="linknames"){const c=ixLinkCand(g);if(c){await ixLinkNames(c.nick,c.real);ixS.groups.forEach(x=>{try{ixVerify(x)}catch(e){}});ixDraw();toast(`Linked ${c.nick} = ${c.real}`)}return}
   if(a==="tds1"||a==="tds0"){const fi=g.X.ord.fiat!=null?g.X.ord.fiat:(g.target?orderTotal(g.target):g.X.pay.amount);g.tdsSet=a==="tds0"?0:+(fi*0.01).toFixed(2);ixDraw();return}
   if(a==="debug"){sheets.ixdebug(g.id);return}
+  if(a==="copy:utr"||a==="copy:id"){const v=a==="copy:utr"?g.X.pay.utr:g.X.ord.id;try{await navigator.clipboard.writeText(String(v||""));toast("Copied");try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}catch(e){toast("Could not copy")}return}
   if(a==="raw"){const r=btn.closest(".ixb").querySelector(".ixraw");r.hidden=!r.hidden;return}
   if(a==="addbank"){sheets.bank();return}
   if(a.startsWith("own:")){const l4=a.slice(4),sel=btn.closest(".ixown").querySelector("[data-ixown]"),bk=banks.find(x=>x.id===(sel&&sel.value));if(bk){await patchRec(bk.id,{accNo:"XXXXXX"+l4});toast(`Saved ••${l4} on ${bk.name||bk.bankName}`);ixS.groups.forEach(x=>{try{ixVerify(x)}catch(e){}});ixDraw()}return}
@@ -7057,7 +7071,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=235;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=236;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -7124,6 +7138,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00236","13 Nov 2026",["Smart Intake: a new \"Check these numbers\" block on every deal. The UTR and the order ID are shown large with the last 4 digits highlighted, a Copy button, and plain checks: right format, not used on a saved order before, and whether the AI read the same number. It also tells you which last 4 digits to look for in your bank SMS and the exchange history. Rows and buttons now have light motion (turned off when your phone asks for reduced motion), and status chips carry a tick, exclamation or cross."]],
   ["0.0.0.00235","13 Nov 2026",["Smart Intake is simpler to use. Deals that need you (mismatch, then needs review) are listed first, verified ones after, saved ones last. A \"Save N verified\" bar stays at the bottom while you scroll. Each deal opens to the facts that matter: who, how much, your account check and why. The technical parts (reader steps, field checklist, match table, risk table) are folded under \"Details and checks\"."]],
   ["0.0.0.00234","13 Nov 2026",["Smart Intake with many screenshots is easier to read. The screenshots are a small scrolling strip instead of a big grid. Every deal is one clear line: BUY or SELL, the other person, amount, date and time, status, and why it needs a look. A summary at the top shows how many deals are verified, need review or mismatch, with filters. The button now says Save N verified and only saves verified deals; the rest are never saved for you. The long character counts under the pictures are now short Reader details."]],
   ["0.0.0.00233","13 Nov 2026",["Smart Intake: the Paytm \"From\" block now depends on who paid. If the name or the digits under \"From\" are yours (a BUY), the account stays yours and the receipt is read as money sent. If they belong to someone else (a SELL, money received), they are kept as the payer's and never shown as your account."]],
@@ -8004,6 +8019,19 @@ function ixTypeLearn(it,t){try{const s=ixSig(it.ocr&&it.ocr.text);if(!s||!t)retu
       if(cp){const c=ixjGet(IXJ.cs,[])[+cp.dataset.ixlcopy];if(!c)return;const tx="Pexai Smart Intake case\n"+JSON.stringify(c,null,1);try{await navigator.clipboard.writeText(tx);toast("Copied. Send it to Claude")}catch(x){toast("Could not copy")}return}
       if(cl){try{localStorage.removeItem(IXJ.cs)}catch(x){}sheets.ixmem();return}
       if(ty){const m=ixjGet(IXJ.ty,{});delete m[ty.dataset.ixlty];ixjSet(IXJ.ty,m);sheets.ixmem()}})}catch(e){console.error(e)}}})();
+// "Check these numbers": the UTR and the order ID are the two numbers a deal stands on. Show them big, with the last four digits to match
+// against the bank SMS / exchange history, and say plainly what the app could and could not confirm about each.
+function ixNumsHtml(g){try{const P=g.X.pay,O=g.X.ord,hasU=P.utr!=null&&String(P.utr).trim()!=="",hasI=O.id!=null&&String(O.id).trim()!=="";if(!hasU&&!hasI)return"";
+  const chip=(s,t)=>`<span class="ixnc ${s}"><i>${s==="ok"?"✓":s==="warn"?"!":"i"}</i>${esc(t)}</span>`,N=v=>String(v==null?"":v).toUpperCase().replace(/[^A-Z0-9]/g,"");
+  const shown=(v,grp)=>{const s=String(v),a=s.slice(0,-4),b=s.slice(-4),g4=grp?a.replace(/(.{4})(?=.)/g,"$1 ").trim():a;return`<span class="ixnv">${esc(g4)}${g4?" ":""}<b>${esc(b)}</b></span>`};
+  const dup=k=>(g.dups||[]).find(d=>d.k===k&&!d.same);
+  const ai=(mine,theirs)=>{if(g.ai==="ok"&&theirs!=null&&String(theirs)!=="")return N(theirs)===N(mine)?chip("ok","AI read it the same"):chip("warn","AI read it differently: "+String(theirs).slice(-6));return chip("i","Read by the phone reader")};
+  let h=`<div class="ixnum"><div class="ixnt"><b>Check these numbers</b><small>Match the last 4 digits in your own records</small></div>`;
+  if(hasU){const u=String(P.utr).trim(),d=dup("utr");
+    h+=`<div class="ixnb"><div class="ixnh"><span>UTR / reference</span><button type="button" class="mini ghost" data-ix="copy:utr" aria-label="Copy UTR">Copy</button></div>${shown(u,/^\d+$/.test(u))}<div class="ixncs">${/^\d{12}$/.test(u)?chip("ok","12 digits, UPI format"):/^[A-Za-z0-9]{8,24}$/.test(u)?chip("i","Bank reference, "+u.length+" characters"):chip("warn","Unusual format")}${d?chip("warn","Already used before"):chip("ok","Not used on a saved order")}${ai(u,g.aiPay&&g.aiPay.utr)}</div><small class="ixnh2">Look for ••${esc(u.slice(-4))} in your bank SMS or app</small></div>`}
+  if(hasI){const id=String(O.id).trim(),d=dup("ex"),same=g.target&&String(O.id)&&N(exIdOf(g.target))===N(id);
+    h+=`<div class="ixnb"><div class="ixnh"><span>Order ID</span><button type="button" class="mini ghost" data-ix="copy:id" aria-label="Copy order ID">Copy</button></div>${shown(id,false)}<div class="ixncs">${/^[0-9a-f]{20,}$/i.test(id)?chip("ok","Exchange ID format, "+id.length+" characters"):chip("i",id.length+" characters")}${same?chip("ok","Matches your open order"):d?chip("warn","Already saved before"):chip("ok","Not saved before")}${ai(id,g.aiOrd&&g.aiOrd.id)}</div><small class="ixnh2">Look for …${esc(id.slice(-4))} in the exchange order history</small></div>`}
+  return h+`<small class="ixnf">The app compares screenshots with each other and with your saved orders. It cannot ask the bank or the exchange, so for big amounts match the last 4 digits yourself.</small></div>`}catch(e){return""}}
 // ================= INSIGHTS =================
 const INS_FROM=k=>k==="all"?0:Date.now()-(+k)*DAY;
 const hLab=h=>{h=((h%24)+24)%24;return (h%12||12)+(h<12?" AM":" PM")};
