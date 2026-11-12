@@ -10,7 +10,9 @@ function ixRail(){try{const R=document.getElementById("ix-rail");if(!R)return;co
 const i2Url=new WeakMap();const i2U=f=>{let u=i2Url.get(f);if(!u){u=URL.createObjectURL(f);i2Url.set(f,u)}return u};
 // what the app made of each picture (known after the check): so you can see which one is which
 function i2Label(f){try{const it=(ixS.items||[]).find(x=>x.file===f);if(!it||!it.cls)return"";if(it.ledger)return"Wallet history";if(it.list)return"Order list";if(it.pay)return"Payment";if(it.ord)return"Exchange order";return it.cls.type==="UNKNOWN"?"Not sure":""}catch(e){return""}}
-function i2Thumbs(){setTimeout(i2Dbg,0);const n=i2Files.length,dzE=$("#idrop");try{dzE.classList.toggle("has",n>0)}catch(e){}try{$("#i2-prev").classList.toggle("many",n>6)}catch(e){}
+// once the result is on screen, the input controls fold away so the result is the first thing you see
+function ixDoneMode(){try{const sec=document.getElementById("p-intake");if(!sec)return;const on=!ixS.busy&&(ixS.groups||[]).length>0&&ixS.doneN!=null&&ixS.doneN===i2Files.length;sec.classList.toggle("ixdone",on);const c=$("#i2-clear");if(c)c.textContent=on?"Start over":"Clear";const g=$("#i2-go");if(g&&on)g.textContent="Analyze again";$("#i2-prev").classList.toggle("many",i2Files.length>6||on)}catch(e){}}
+function i2Thumbs(){setTimeout(i2Dbg,0);const n=i2Files.length,dzE=$("#idrop");try{dzE.classList.toggle("has",n>0)}catch(e){}try{ixDoneMode();$("#i2-prev").classList.toggle("many",n>6||$("#p-intake").classList.contains("ixdone"))}catch(e){}
   $("#i2-prev").innerHTML=i2Files.map((f,i)=>{const lb=i2Label(f);return`<span class="pv"><img data-pi="${i}" src="${i2U(f)}" alt="Screenshot ${i+1}"><i class="no">${i+1}</i><button type="button" data-ri="${i}" aria-label="Remove screenshot ${i+1}">×</button>${lb?`<em>${esc(lb)}</em>`:""}</span>`}).join("")+(n&&n<10?`<button type="button" class="addtile" data-addpic aria-label="Add more screenshots"><span>＋</span><small>Add more</small></button>`:"")}
 // "What the reader saw": for each picture the engine, confidence and the text it produced, so a wrong or empty read can be seen (and sent) at once
 function i2Dbg(){try{let d=document.getElementById("i2-dbg");const prev=$("#i2-prev");const its=(ixS.items||[]).filter(x=>x.ocr&&i2Files.includes(x.file));
@@ -50,7 +52,7 @@ function i2Lb(i){try{document.querySelectorAll(".i2lb").forEach(x=>x.remove());i
     const dt=e.target.closest("[data-k]");if(dt){go(+dt.dataset.k);return}
     if(e.target.closest("[data-d]")){const k=Math.round(pos);i2Files.splice(k,1);i2Draw();if(!N()){close();return}build();pos=Math.min(k,N()-1);zoom=null;render(pos,false);head()}});
   }catch(e){console.error(e)}}
-function i2Draw(){try{const n=i2Files.length;$("#i2-go").textContent=n?(n>1?"Analyze "+n+" screenshots":"Analyze"):"Add from text"}catch(e){}if(i2Files.length&&!ocrWorker&&!ocrPromise&&!(window.P2POcr&&P2POcr.recognize)){try{ocrInit().catch(()=>{})}catch(e){}}i2Thumbs();ixRail();}
+function i2Draw(){try{const n=i2Files.length;$("#i2-go").textContent=document.getElementById("p-intake").classList.contains("ixdone")?"Analyze again":n?(n>1?"Analyze "+n+" screenshots":"Analyze"):"Add from text"}catch(e){}if(i2Files.length&&!ocrWorker&&!ocrPromise&&!(window.P2POcr&&P2POcr.recognize)){try{ocrInit().catch(()=>{})}catch(e){}}i2Thumbs();ixRail();}
 function i2Add(list){const all=[...(list||[])];const imgs=all.filter(f=>/^image\//.test(f.type)||(!f.type&&/\.(png|jpe?g|webp|heic|heif|gif|bmp)$/i.test(f.name||""))||(!f.type&&f.size>0));
   if(!all.length)return;if(!imgs.length){toast("That file isn't a picture. Choose a screenshot.");return}const max=50;
 
@@ -360,7 +362,7 @@ function ixAiItem(it,X){const P=X.pay||{},O=X.ord||{};const nP=[P.amount,P.utr,P
   else{it.cls={type:"UNKNOWN",conf:0};it.ext="fail"}
   return it}
 // the whole run
-async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;ixS.T={};ixS.stopNow=false;ixS.prog=null;ixS.stopped=0;setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
+async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;ixS.doneN=null;ixS.T={};ixS.stopNow=false;ixS.prog=null;ixS.stopped=0;setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
   const out=$("#i2-ix");out.innerHTML="";const card=document.createElement("div");card.className="acard ixprog";out.appendChild(card);const t0=Date.now();let msg="Getting your screenshots ready…";let skipShown=false;
   const paint=()=>{const sec=Math.round((Date.now()-t0)/1000);card.innerHTML=`<div class="ah">ANALYSING ${files.length} SCREENSHOT${files.length>1?"S":""}</div><div class="ires">${esc(msg)} ${sec}s</div>${sec>=15&&!ixS.ocrReady&&!skipShown?"":""}`+(sec>=15&&ixS.stage==="ocr"?`<div class="note">${ixAiReady()?"The phone reader is slow to start. You can skip it and let your AI read the pictures.":"The phone reader is still starting (first use downloads about 10 MB). Please keep this page open."}</div>${ixAiReady()?'<button class="mini ghost" type="button" data-skipocr>Skip phone reader</button>':""}`:"")+ixBulkBar()+ixLiveHtml()+'<button class="mini ghost" type="button" data-ixcancel style="margin-top:8px">Cancel analysis</button>';const cb=card.querySelector("[data-ixcancel]");if(cb)cb.onclick=()=>{ixS.run++;clearInterval(tick);card.remove();ixS.busy=false;try{ixRail()}catch(e){}toast("Analysis cancelled")};const sb=card.querySelector("[data-skipocr]");if(sb)sb.onclick=()=>ixS.skip&&ixS.skip();const stp=card.querySelector("[data-ixstop]");if(stp)stp.onclick=()=>{ixS.stopNow=true;stp.disabled=true;stp.textContent="Stopping…"}};
   const tick=setInterval(paint,1000);paint();
@@ -399,7 +401,7 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
     try{ixReport(files.length)}catch(e){console.error(e)}
     try{const first=out.querySelector(".ixg, .ixhead");if(first)first.scrollIntoView({block:"start",behavior:"smooth"})}catch(e){}
   }catch(e){console.error(e);clearInterval(tick);card.innerHTML=`<div class="ah">ANALYSIS INTERRUPTED</div><div class="note">${esc(e&&e.code==="busy"?"The AI is busy or slow right now.":e&&e.code==="bad_json"?e.text:"Something went wrong while reading. Your screenshots are kept.")}</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ixS.busy=false;ixRun()}}
-  finally{clearInterval(tick);if(run===ixS.run)ixS.busy=false;try{ixRail()}catch(e){}ocrListeners=[];if(ixS.again){ixS.again=false;setTimeout(()=>ixRun(),60)}}}
+  finally{clearInterval(tick);if(run===ixS.run){ixS.busy=false;if((ixS.groups||[]).length)ixS.doneN=files.length}try{ixDoneMode()}catch(e){}try{ixRail()}catch(e){}ocrListeners=[];if(ixS.again){ixS.again=false;setTimeout(()=>ixRun(),60)}}}
 // ---- bulk helpers: progress bar, batch report, bank hint
 function ixBulkBar(){const p=ixS.prog;if(!p||ixS.stage!=="ocr"||p.m<5)return"";const pc=Math.round(p.n/p.m*100);
   return`<div class="ixpb"><i style="width:${pc}%"></i></div><div class="note">${p.n} of ${p.m} read · ${pc}%</div><button class="mini ghost" type="button" data-ixstop>Stop and use what is read</button>`}

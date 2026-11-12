@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=236;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=237;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00237","13 Nov 2026",["Smart Intake: once the result is ready, the input controls (Camera, Paste image, Paste an SMS, Auto-save option) fold away, so the result is the first thing you see. Your screenshots stay as a small strip, with Analyze again and Start over below. Add or remove a screenshot and the full controls come back."]],
   ["0.0.0.00236","13 Nov 2026",["Smart Intake: a new \"Check these numbers\" block on every deal. The UTR and the order ID are shown large with the last 4 digits highlighted, a Copy button, and plain checks: right format, not used on a saved order before, and whether the AI read the same number. It also tells you which last 4 digits to look for in your bank SMS and the exchange history. Rows and buttons now have light motion (turned off when your phone asks for reduced motion), and status chips carry a tick, exclamation or cross."]],
   ["0.0.0.00235","13 Nov 2026",["Smart Intake is simpler to use. Deals that need you (mismatch, then needs review) are listed first, verified ones after, saved ones last. A \"Save N verified\" bar stays at the bottom while you scroll. Each deal opens to the facts that matter: who, how much, your account check and why. The technical parts (reader steps, field checklist, match table, risk table) are folded under \"Details and checks\"."]],
   ["0.0.0.00234","13 Nov 2026",["Smart Intake with many screenshots is easier to read. The screenshots are a small scrolling strip instead of a big grid. Every deal is one clear line: BUY or SELL, the other person, amount, date and time, status, and why it needs a look. A summary at the top shows how many deals are verified, need review or mismatch, with filters. The button now says Save N verified and only saves verified deals; the rest are never saved for you. The long character counts under the pictures are now short Reader details."]],

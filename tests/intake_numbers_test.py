@@ -23,6 +23,7 @@ async def main():
     await pg.evaluate("goPage('intake')");await pg.wait_for_timeout(300)
     mk=lambda n,k:{"name":n,"mimeType":"image/png","buffer":bytes([k]*40)}
     await pg.set_input_files("#i2-file",[mk("o.png",1),mk("p.png",2)]);await pg.wait_for_timeout(3500)
+    chk("input controls fold away once the result is ready",await pg.evaluate("document.getElementById('p-intake').classList.contains('ixdone')") and not await pg.is_visible(".ixalt") and (await pg.inner_text("#i2-clear"))=="Start over")
     t=await pg.inner_text(".ixnum")
     chk("block is shown",t.startswith("Check these numbers"))
     chk("UTR last 4 highlighted",await pg.evaluate("[...document.querySelectorAll('.ixnv b')].map(x=>x.textContent).join()")=="5260,ed34")

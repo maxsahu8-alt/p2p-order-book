@@ -325,3 +325,8 @@ button.abrow2,.abrow2>summary{display:flex;justify-content:space-between;align-i
 .ixg>summary.ixsum{transition:transform .12s ease}.ixg>summary.ixsum:active{transform:scale(.985)}.ixchips button,.ixbar .primary{transition:transform .12s ease,background .2s ease}.ixchips button:active,.ixbar .primary:active{transform:scale(.96)}
 .ixs2.VERIFIED::before{content:"✓ "}.ixs2.REVIEW::before{content:"! "}.ixs2.MISMATCH::before{content:"✕ "}
 @media (prefers-reduced-motion:reduce){.ixfresh .ixg{animation:none}.ixg>summary.ixsum,.ixchips button,.ixbar .primary{transition:none}}
+
+/* Smart Intake: after the result is ready, only what you need stays above it */
+#p-intake.ixdone .ixalt,#p-intake.ixdone .ixtxt,#p-intake.ixdone .ixautot,#p-intake.ixdone .ixready,#p-intake.ixdone #i2-dbg{display:none}
+#p-intake.ixdone .ixact{display:flex;gap:8px;margin:4px 0 8px}#p-intake.ixdone .ixact .primary{background:transparent;color:var(--fg);border:1px solid var(--line);box-shadow:none;font-weight:600;padding:10px 14px}#p-intake.ixdone .ixact .ixclear{flex:none}
+.ixprev.many .addtile{flex:none;width:46px;height:62px;border-radius:8px}.ixprev.many .addtile small{display:none}.ixprev.many .addtile span{font-size:1.2rem}

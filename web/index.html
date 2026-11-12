@@ -1850,6 +1850,11 @@ button.abrow2,.abrow2>summary{display:flex;justify-content:space-between;align-i
 .ixg>summary.ixsum{transition:transform .12s ease}.ixg>summary.ixsum:active{transform:scale(.985)}.ixchips button,.ixbar .primary{transition:transform .12s ease,background .2s ease}.ixchips button:active,.ixbar .primary:active{transform:scale(.96)}
 .ixs2.VERIFIED::before{content:"✓ "}.ixs2.REVIEW::before{content:"! "}.ixs2.MISMATCH::before{content:"✕ "}
 @media (prefers-reduced-motion:reduce){.ixfresh .ixg{animation:none}.ixg>summary.ixsum,.ixchips button,.ixbar .primary{transition:none}}
+
+/* Smart Intake: after the result is ready, only what you need stays above it */
+#p-intake.ixdone .ixalt,#p-intake.ixdone .ixtxt,#p-intake.ixdone .ixautot,#p-intake.ixdone .ixready,#p-intake.ixdone #i2-dbg{display:none}
+#p-intake.ixdone .ixact{display:flex;gap:8px;margin:4px 0 8px}#p-intake.ixdone .ixact .primary{background:transparent;color:var(--fg);border:1px solid var(--line);box-shadow:none;font-weight:600;padding:10px 14px}#p-intake.ixdone .ixact .ixclear{flex:none}
+.ixprev.many .addtile{flex:none;width:46px;height:62px;border-radius:8px}.ixprev.many .addtile small{display:none}.ixprev.many .addtile span{font-size:1.2rem}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -6166,7 +6171,9 @@ function ixRail(){try{const R=document.getElementById("ix-rail");if(!R)return;co
 const i2Url=new WeakMap();const i2U=f=>{let u=i2Url.get(f);if(!u){u=URL.createObjectURL(f);i2Url.set(f,u)}return u};
 // what the app made of each picture (known after the check): so you can see which one is which
 function i2Label(f){try{const it=(ixS.items||[]).find(x=>x.file===f);if(!it||!it.cls)return"";if(it.ledger)return"Wallet history";if(it.list)return"Order list";if(it.pay)return"Payment";if(it.ord)return"Exchange order";return it.cls.type==="UNKNOWN"?"Not sure":""}catch(e){return""}}
-function i2Thumbs(){setTimeout(i2Dbg,0);const n=i2Files.length,dzE=$("#idrop");try{dzE.classList.toggle("has",n>0)}catch(e){}try{$("#i2-prev").classList.toggle("many",n>6)}catch(e){}
+// once the result is on screen, the input controls fold away so the result is the first thing you see
+function ixDoneMode(){try{const sec=document.getElementById("p-intake");if(!sec)return;const on=!ixS.busy&&(ixS.groups||[]).length>0&&ixS.doneN!=null&&ixS.doneN===i2Files.length;sec.classList.toggle("ixdone",on);const c=$("#i2-clear");if(c)c.textContent=on?"Start over":"Clear";const g=$("#i2-go");if(g&&on)g.textContent="Analyze again";$("#i2-prev").classList.toggle("many",i2Files.length>6||on)}catch(e){}}
+function i2Thumbs(){setTimeout(i2Dbg,0);const n=i2Files.length,dzE=$("#idrop");try{dzE.classList.toggle("has",n>0)}catch(e){}try{ixDoneMode();$("#i2-prev").classList.toggle("many",n>6||$("#p-intake").classList.contains("ixdone"))}catch(e){}
   $("#i2-prev").innerHTML=i2Files.map((f,i)=>{const lb=i2Label(f);return`<span class="pv"><img data-pi="${i}" src="${i2U(f)}" alt="Screenshot ${i+1}"><i class="no">${i+1}</i><button type="button" data-ri="${i}" aria-label="Remove screenshot ${i+1}">×</button>${lb?`<em>${esc(lb)}</em>`:""}</span>`}).join("")+(n&&n<10?`<button type="button" class="addtile" data-addpic aria-label="Add more screenshots"><span>＋</span><small>Add more</small></button>`:"")}
 // "What the reader saw": for each picture the engine, confidence and the text it produced, so a wrong or empty read can be seen (and sent) at once
 function i2Dbg(){try{let d=document.getElementById("i2-dbg");const prev=$("#i2-prev");const its=(ixS.items||[]).filter(x=>x.ocr&&i2Files.includes(x.file));
@@ -6206,7 +6213,7 @@ function i2Lb(i){try{document.querySelectorAll(".i2lb").forEach(x=>x.remove());i
     const dt=e.target.closest("[data-k]");if(dt){go(+dt.dataset.k);return}
     if(e.target.closest("[data-d]")){const k=Math.round(pos);i2Files.splice(k,1);i2Draw();if(!N()){close();return}build();pos=Math.min(k,N()-1);zoom=null;render(pos,false);head()}});
   }catch(e){console.error(e)}}
-function i2Draw(){try{const n=i2Files.length;$("#i2-go").textContent=n?(n>1?"Analyze "+n+" screenshots":"Analyze"):"Add from text"}catch(e){}if(i2Files.length&&!ocrWorker&&!ocrPromise&&!(window.P2POcr&&P2POcr.recognize)){try{ocrInit().catch(()=>{})}catch(e){}}i2Thumbs();ixRail();}
+function i2Draw(){try{const n=i2Files.length;$("#i2-go").textContent=document.getElementById("p-intake").classList.contains("ixdone")?"Analyze again":n?(n>1?"Analyze "+n+" screenshots":"Analyze"):"Add from text"}catch(e){}if(i2Files.length&&!ocrWorker&&!ocrPromise&&!(window.P2POcr&&P2POcr.recognize)){try{ocrInit().catch(()=>{})}catch(e){}}i2Thumbs();ixRail();}
 function i2Add(list){const all=[...(list||[])];const imgs=all.filter(f=>/^image\//.test(f.type)||(!f.type&&/\.(png|jpe?g|webp|heic|heif|gif|bmp)$/i.test(f.name||""))||(!f.type&&f.size>0));
   if(!all.length)return;if(!imgs.length){toast("That file isn't a picture. Choose a screenshot.");return}const max=50;
 
@@ -6516,7 +6523,7 @@ function ixAiItem(it,X){const P=X.pay||{},O=X.ord||{};const nP=[P.amount,P.utr,P
   else{it.cls={type:"UNKNOWN",conf:0};it.ext="fail"}
   return it}
 // the whole run
-async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;ixS.T={};ixS.stopNow=false;ixS.prog=null;ixS.stopped=0;setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
+async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;ixS.doneN=null;ixS.T={};ixS.stopNow=false;ixS.prog=null;ixS.stopped=0;setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
   const out=$("#i2-ix");out.innerHTML="";const card=document.createElement("div");card.className="acard ixprog";out.appendChild(card);const t0=Date.now();let msg="Getting your screenshots ready…";let skipShown=false;
   const paint=()=>{const sec=Math.round((Date.now()-t0)/1000);card.innerHTML=`<div class="ah">ANALYSING ${files.length} SCREENSHOT${files.length>1?"S":""}</div><div class="ires">${esc(msg)} ${sec}s</div>${sec>=15&&!ixS.ocrReady&&!skipShown?"":""}`+(sec>=15&&ixS.stage==="ocr"?`<div class="note">${ixAiReady()?"The phone reader is slow to start. You can skip it and let your AI read the pictures.":"The phone reader is still starting (first use downloads about 10 MB). Please keep this page open."}</div>${ixAiReady()?'<button class="mini ghost" type="button" data-skipocr>Skip phone reader</button>':""}`:"")+ixBulkBar()+ixLiveHtml()+'<button class="mini ghost" type="button" data-ixcancel style="margin-top:8px">Cancel analysis</button>';const cb=card.querySelector("[data-ixcancel]");if(cb)cb.onclick=()=>{ixS.run++;clearInterval(tick);card.remove();ixS.busy=false;try{ixRail()}catch(e){}toast("Analysis cancelled")};const sb=card.querySelector("[data-skipocr]");if(sb)sb.onclick=()=>ixS.skip&&ixS.skip();const stp=card.querySelector("[data-ixstop]");if(stp)stp.onclick=()=>{ixS.stopNow=true;stp.disabled=true;stp.textContent="Stopping…"}};
   const tick=setInterval(paint,1000);paint();
@@ -6555,7 +6562,7 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
     try{ixReport(files.length)}catch(e){console.error(e)}
     try{const first=out.querySelector(".ixg, .ixhead");if(first)first.scrollIntoView({block:"start",behavior:"smooth"})}catch(e){}
   }catch(e){console.error(e);clearInterval(tick);card.innerHTML=`<div class="ah">ANALYSIS INTERRUPTED</div><div class="note">${esc(e&&e.code==="busy"?"The AI is busy or slow right now.":e&&e.code==="bad_json"?e.text:"Something went wrong while reading. Your screenshots are kept.")}</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ixS.busy=false;ixRun()}}
-  finally{clearInterval(tick);if(run===ixS.run)ixS.busy=false;try{ixRail()}catch(e){}ocrListeners=[];if(ixS.again){ixS.again=false;setTimeout(()=>ixRun(),60)}}}
+  finally{clearInterval(tick);if(run===ixS.run){ixS.busy=false;if((ixS.groups||[]).length)ixS.doneN=files.length}try{ixDoneMode()}catch(e){}try{ixRail()}catch(e){}ocrListeners=[];if(ixS.again){ixS.again=false;setTimeout(()=>ixRun(),60)}}}
 // ---- bulk helpers: progress bar, batch report, bank hint
 function ixBulkBar(){const p=ixS.prog;if(!p||ixS.stage!=="ocr"||p.m<5)return"";const pc=Math.round(p.n/p.m*100);
   return`<div class="ixpb"><i style="width:${pc}%"></i></div><div class="note">${p.n} of ${p.m} read · ${pc}%</div><button class="mini ghost" type="button" data-ixstop>Stop and use what is read</button>`}
@@ -7071,7 +7078,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=236;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=237;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -7138,6 +7145,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00237","13 Nov 2026",["Smart Intake: once the result is ready, the input controls (Camera, Paste image, Paste an SMS, Auto-save option) fold away, so the result is the first thing you see. Your screenshots stay as a small strip, with Analyze again and Start over below. Add or remove a screenshot and the full controls come back."]],
   ["0.0.0.00236","13 Nov 2026",["Smart Intake: a new \"Check these numbers\" block on every deal. The UTR and the order ID are shown large with the last 4 digits highlighted, a Copy button, and plain checks: right format, not used on a saved order before, and whether the AI read the same number. It also tells you which last 4 digits to look for in your bank SMS and the exchange history. Rows and buttons now have light motion (turned off when your phone asks for reduced motion), and status chips carry a tick, exclamation or cross."]],
   ["0.0.0.00235","13 Nov 2026",["Smart Intake is simpler to use. Deals that need you (mismatch, then needs review) are listed first, verified ones after, saved ones last. A \"Save N verified\" bar stays at the bottom while you scroll. Each deal opens to the facts that matter: who, how much, your account check and why. The technical parts (reader steps, field checklist, match table, risk table) are folded under \"Details and checks\"."]],
   ["0.0.0.00234","13 Nov 2026",["Smart Intake with many screenshots is easier to read. The screenshots are a small scrolling strip instead of a big grid. Every deal is one clear line: BUY or SELL, the other person, amount, date and time, status, and why it needs a look. A summary at the top shows how many deals are verified, need review or mismatch, with filters. The button now says Save N verified and only saves verified deals; the rest are never saved for you. The long character counts under the pictures are now short Reader details."]],
