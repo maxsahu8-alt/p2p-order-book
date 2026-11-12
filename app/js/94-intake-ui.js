@@ -52,7 +52,7 @@ function i2Lb(i){try{document.querySelectorAll(".i2lb").forEach(x=>x.remove());i
   }catch(e){console.error(e)}}
 function i2Draw(){try{const n=i2Files.length;$("#i2-go").textContent=n?(n>1?"Analyze "+n+" screenshots":"Analyze"):"Add from text"}catch(e){}if(i2Files.length&&!ocrWorker&&!ocrPromise&&!(window.P2POcr&&P2POcr.recognize)){try{ocrInit().catch(()=>{})}catch(e){}}i2Thumbs();ixRail();}
 function i2Add(list){const all=[...(list||[])];const imgs=all.filter(f=>/^image\//.test(f.type)||(!f.type&&/\.(png|jpe?g|webp|heic|heif|gif|bmp)$/i.test(f.name||""))||(!f.type&&f.size>0));
-  if(!all.length)return;if(!imgs.length){toast("That file isn't a picture. Choose a screenshot.");return}const max=10;
+  if(!all.length)return;if(!imgs.length){toast("That file isn't a picture. Choose a screenshot.");return}const max=50;
 
   const before=i2Files.length;i2Files=i2Files.concat(imgs).slice(0,max);const added=i2Files.length-before;
   if(!added){toast(`Up to ${max} screenshots at a time`);return}i2Draw();
@@ -323,11 +323,14 @@ async function ixDeep(g){const pay=(g.pays.find(x=>!x.support)||g.pays[0]),ord=g
   if(g.partSum){for(const x of g.pays.filter(k=>k.part&&k.blob).slice(0,4)){const q=x.pay||{};if(q.amount>0&&(q.last4||q.bank||q.vpa)&&q.time&&q.date)continue;
     try{const r=(await verExtract([x.blob])).X.pay||{};const m=ixMerge(q,r,x.ocr&&x.ocr.conf!=null?x.ocr.conf/100:null);x.pay={...q,...m.v};if(!x.pay.last4&&r.acct)x.pay.last4=ixL4(r.acct);if(!x.pay.time&&r.time)x.pay.time=r.time;if(!x.pay.date&&r.date)x.pay.date=r.date}catch(e){}}}}
 async function ixOcrAll(items,prog){let n=0;const skip=new Promise((_,no)=>{ixS.skip=()=>no(new Error("skip"))});skip.catch(()=>{});
-  for(const it of items){if(prog)prog(n,items.length);it.ocr=await ixOcr(it,skip);n++;await new Promise(r=>setTimeout(r,0))}}
-async function ixFinish(groups,useAI){for(const g of groups){ixVerify(g);
-    if(useAI&&g.reasonsAI.length&&ixAiReady()&&(g.pays.length||g.order)&&!g.ai){await ixDeep(g);g.needAI=false}
-    else if(g.reasonsAI.length&&!ixAiReady())g.ai="na";
-    if(!g.histId)await ixHistAdd(g)}}
+  for(const it of items){if(ixS.stopNow)break;if(prog)prog(n,items.length);it.ocr=await ixOcr(it,skip);n++;await new Promise(r=>setTimeout(r,0))}}
+async function ixFinish(groups,useAI){const jobs=[];
+  for(const g of groups){ixVerify(g);
+    if(useAI&&g.reasonsAI.length&&ixAiReady()&&(g.pays.length||g.order)&&!g.ai)jobs.push(g);
+    else if(g.reasonsAI.length&&!ixAiReady())g.ai="na"}
+  let k=0;const W=async()=>{while(k<jobs.length){const g=jobs[k++];await ixDeep(g);g.needAI=false}};
+  await Promise.all(Array.from({length:Math.min(3,jobs.length)},W));
+  for(const g of groups){if(!g.histId)await ixHistAdd(g)}}
 // when the phone reader is down, the AI reads each picture alone; this turns its answer into the same item the phone reader would have made
 function ixAiItem(it,X){const P=X.pay||{},O=X.ord||{};const nP=[P.amount,P.utr,P.receiver,P.sender,P.status,P.date].filter(v=>v!=null&&v!=="").length,nO=[O.id,O.fiat,O.crypto,O.price,O.buyer,O.seller,O.when].filter(v=>v!=null&&v!=="").length;
   it.ocr={text:"",conf:null,engine:"AI",status:"ok"};it.list=null;it.ledger=null;it.pay=null;it.ord=null;
@@ -336,9 +339,9 @@ function ixAiItem(it,X){const P=X.pay||{},O=X.ord||{};const nP=[P.amount,P.utr,P
   else{it.cls={type:"UNKNOWN",conf:0};it.ext="fail"}
   return it}
 // the whole run
-async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;ixS.T={};setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
+async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.length)return;const run=++ixS.run;ixS.T={};ixS.stopNow=false;ixS.prog=null;ixS.stopped=0;setTimeout(()=>{try{ixRail()}catch(e){}},0);ixS.busy=true;ixS.groups=[];
   const out=$("#i2-ix");out.innerHTML="";const card=document.createElement("div");card.className="acard ixprog";out.appendChild(card);const t0=Date.now();let msg="Getting your screenshots ready…";let skipShown=false;
-  const paint=()=>{const sec=Math.round((Date.now()-t0)/1000);card.innerHTML=`<div class="ah">ANALYSING ${files.length} SCREENSHOT${files.length>1?"S":""}</div><div class="ires">${esc(msg)} ${sec}s</div>${sec>=15&&!ixS.ocrReady&&!skipShown?"":""}`+(sec>=15&&ixS.stage==="ocr"?`<div class="note">${ixAiReady()?"The phone reader is slow to start. You can skip it and let your AI read the pictures.":"The phone reader is still starting (first use downloads about 10 MB). Please keep this page open."}</div>${ixAiReady()?'<button class="mini ghost" type="button" data-skipocr>Skip phone reader</button>':""}`:"")+ixLiveHtml()+'<button class="mini ghost" type="button" data-ixcancel style="margin-top:8px">Cancel analysis</button>';const cb=card.querySelector("[data-ixcancel]");if(cb)cb.onclick=()=>{ixS.run++;clearInterval(tick);card.remove();ixS.busy=false;try{ixRail()}catch(e){}toast("Analysis cancelled")};const sb=card.querySelector("[data-skipocr]");if(sb)sb.onclick=()=>ixS.skip&&ixS.skip()};
+  const paint=()=>{const sec=Math.round((Date.now()-t0)/1000);card.innerHTML=`<div class="ah">ANALYSING ${files.length} SCREENSHOT${files.length>1?"S":""}</div><div class="ires">${esc(msg)} ${sec}s</div>${sec>=15&&!ixS.ocrReady&&!skipShown?"":""}`+(sec>=15&&ixS.stage==="ocr"?`<div class="note">${ixAiReady()?"The phone reader is slow to start. You can skip it and let your AI read the pictures.":"The phone reader is still starting (first use downloads about 10 MB). Please keep this page open."}</div>${ixAiReady()?'<button class="mini ghost" type="button" data-skipocr>Skip phone reader</button>':""}`:"")+ixBulkBar()+ixLiveHtml()+'<button class="mini ghost" type="button" data-ixcancel style="margin-top:8px">Cancel analysis</button>';const cb=card.querySelector("[data-ixcancel]");if(cb)cb.onclick=()=>{ixS.run++;clearInterval(tick);card.remove();ixS.busy=false;try{ixRail()}catch(e){}toast("Analysis cancelled")};const sb=card.querySelector("[data-skipocr]");if(sb)sb.onclick=()=>ixS.skip&&ixS.skip();const stp=card.querySelector("[data-ixstop]");if(stp)stp.onclick=()=>{ixS.stopNow=true;stp.disabled=true;stp.textContent="Stopping…"}};
   const tick=setInterval(paint,1000);paint();
   try{
     ixS.stage="prep";const items=await Promise.all(files.map(async(f,i)=>({i,file:f,blob:await shrinkImage(f),hash:await fileHash(f)})));
@@ -346,7 +349,8 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
     ixS.stage="ocr";ocrListeners=[t=>{if(/Screenshot reader/.test(t))msg=t.replace("Screenshot reader: ","Reader: ")}];
     // the phone reader can hang for minutes (slow phone, no data, app in the background): with an AI connected, give it 25 s, then let the AI read
     const autoSk=setTimeout(()=>{try{if(ixAiReady()&&!items.some(x=>x.ocr&&x.ocr.status==="ok")&&ixS.skip){ixS.skip();msg="Phone reader is slow. Your AI is reading the pictures…"}}catch(e){}},25000);
-    await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone…`});clearTimeout(autoSk);ocrListeners=[];
+    await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone…`;ixS.prog={n,m}});clearTimeout(autoSk);ocrListeners=[];
+    if(ixS.stopNow){const done=items.filter(x=>x.ocr);if(!done.length)throw new Error("Stopped before anything was read");ixS.stopped=items.length-done.length;items.length=0;done.forEach(x=>items.push(x));ixS.items=items}
     if(run!==ixS.run)return;
     if(items.every(x=>x.ocr.status==="fail")&&!ixAiReady()&&!items.some(x=>x.ocr.err==="skipped")){ocrPromise=null;ocrWorker=null;items.forEach(x=>ixOcrCache.delete(x.hash));msg="Reader didn't start, trying again…";await ixOcrAll(items,(n,m)=>{msg=`Reading screenshot ${n+1} of ${m} on your phone (2nd try)…`});ocrListeners=[];if(run!==ixS.run)return}
     ixS.T.ocr=Date.now()-t0;const failed=items.filter(x=>x.ocr.status==="fail");
@@ -371,9 +375,27 @@ async function ixRun(){if(ixS.busy)return;const files=[...i2Files];if(!files.len
     }
     if(run!==ixS.run)return;ixS.T.done=Date.now()-t0;ixS.groups.forEach(g=>{g.T={...ixS.T}});
     clearInterval(tick);card.remove();ixS.autoOff=false;ixDraw();renderIxHist();try{await ixAutoSafe()}catch(e){console.error(e)}
+    try{ixReport(files.length)}catch(e){console.error(e)}
     try{const first=out.querySelector(".ixg, .ixhead");if(first)first.scrollIntoView({block:"start",behavior:"smooth"})}catch(e){}
   }catch(e){console.error(e);clearInterval(tick);card.innerHTML=`<div class="ah">ANALYSIS INTERRUPTED</div><div class="note">${esc(e&&e.code==="busy"?"The AI is busy or slow right now.":e&&e.code==="bad_json"?e.text:"Something went wrong while reading. Your screenshots are kept.")}</div><button class="mini" type="button" data-retry>Try again</button>`;card.querySelector("[data-retry]").onclick=()=>{ixS.busy=false;ixRun()}}
   finally{clearInterval(tick);if(run===ixS.run)ixS.busy=false;try{ixRail()}catch(e){}ocrListeners=[];if(ixS.again){ixS.again=false;setTimeout(()=>ixRun(),60)}}}
+// ---- bulk helpers: progress bar, batch report, bank hint
+function ixBulkBar(){const p=ixS.prog;if(!p||ixS.stage!=="ocr"||p.m<5)return"";const pc=Math.round(p.n/p.m*100);
+  return`<div class="ixpb"><i style="width:${pc}%"></i></div><div class="note">${p.n} of ${p.m} read · ${pc}%</div><button class="mini ghost" type="button" data-ixstop>Stop and use what is read</button>`}
+function ixBankHint(){try{const none=orders.filter(o=>o.status!=="Cancelled"&&/Bank not matched/.test(o.note||"")&&!(o.splits&&o.splits.length));if(!none.length)return null;
+  const side=none.filter(o=>o.side==="BUY").length>=none.length/2?"BUY":"SELL";const cnt=new Map();
+  orders.filter(o=>o.side===side&&o.splits&&o.splits.length).sort((a,b)=>b.time-a.time).slice(0,40).forEach(o=>o.splits.forEach(sp=>cnt.set(sp.bank,(cnt.get(sp.bank)||0)+1)));
+  const top=[...cnt.entries()].sort((a,b)=>b[1]-a[1])[0];const bk=top&&banks.find(b=>b.id===top[0]);
+  return{n:none.length,side,name:bk?(bk.name||bk.bankName||"a bank"):"",share:top?Math.round(top[1]/[...cnt.values()].reduce((a,c)=>a+c,0)*100):0}}catch(e){return null}}
+function ixReport(nFiles){const out=$("#i2-ix");if(!out||nFiles<5)return;const old=out.querySelector(".ixrep");if(old)old.remove();
+  const G=ixS.groups||[],I=ixS.items||[];const isPay=i=>i.cls&&/PAY/.test(i.cls.type),isOrd=i=>i.cls&&/ORDER|LIST/.test(i.cls.type),bad=I.filter(i=>!i.cls||i.cls.type==="UNKNOWN"||i.ext==="fail").length;
+  const saved=G.filter(g=>g.saved).length,dup=G.filter(g=>(g.dups||[]).length).length,rev=G.filter(g=>!g.saved&&!(g.dups||[]).length&&(!g.cmp||g.cmp.overall!=="VERIFIED"||(g.risk&&g.risk.level!=="LOW"))).length;
+  const st=[[nFiles,"screenshots"],[I.filter(isOrd).length,"orders"],[I.filter(isPay).length,"payments"],[G.length,"transactions"],[saved,"auto-saved"],[rev,"to review"],[dup,"duplicates"],[bad,"unreadable"]].filter(x=>x[0]||x[1]==="screenshots");
+  const h=ixBankHint();
+  const d=document.createElement("div");d.className="acard ixrep";
+  d.innerHTML=`<div class="ah">BATCH REPORT</div><div class="ixrs">${st.map(x=>`<span><b>${x[0]}</b>${x[1]}</span>`).join("")}</div>${ixS.stopped?`<div class="note">Stopped early. ${ixS.stopped} screenshot${ixS.stopped>1?"s were":" was"} not read. Add them again to read the rest.</div>`:""}`+
+    (h?`<div class="ixbh"><b>${h.n} saved order${h.n>1?"s have":" has"} no bank yet.</b>${h.name?`<small>Most of your recent ${h.side} orders used ${esc(h.name)} (${h.share}%). You can assign it in Bank audit.</small>`:""}<button type="button" class="mini ghost" data-ixbank>Open Bank audit</button></div>`:"");
+  out.prepend(d);const bb=d.querySelector("[data-ixbank]");if(bb)bb.onclick=()=>{try{typeof sheets.bankaudit==="function"?sheets.bankaudit():toast("Bank audit is off in Features")}catch(e){}}}
 // ---- Recent intakes
 function renderIxHist(){const el=$("#i2-hist");if(!el)return;const L=recs.filter(r=>r.kind==="ix").sort((a,b)=>b.time-a.time).slice(0,40);if(!L.length){el.innerHTML="";return}
   const d0=new Date();d0.setHours(0,0,0,0);const t0=d0.getTime(),sec=[["Today",x=>x.time>=t0],["Yesterday",x=>x.time<t0&&x.time>=t0-DAY],["This week",x=>x.time<t0-DAY&&x.time>=t0-6*DAY]];

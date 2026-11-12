@@ -24,7 +24,7 @@ function quickFill(el){
   const last=[...orders].sort((a,b)=>b.time-a.time)[0];
   set("q-order",last?`Last · ${last.side} ${fmtQ(last.qty)} @ ₹${fmtR(last.rate)}`:"No orders yet");
   const jobs=recs.filter(r=>r.kind==="intakejob"&&(r.status==="new"||r.status==="working")).length;
-  set("q-intake",jobs?`${jobs} batch${jobs>1?"es":""} reading now`:"Up to 10 at once");
+  set("q-intake",jobs?`${jobs} batch${jobs>1?"es":""} reading now`:"Up to 50 at once");
   const due=parties.reduce((t,p)=>t+Math.max(0,partyOwed(p.id)-partyPaid(p.id)),0);
   set("q-pay",due>0.5?inr(Math.round(due))+" due":"",due>0.5?"warn":"");
   set("q-due",parties.length?parties.length+(parties.length===1?" party":" parties"):"");

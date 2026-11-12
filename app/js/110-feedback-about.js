@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=221;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=222;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00222","12 Nov 2026",["Smart Intake can now read up to 50 screenshots at once. It shows a progress bar with a Stop button, double-checks unclear parts with AI three at a time, and ends with a Batch report (screenshots, orders, payments, saved, to review, duplicates, unreadable). If saved orders have no bank, it shows your usual bank and opens Bank audit."]],
   ["0.0.0.00221","12 Nov 2026",["Features page redesigned: every optional function has its own on/off switch (5 more added: Bank audit, Bank charges, Pay card and UPI QR, Notes, Risk checks), All on and All off, a save bar that shows how many changes, and a Core list of what is always on."]],
   ["0.0.0.00220","12 Nov 2026",["Copyright line is back in About."]],
   ["0.0.0.00219","12 Nov 2026",["Removed the copyright line from About."]],
