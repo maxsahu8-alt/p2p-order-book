@@ -280,3 +280,5 @@ button.abrow2,.abrow2>summary{display:flex;justify-content:space-between;align-i
 .abft{text-align:center;margin:18px 0 6px;display:flex;flex-direction:column;align-items:center;gap:6px}.abft small{color:var(--muted);font-size:.75rem}.abft hr{width:36px;border:0;border-top:1px solid var(--line);margin:6px 0}
 .abfs{display:flex;gap:18px;justify-content:center;font-size:.8rem;color:var(--muted)}.abfs b{color:var(--fg);font-variant-numeric:tabular-nums}
 .abft .abcp{margin:0;opacity:.75;font-size:.7rem}
+
+.abinf{padding:0 16px 10px}
