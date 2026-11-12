@@ -98,7 +98,10 @@ const VER_LBL={MATCH:"MATCH",FOUND:"FOUND",AUTO:"FROM PAYMENT",UNCLEAR:"UNCLEAR"
 // ---- run: provider adapter. Order of use: your Verify server (if set) → the AI you connected in Settings → on-phone reader (payment only)
 function verCfg(){try{return JSON.parse(localStorage.getItem("p2p_verify")||"{}")||{}}catch(e){return{}}}
 const verB64=b=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]||"");r.onerror=no;r.readAsDataURL(b)});
-async function verExtract(blobs){const cfg=verCfg();const prompt=verPrompt();let raw="";
+// phone screenshots are big PNGs; the AI reads a 2000 px JPEG just as well and the upload is many times smaller (this is most of the waiting time)
+async function verSlim(b){try{if(!b||b.size<350*1024||!window.createImageBitmap)return b;const im=await createImageBitmap(b),k=Math.min(1,2000/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);if(im.close)im.close();
+  const o=await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.82));return o&&o.size&&o.size<b.size?o:b}catch(e){return b}}
+async function verExtract(blobs){blobs=await Promise.all((blobs||[]).map(verSlim));const cfg=verCfg();const prompt=verPrompt();let raw="";
   const ask=async extra=>{
     if(cfg.url){const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),70000);
       try{const res=await fetch(cfg.url.replace(/\/+$/,"")+"/verify",{method:"POST",signal:ac.signal,headers:{"content-type":"application/json",...(cfg.token?{authorization:"Bearer "+cfg.token}:{})},body:JSON.stringify({prompt:prompt+(extra||""),images:await Promise.all(blobs.map(async b=>({mime:b.type||"image/jpeg",data:await verB64(b)})))})});
