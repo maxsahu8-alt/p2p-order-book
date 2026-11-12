@@ -1799,6 +1799,8 @@ button.abrow2,.abrow2>summary{display:flex;justify-content:space-between;align-i
 .abic{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);margin-right:12px}.abic svg{width:19px;height:19px}
 .abtx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.abtx b{font-weight:650;font-size:.92rem}.abtx small{font-weight:500;font-size:.75rem;color:var(--muted)}
 .abw .abck{padding:12px!important;font-size:.9rem}.abw .abm .abt{font-size:.78rem}
+
+.abcp{display:block;margin-top:6px;font-size:.7rem;opacity:.8}
 /* report sheet: summary cards + charts */
 .rpw{gap:12px}
 .rpw #repP{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}.rpw #repP::-webkit-scrollbar{display:none}
@@ -6944,7 +6946,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=211;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=212;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -7011,6 +7013,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00212","12 Nov 2026",["About page footer now shows the copyright line."]],
   ["0.0.0.00211","12 Nov 2026",["About page: icons, short descriptions and rows grouped as Help, Your data and Tools."]],
   ["0.0.0.00210","12 Nov 2026",["About page now works like a settings list: status, Check for updates, then simple rows."]],
   ["0.0.0.00209","12 Nov 2026",["About page: centred header, one main button, shorter notes."]],
@@ -7256,7 +7259,7 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
       <button type="button" class="abrow2" data-sheet="features"><span class="abic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span><span class="abtx"><b>Features and licence</b><small>Turn features on or off</small></span><i>›</i></button>
     </div>
     <p class="note abf" style="margin-top:14px">${orders.length.toLocaleString("en-IN")} orders · ${parties.length} parties · ${banks.length} banks · saved on ${col?"cloud sync":"this device"}${col?`<br>Space used ${used.toLocaleString("en-IN")} / ${cap.toLocaleString("en-IN")}`:""}</p>
-    <p class="note abf">Made for P2P merchants${pref("owner")?" · "+esc(pref("owner")):""}<br>${APP_NAME} v${APP_VER}</p></div>`,el=>{const q=s=>el.querySelector(s);
+    <p class="note abf">Made for P2P merchants${pref("owner")?" · "+esc(pref("owner")):""}<br>${APP_NAME} v${APP_VER}<br><span class="abcp">© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</span></p></div>`,el=>{const q=s=>el.querySelector(s);
     if(q("#ab-apply"))q("#ab-apply").onclick=e=>appApply(pv,e.currentTarget);
     if(q("#ab-chk"))q("#ab-chk").onclick=e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Checking…";setTimeout(()=>{if(b.isConnected&&b.disabled){b.disabled=false;b.textContent="Check for updates";toast("No answer yet. Close the app fully, open it again and try on wifi.")}},150000);try{window.P2PNative.checkUpdate()}catch(err){b.disabled=false;b.textContent="Check for updates"}};
     q("#ab-fb").onclick=()=>sheets.feedback();q("#ab-bk").onclick=()=>{closeSheet();$("#bkExport").click()};

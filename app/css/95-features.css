@@ -274,3 +274,5 @@ button.abrow2,.abrow2>summary{display:flex;justify-content:space-between;align-i
 .abic{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);margin-right:12px}.abic svg{width:19px;height:19px}
 .abtx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.abtx b{font-weight:650;font-size:.92rem}.abtx small{font-weight:500;font-size:.75rem;color:var(--muted)}
 .abw .abck{padding:12px!important;font-size:.9rem}.abw .abm .abt{font-size:.78rem}
+
+.abcp{display:block;margin-top:6px;font-size:.7rem;opacity:.8}
