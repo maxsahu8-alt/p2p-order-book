@@ -56,7 +56,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   P.dir=/debited from|paid to|money sent|sent to|transferred to|you paid/i.test(flat)?"out":/received|credited (?:to|in|by|with)|credit alert/i.test(flat)?"in":"";
   P.method=/\bIMPS\b/i.test(flat)?"IMPS":/\bNEFT\b|\bRTGS\b/i.test(flat)?"NEFT":"UPI";
   const flatB=flat.replace(/powered by.*$/i," ").replace(/\S+@\S+/g," ");const B=PAY_BANKS.find(([,re])=>re.test(flatB));P.bank=B?B[0]:"";
-  const flatV=flat.replace(/\S*\d\S*\s?@\s?[A-Za-z]\S*/g," ");const l4=flatV.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*\d*?(\d{4})\b/i)||flatV.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);P.last4=l4?l4[1]:"";
+  const flatV=flat.replace(/\S*\d\S*\s?@\s?[A-Za-z]\S*/g," ");const l4=flatV.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*\d*?(\d{4})\b/i)||flatV.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);const l4b=flatV.match(/\bbank\s*[•*xX\s]*(\d{4})\b(?!\s*[-\/])/i);P.last4=l4b?l4b[1]:l4?l4[1]:"";
   P.time=payTime(flat)||payTime(flat.replace(/['’‘`´]\s?(\d{2})\b/g," 20$1"));
   {const ta=ixTimeAlts(flat);P.timeAlts=ta.amb&&ta.alts.includes(P.time)?ta.alts:(P.time?[P.time]:ta.alts);if(!P.time&&ta.alts.length)P.time=ta.alts[0]}
   P.idTime=payIdTime(flat);if(P.idTime&&(!P.time||(new Date(P.time).toDateString()===new Date(P.idTime).toDateString()&&Math.abs(P.time-P.idTime)>10*6e4))){P.timeRead=P.time||0;P.time=P.idTime;P.timeAlts=[P.idTime]}
@@ -70,6 +70,8 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   if(!P.receiver){const i=lines.findIndex(l=>/^UPI ID\s*[:\-]/i.test(l));if(i>0){const n=nameOf(lines[i-1]);if(n)P.receiver=n}}
   if(!P.status&&/pay again|check balance/i.test(flat)&&!/fail|declin|reject|cancel/i.test(flat))P.status="Success";
   if(!P.dir&&/pay again|check balance/i.test(flat))P.dir="out";
+  if(!P.dir&&lines.some(l=>/^to\s+[A-Za-z]{2}/i.test(l))&&!lines.some(l=>/^from\s+[A-Za-z]{2}/i.test(l))&&/google\s*pay|upi transaction id/i.test(flat))P.dir="out"; // Google Pay header "To <name>" (money you sent), even when the Pay again button was not read
+  if(!P.dir&&lines.some(l=>/^from\s+[A-Za-z]{2}/i.test(l))&&!lines.some(l=>/^to\s+[A-Za-z]{2}/i.test(l))&&/google\s*pay|upi transaction id/i.test(flat))P.dir="in";
   P.sender=grab(/^(?:money received from|received from|paid by|paid from|sender(?: name)?|remitter|debited from|from)\b\s*[:\-]?\s*(.*)$/i);
   // "From: slice savings / xx9798" is the payer's ACCOUNT, not a person: keep it apart from the name
   {const MK=/^[xX*•.]{2,}\s*\d{3,4}(?![\d@])(?:\s|$)(?!.*@)/,MD=t=>(String(t).match(/[xX*•.]{2,}\s*(\d{3,4})/)||[])[1]||"";for(let i=0;i<lines.length;i++){const m=lines[i].match(/^(?:debited from|paid from|from)\b\s*(?:account|a\/c)?\s*[:\-]?\s*(.*)$/i);if(!m)continue;

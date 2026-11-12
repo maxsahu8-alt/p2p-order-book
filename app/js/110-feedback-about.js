@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=228;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=230;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,8 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00230","12 Nov 2026",["Smart Intake checks the nickname and the real name together before linking an order to a party. A hidden nickname (like aff***@gmail.com) can belong to more than one person, so when it comes with a different real name you get a warning to check, instead of a hard stop. A clear nickname with a different real name still sends the order to review."]],
+  ["0.0.0.00229","12 Nov 2026",["Smart Intake, KuCoin and GPay: the counterparty name that wraps over two lines (mahnder / Thakur(mah***@gmail.com)) is now read whole together with the masked e-mail, which is kept as the second name. On a GPay receipt the paying account is taken from the bank chip (Axis Bank 7410), not from the receiver's phone number, so your own bank is recognised and the check no longer calls your banking name a third party. Checked on your real 28 Oct screenshots: verified without AI. A masked e-mail is only remembered with the name and never used to merge two people."]],
   ["0.0.0.00228","12 Nov 2026",["Smart Intake: a BUY paid from your own bank is recognised from the account number printed next to the bank name on the receipt (for example Axis Bank 7410), not only from the number the reader picked first (a GPay phone number could be taken instead). A bank is never matched by its name alone, so someone else's account at the same bank is still flagged. Also, when every key number was read cleanly and only two names differ, the AI double-check is skipped, because a second reading cannot change a real name mismatch."]],
   ["0.0.0.00227","12 Nov 2026",["Smart Intake: a BUY paid from your own bank still showed Sender and Buyer as a name mismatch (bank name vs your nickname) when the account digits on the receipt did not match your saved account number. The app now also recognises your bank by its name (when only one of your banks has it) and by your saved UPI IDs, so the payment counts as yours."]],
   ["0.0.0.00226","12 Nov 2026",["Smart Intake: the AI double-check was slow because full-size phone screenshots were uploaded as they are. They are now shrunk to a 2000 px JPEG before the AI sees them, so the upload is many times smaller and the check finishes sooner."]],

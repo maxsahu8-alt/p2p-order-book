@@ -109,9 +109,12 @@ function ixOrdFrom(text,conf){const t=ixZipCols(text),flat=t.replace(/\s+/g," ")
   let price=null;{const pm=flat.match(new RegExp("(?:unit\\s*)?(?:price|rate)\\D{0,14}"+CUR+"?\\s*([0-9]{2,3}(?:\\.\\d{1,4})?)","i"));if(pm)price=num(pm[1]);if(price==null&&fiat&&crypto)price=+(fiat/crypto).toFixed(2)}
   const nm=(lab)=>{const m=flat.match(new RegExp(lab+"\\s*(?:name)?\\s*[:：]?\\s*([A-Za-z][A-Za-z.' ]{2,36}?)(?=\\s{2,}|\\s(?:order|price|amount|total|quantity|status|payment|seller|buyer|time|date)\\b|$|[0-9])","i"));if(!m)return null;const v=m[1].trim();return /^[a-z]/.test(v)||/\b(?:paid|payment|released?|the|has|have)\b/i.test(v)?null:v};
   const ixn=v=>v?ixNameClean(v):null;let buyer=ixn(nm("buyer")),seller=ixn(nm("seller"));
-  let cp=null,nick=null;{const Ls=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<Ls.length&&!cp;i++){const m=Ls[i].match(/^(?:counter\s*-?\s*party|merchant|advertiser|trader)\b\s*[:：]?\s*(.*)$/i);if(m){cp=ixNameClean(m[1])||(Ls[i+1]&&!IX_LABELISH.test(Ls[i+1])?ixNameClean(Ls[i+1]):null);nick=((m[1].match(/\(([^)]{2,30})\)/)||[])[1]||"").trim()||null;
-    // the name wraps: "MOHAMMED ILIYAZ HUSSAIN" / "BELLARY (Ily67)"
-    const nx=m[1].trim()&&Ls[i+1]?Ls[i+1].match(/^([A-Za-z][A-Za-z.' ]{1,24}?)\s*(?:\(([^)]{2,30})\))?$/):null;if(cp&&nx&&!IX_LABELISH.test(nx[1])&&!/\b(?:order|price|amount|total|created|status|quantity|payment|time|date|number|buyer|seller|having|place|check)\b/i.test(nx[1])){cp=ixNameClean(cp+" "+nx[1])||cp;if(nx[2]&&!nick)nick=nx[2].trim()}}}}
+  let cp=null,nick=null;{const Ls=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<Ls.length&&!cp;i++){const m=Ls[i].match(/^(?:counter\s*-?\s*party|merchant|advertiser|trader)\b\s*[:：]?\s*(.*)$/i);if(m){
+    // the value is on the label line, or alone on the next line (the page prints the label on the left and the value on the right)
+    const same=!!m[1].trim(),v1=same?m[1]:(Ls[i+1]&&!IX_LABELISH.test(Ls[i+1])?Ls[i+1]:""),wl=same?Ls[i+1]:Ls[i+2];
+    cp=ixNameClean(v1)||null;nick=((v1.match(/\(([^)]{2,30})\)/)||[])[1]||"").trim()||null;
+    // the name wraps: "MOHAMMED ILIYAZ HUSSAIN" / "BELLARY (Ily67)" or "mahnder" / "Thakur(mah***@gmail.com)"
+    const nx=wl?wl.match(/^([A-Za-z][A-Za-z.' ]{1,24}?)\s*(?:\(([^)]{2,30})\))?$/):null;if(cp&&nx&&!IX_LABELISH.test(nx[1])&&!/\b(?:order|price|amount|total|created|status|quantity|payment|time|date|number|buyer|seller|having|place|check)\b/i.test(nx[1])){cp=ixNameClean(cp+" "+nx[1])||cp;if(nx[2]&&!nick)nick=nx[2].trim()}}}}
   const st=(flat.match(/\b(completed|released|paid|unpaid|to be paid|waiting for payment|cancell?ed|appeal|dispute|pending|processing)\b/i)||[])[1];
   let ts=payTime(t);if(!ts){const m=flat.match(/(\d{4})-(\d{2})-(\d{2})[ T]+(\d{1,2}):(\d{2})/);if(m)ts=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).getTime()}
   let whenAlt=null,whenAlts=null;{const ta=ixTimeAlts(t);if(!ts&&ta.alts.length)ts=ta.alts[0];if(ta.amb&&ts){whenAlts=ta.alts.map(ixMs);const o=ta.alts.find(x=>x!==ts);if(o)whenAlt=ixMs(o)}}
@@ -516,7 +519,7 @@ function ixCpRisk(g,hi,me){try{if(!feat("counterparties"))return;const cpn=ixCpO
 // name pair memory: the exchange order page shows a nickname and a real name. Remember both per deal and warn when a pair does not fit an earlier one
 function ixPairCheck(g){try{const O=(g.X&&g.X.ord)||{},nk=String(O.nick||"").trim(),rn=String(ixCpOf(g)||"").trim();if(!nk||!rn)return null;
   const T=orders.filter(o=>o.status!=="Cancelled"&&o.cp&&o.nk&&(!g.target||o.id!==g.target.id)),sameNk=T.filter(o=>ixlN(o.nk)===ixlN(nk));
-  const bad=sameNk.find(o=>verName(o.cp,rn)==="X");if(bad)return{lvl:"hi",nick:nk,real:rn,other:bad.cp,msg:`Nickname “${nk}” earlier belonged to ${bad.cp}, but this order shows ${rn}. It may be a different person, so check before saving to a party`};
+  const bad=sameNk.find(o=>verName(o.cp,rn)==="X");if(bad)return{lvl:/\*{2,}/.test(nk)?"me":"hi",nick:nk,real:rn,other:bad.cp,msg:`Nickname “${nk}” earlier belonged to ${bad.cp}, but this order shows ${rn}. It may be a different person, so check before saving to a party`+(/\*{2,}/.test(nk)?" (the nickname is partly hidden, so two people can share it)":"")};
   if(g.target&&g.target.nk&&ixlN(g.target.nk)!==ixlN(nk)&&verName(g.target.cp||"",rn)==="X")return{lvl:"hi",nick:nk,real:rn,other:g.target.cp,msg:`This order is saved as ${g.target.cp} (“${g.target.nk}”), but the screenshot shows ${rn} (“${nk}”)`};
   const bad2=!sameNk.length&&T.find(o=>verName(o.cp,rn)==="M"&&ixlN(o.nk)!==ixlN(nk));if(bad2)return{lvl:"me",nick:nk,real:rn,other:bad2.nk,msg:`${rn} earlier had the nickname “${bad2.nk}”, now “${nk}”. Check once`};
   return null}catch(e){return null}}

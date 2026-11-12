@@ -3071,9 +3071,12 @@ function ixOrdFrom(text,conf){const t=ixZipCols(text),flat=t.replace(/\s+/g," ")
   let price=null;{const pm=flat.match(new RegExp("(?:unit\\s*)?(?:price|rate)\\D{0,14}"+CUR+"?\\s*([0-9]{2,3}(?:\\.\\d{1,4})?)","i"));if(pm)price=num(pm[1]);if(price==null&&fiat&&crypto)price=+(fiat/crypto).toFixed(2)}
   const nm=(lab)=>{const m=flat.match(new RegExp(lab+"\\s*(?:name)?\\s*[:：]?\\s*([A-Za-z][A-Za-z.' ]{2,36}?)(?=\\s{2,}|\\s(?:order|price|amount|total|quantity|status|payment|seller|buyer|time|date)\\b|$|[0-9])","i"));if(!m)return null;const v=m[1].trim();return /^[a-z]/.test(v)||/\b(?:paid|payment|released?|the|has|have)\b/i.test(v)?null:v};
   const ixn=v=>v?ixNameClean(v):null;let buyer=ixn(nm("buyer")),seller=ixn(nm("seller"));
-  let cp=null,nick=null;{const Ls=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<Ls.length&&!cp;i++){const m=Ls[i].match(/^(?:counter\s*-?\s*party|merchant|advertiser|trader)\b\s*[:：]?\s*(.*)$/i);if(m){cp=ixNameClean(m[1])||(Ls[i+1]&&!IX_LABELISH.test(Ls[i+1])?ixNameClean(Ls[i+1]):null);nick=((m[1].match(/\(([^)]{2,30})\)/)||[])[1]||"").trim()||null;
-    // the name wraps: "MOHAMMED ILIYAZ HUSSAIN" / "BELLARY (Ily67)"
-    const nx=m[1].trim()&&Ls[i+1]?Ls[i+1].match(/^([A-Za-z][A-Za-z.' ]{1,24}?)\s*(?:\(([^)]{2,30})\))?$/):null;if(cp&&nx&&!IX_LABELISH.test(nx[1])&&!/\b(?:order|price|amount|total|created|status|quantity|payment|time|date|number|buyer|seller|having|place|check)\b/i.test(nx[1])){cp=ixNameClean(cp+" "+nx[1])||cp;if(nx[2]&&!nick)nick=nx[2].trim()}}}}
+  let cp=null,nick=null;{const Ls=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<Ls.length&&!cp;i++){const m=Ls[i].match(/^(?:counter\s*-?\s*party|merchant|advertiser|trader)\b\s*[:：]?\s*(.*)$/i);if(m){
+    // the value is on the label line, or alone on the next line (the page prints the label on the left and the value on the right)
+    const same=!!m[1].trim(),v1=same?m[1]:(Ls[i+1]&&!IX_LABELISH.test(Ls[i+1])?Ls[i+1]:""),wl=same?Ls[i+1]:Ls[i+2];
+    cp=ixNameClean(v1)||null;nick=((v1.match(/\(([^)]{2,30})\)/)||[])[1]||"").trim()||null;
+    // the name wraps: "MOHAMMED ILIYAZ HUSSAIN" / "BELLARY (Ily67)" or "mahnder" / "Thakur(mah***@gmail.com)"
+    const nx=wl?wl.match(/^([A-Za-z][A-Za-z.' ]{1,24}?)\s*(?:\(([^)]{2,30})\))?$/):null;if(cp&&nx&&!IX_LABELISH.test(nx[1])&&!/\b(?:order|price|amount|total|created|status|quantity|payment|time|date|number|buyer|seller|having|place|check)\b/i.test(nx[1])){cp=ixNameClean(cp+" "+nx[1])||cp;if(nx[2]&&!nick)nick=nx[2].trim()}}}}
   const st=(flat.match(/\b(completed|released|paid|unpaid|to be paid|waiting for payment|cancell?ed|appeal|dispute|pending|processing)\b/i)||[])[1];
   let ts=payTime(t);if(!ts){const m=flat.match(/(\d{4})-(\d{2})-(\d{2})[ T]+(\d{1,2}):(\d{2})/);if(m)ts=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).getTime()}
   let whenAlt=null,whenAlts=null;{const ta=ixTimeAlts(t);if(!ts&&ta.alts.length)ts=ta.alts[0];if(ta.amb&&ts){whenAlts=ta.alts.map(ixMs);const o=ta.alts.find(x=>x!==ts);if(o)whenAlt=ixMs(o)}}
@@ -3478,7 +3481,7 @@ function ixCpRisk(g,hi,me){try{if(!feat("counterparties"))return;const cpn=ixCpO
 // name pair memory: the exchange order page shows a nickname and a real name. Remember both per deal and warn when a pair does not fit an earlier one
 function ixPairCheck(g){try{const O=(g.X&&g.X.ord)||{},nk=String(O.nick||"").trim(),rn=String(ixCpOf(g)||"").trim();if(!nk||!rn)return null;
   const T=orders.filter(o=>o.status!=="Cancelled"&&o.cp&&o.nk&&(!g.target||o.id!==g.target.id)),sameNk=T.filter(o=>ixlN(o.nk)===ixlN(nk));
-  const bad=sameNk.find(o=>verName(o.cp,rn)==="X");if(bad)return{lvl:"hi",nick:nk,real:rn,other:bad.cp,msg:`Nickname “${nk}” earlier belonged to ${bad.cp}, but this order shows ${rn}. It may be a different person, so check before saving to a party`};
+  const bad=sameNk.find(o=>verName(o.cp,rn)==="X");if(bad)return{lvl:/\*{2,}/.test(nk)?"me":"hi",nick:nk,real:rn,other:bad.cp,msg:`Nickname “${nk}” earlier belonged to ${bad.cp}, but this order shows ${rn}. It may be a different person, so check before saving to a party`+(/\*{2,}/.test(nk)?" (the nickname is partly hidden, so two people can share it)":"")};
   if(g.target&&g.target.nk&&ixlN(g.target.nk)!==ixlN(nk)&&verName(g.target.cp||"",rn)==="X")return{lvl:"hi",nick:nk,real:rn,other:g.target.cp,msg:`This order is saved as ${g.target.cp} (“${g.target.nk}”), but the screenshot shows ${rn} (“${nk}”)`};
   const bad2=!sameNk.length&&T.find(o=>verName(o.cp,rn)==="M"&&ixlN(o.nk)!==ixlN(nk));if(bad2)return{lvl:"me",nick:nk,real:rn,other:bad2.nk,msg:`${rn} earlier had the nickname “${bad2.nk}”, now “${nk}”. Check once`};
   return null}catch(e){return null}}
@@ -3568,7 +3571,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   P.dir=/debited from|paid to|money sent|sent to|transferred to|you paid/i.test(flat)?"out":/received|credited (?:to|in|by|with)|credit alert/i.test(flat)?"in":"";
   P.method=/\bIMPS\b/i.test(flat)?"IMPS":/\bNEFT\b|\bRTGS\b/i.test(flat)?"NEFT":"UPI";
   const flatB=flat.replace(/powered by.*$/i," ").replace(/\S+@\S+/g," ");const B=PAY_BANKS.find(([,re])=>re.test(flatB));P.bank=B?B[0]:"";
-  const flatV=flat.replace(/\S*\d\S*\s?@\s?[A-Za-z]\S*/g," ");const l4=flatV.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*\d*?(\d{4})\b/i)||flatV.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);P.last4=l4?l4[1]:"";
+  const flatV=flat.replace(/\S*\d\S*\s?@\s?[A-Za-z]\S*/g," ");const l4=flatV.match(/(?:[xX*•]{2,}|a\/c(?: no\.?)?|acct?|account|ending(?: in| with)?|card)\s*[:\-]?\s*[xX*•]*\s*\d*?(\d{4})\b/i)||flatV.match(/(?:bank|india|limited|ltd)\s*[•*xX\s]*(\d{4})\b/i);const l4b=flatV.match(/\bbank\s*[•*xX\s]*(\d{4})\b(?!\s*[-\/])/i);P.last4=l4b?l4b[1]:l4?l4[1]:"";
   P.time=payTime(flat)||payTime(flat.replace(/['’‘`´]\s?(\d{2})\b/g," 20$1"));
   {const ta=ixTimeAlts(flat);P.timeAlts=ta.amb&&ta.alts.includes(P.time)?ta.alts:(P.time?[P.time]:ta.alts);if(!P.time&&ta.alts.length)P.time=ta.alts[0]}
   P.idTime=payIdTime(flat);if(P.idTime&&(!P.time||(new Date(P.time).toDateString()===new Date(P.idTime).toDateString()&&Math.abs(P.time-P.idTime)>10*6e4))){P.timeRead=P.time||0;P.time=P.idTime;P.timeAlts=[P.idTime]}
@@ -3582,6 +3585,8 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   if(!P.receiver){const i=lines.findIndex(l=>/^UPI ID\s*[:\-]/i.test(l));if(i>0){const n=nameOf(lines[i-1]);if(n)P.receiver=n}}
   if(!P.status&&/pay again|check balance/i.test(flat)&&!/fail|declin|reject|cancel/i.test(flat))P.status="Success";
   if(!P.dir&&/pay again|check balance/i.test(flat))P.dir="out";
+  if(!P.dir&&lines.some(l=>/^to\s+[A-Za-z]{2}/i.test(l))&&!lines.some(l=>/^from\s+[A-Za-z]{2}/i.test(l))&&/google\s*pay|upi transaction id/i.test(flat))P.dir="out"; // Google Pay header "To <name>" (money you sent), even when the Pay again button was not read
+  if(!P.dir&&lines.some(l=>/^from\s+[A-Za-z]{2}/i.test(l))&&!lines.some(l=>/^to\s+[A-Za-z]{2}/i.test(l))&&/google\s*pay|upi transaction id/i.test(flat))P.dir="in";
   P.sender=grab(/^(?:money received from|received from|paid by|paid from|sender(?: name)?|remitter|debited from|from)\b\s*[:\-]?\s*(.*)$/i);
   // "From: slice savings / xx9798" is the payer's ACCOUNT, not a person: keep it apart from the name
   {const MK=/^[xX*•.]{2,}\s*\d{3,4}(?![\d@])(?:\s|$)(?!.*@)/,MD=t=>(String(t).match(/[xX*•.]{2,}\s*(\d{3,4})/)||[])[1]||"";for(let i=0;i<lines.length;i++){const m=lines[i].match(/^(?:debited from|paid from|from)\b\s*(?:account|a\/c)?\s*[:\-]?\s*(.*)$/i);if(!m)continue;
@@ -6318,7 +6323,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       const no={id:newId("o"),...(side==="SELL"&&P.sender?{payer:String(P.sender).slice(0,60)}:{}),...(O.nick?{nk:String(O.nick).slice(0,40)}:{}),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:[estNote,O.why?"Reason: "+O.why:""].filter(Boolean).join(" · "),splits:split,proofs,shots,pv,time:ixOrdTime(X,P.date?verWhen(P.date,P.time):0)||Date.now(),src:"ai"};
       {const td=g.tdsSet!=null?g.tdsSet:O.tds;if(side==="SELL"&&td>0){no.tds=td;if(O.tdsQ>0&&g.tdsSet==null)no.tdsQ=O.tdsQ;no.tdsSrc="order"}}if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
       await putRec(no);await auditLog(no,"create",{by:"intake",result:g.cmp.overall,risk:g.risk.level});g.savedId=no.id}
-    try{const nk=(g.order&&g.order.ord&&g.order.ord.nick)||O.nick||"";const real=g.target?g.target.cp:(O.buyer&&ixSide(g)==="SELL"?O.buyer:O.seller)||"";if(nk&&real&&ixlN(nk)!==ixlN(real)&&!(g.pair&&g.pair.lvl==="hi"))await ixLinkNames(nk,real)}catch(e){}
+    try{const nk=(g.order&&g.order.ord&&g.order.ord.nick)||O.nick||"";const real=g.target?g.target.cp:(O.buyer&&ixSide(g)==="SELL"?O.buyer:O.seller)||"";if(nk&&real&&ixlN(nk)!==ixlN(real)&&!/\*{2,}/.test(nk)&&!(g.pair&&g.pair.lvl==="hi"))await ixLinkNames(nk,real)}catch(e){}
     try{const ln=await ixlOnSave(g);if(ln)notes.push(ln)}catch(e){}
     try{if(P.lite&&bk&&P.amount>0&&!g.liteDone){g.liteDone=true;const lb=banks.find(x=>x.id===bk.id);if(lb&&lb.lite&&lb.lite.on){const nb=await liteApply(lb,"spend",+P.amount,"from payment screenshot");notes.push("Paid from UPI Lite · Lite balance now "+inr(nb))}}}catch(e){}
     g.saved=true;ixHistUpdate(g);return{state:"saved",msg:notes.join(" · ")||"Saved"}
@@ -7014,7 +7019,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=228;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=230;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -7081,6 +7086,8 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00230","12 Nov 2026",["Smart Intake checks the nickname and the real name together before linking an order to a party. A hidden nickname (like aff***@gmail.com) can belong to more than one person, so when it comes with a different real name you get a warning to check, instead of a hard stop. A clear nickname with a different real name still sends the order to review."]],
+  ["0.0.0.00229","12 Nov 2026",["Smart Intake, KuCoin and GPay: the counterparty name that wraps over two lines (mahnder / Thakur(mah***@gmail.com)) is now read whole together with the masked e-mail, which is kept as the second name. On a GPay receipt the paying account is taken from the bank chip (Axis Bank 7410), not from the receiver's phone number, so your own bank is recognised and the check no longer calls your banking name a third party. Checked on your real 28 Oct screenshots: verified without AI. A masked e-mail is only remembered with the name and never used to merge two people."]],
   ["0.0.0.00228","12 Nov 2026",["Smart Intake: a BUY paid from your own bank is recognised from the account number printed next to the bank name on the receipt (for example Axis Bank 7410), not only from the number the reader picked first (a GPay phone number could be taken instead). A bank is never matched by its name alone, so someone else's account at the same bank is still flagged. Also, when every key number was read cleanly and only two names differ, the AI double-check is skipped, because a second reading cannot change a real name mismatch."]],
   ["0.0.0.00227","12 Nov 2026",["Smart Intake: a BUY paid from your own bank still showed Sender and Buyer as a name mismatch (bank name vs your nickname) when the account digits on the receipt did not match your saved account number. The app now also recognises your bank by its name (when only one of your banks has it) and by your saved UPI IDs, so the payment counts as yours."]],
   ["0.0.0.00226","12 Nov 2026",["Smart Intake: the AI double-check was slow because full-size phone screenshots were uploaded as they are. They are now shrunk to a 2000 px JPEG before the AI sees them, so the upload is many times smaller and the check finishes sooner."]],
