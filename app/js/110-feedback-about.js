@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=234;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=235;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00235","13 Nov 2026",["Smart Intake is simpler to use. Deals that need you (mismatch, then needs review) are listed first, verified ones after, saved ones last. A \"Save N verified\" bar stays at the bottom while you scroll. Each deal opens to the facts that matter: who, how much, your account check and why. The technical parts (reader steps, field checklist, match table, risk table) are folded under \"Details and checks\"."]],
   ["0.0.0.00234","13 Nov 2026",["Smart Intake with many screenshots is easier to read. The screenshots are a small scrolling strip instead of a big grid. Every deal is one clear line: BUY or SELL, the other person, amount, date and time, status, and why it needs a look. A summary at the top shows how many deals are verified, need review or mismatch, with filters. The button now says Save N verified and only saves verified deals; the rest are never saved for you. The long character counts under the pictures are now short Reader details."]],
   ["0.0.0.00233","13 Nov 2026",["Smart Intake: the Paytm \"From\" block now depends on who paid. If the name or the digits under \"From\" are yours (a BUY), the account stays yours and the receipt is read as money sent. If they belong to someone else (a SELL, money received), they are kept as the payer's and never shown as your account."]],
   ["0.0.0.00232","13 Nov 2026",["Smart Intake: a Paytm receipt for money you received showed the SENDER's bank digits (Kotak - 1612) as your own account (\"Axis bank 1612\"). The bank and digits printed under \"From\" are now kept as the payer's, your account is found from your UPI ID, and the receipt is read as money received. The grouped Paytm reference (2192 1630 9656) is now read as the UTR, so the AI is not needed for it."]],

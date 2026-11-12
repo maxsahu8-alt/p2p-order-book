@@ -24,7 +24,7 @@ async def run(ordtxt):
     await pg.evaluate("goPage('intake')");await pg.wait_for_timeout(300)
     mk=lambda n,k:{"name":n,"mimeType":"image/png","buffer":bytes([k]*40)}
     await pg.set_input_files("#i2-file",[mk("pay1.png",1),mk("ord1.png",2)]);await pg.wait_for_timeout(2500)
-    r=await pg.evaluate("(()=>{const g=ixS.groups[0];const m=g.cmp.fields.find(x=>x.k==='method')||{};return {res:m.res,ord:m.ord,pay:m.pay,match:ixScores(g).match,overall:g.cmp.overall,shown:document.body.innerText.includes('FROM PAYMENT')}})()")
+    r=await pg.evaluate("(()=>{document.querySelectorAll('.ixmore').forEach(d=>d.open=true);const g=ixS.groups[0];const m=g.cmp.fields.find(x=>x.k==='method')||{};return {res:m.res,ord:m.ord,pay:m.pay,match:ixScores(g).match,overall:g.cmp.overall,shown:document.body.innerText.includes('FROM PAYMENT')}})()")
     await b.close();return r,errs
 r,errs=asyncio.run(run(ORD));print("order without method:",r)
 chk("method row is taken from the payment (AUTO, not NOT FOUND)",r["res"]=="AUTO" and "UPI" in (r["ord"] or ""))
