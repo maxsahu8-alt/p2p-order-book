@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=212;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=213;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00213","12 Nov 2026",["About page footer tidied: correct singular and plural, storage line, and version with copyright."]],
   ["0.0.0.00212","12 Nov 2026",["About page footer now shows the copyright line."]],
   ["0.0.0.00211","12 Nov 2026",["About page: icons, short descriptions and rows grouped as Help, Your data and Tools."]],
   ["0.0.0.00210","12 Nov 2026",["About page now works like a settings list: status, Check for updates, then simple rows."]],
@@ -311,8 +312,10 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
       <button type="button" class="abrow2" data-feat="nightalarm" data-sheet="nalarm"><span class="abic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17V11a6 6 0 1112 0v6l1.5 2h-15zM10 21h4"/></svg></span><span class="abtx"><b>Night order alarm</b><small>Wake up for new KuCoin orders</small></span><i>›</i></button>
       <button type="button" class="abrow2" data-sheet="features"><span class="abic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span><span class="abtx"><b>Features and licence</b><small>Turn features on or off</small></span><i>›</i></button>
     </div>
-    <p class="note abf" style="margin-top:14px">${orders.length.toLocaleString("en-IN")} orders · ${parties.length} parties · ${banks.length} banks · saved on ${col?"cloud sync":"this device"}${col?`<br>Space used ${used.toLocaleString("en-IN")} / ${cap.toLocaleString("en-IN")}`:""}</p>
-    <p class="note abf">Made for P2P merchants${pref("owner")?" · "+esc(pref("owner")):""}<br>${APP_NAME} v${APP_VER}<br><span class="abcp">© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</span></p></div>`,el=>{const q=s=>el.querySelector(s);
+    <div class="abft"><div class="abfs"><span><b>${orders.length.toLocaleString("en-IN")}</b> ${orders.length===1?"order":"orders"}</span><span><b>${parties.length}</b> ${parties.length===1?"party":"parties"}</span><span><b>${banks.length}</b> ${banks.length===1?"bank":"banks"}</span></div>
+      <small>${col?`Cloud sync · ${used.toLocaleString("en-IN")} of ${cap.toLocaleString("en-IN")} records used`:"Saved on this device"}</small>
+      <hr><small>${APP_NAME} v${APP_VER}${pref("owner")?" · "+esc(String(pref("owner")).replace(/\b\w/g,c=>c.toUpperCase())):""}</small>
+      <small class="abcp">© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</small></div></div>`,el=>{const q=s=>el.querySelector(s);
     if(q("#ab-apply"))q("#ab-apply").onclick=e=>appApply(pv,e.currentTarget);
     if(q("#ab-chk"))q("#ab-chk").onclick=e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Checking…";setTimeout(()=>{if(b.isConnected&&b.disabled){b.disabled=false;b.textContent="Check for updates";toast("No answer yet. Close the app fully, open it again and try on wifi.")}},150000);try{window.P2PNative.checkUpdate()}catch(err){b.disabled=false;b.textContent="Check for updates"}};
     q("#ab-fb").onclick=()=>sheets.feedback();q("#ab-bk").onclick=()=>{closeSheet();$("#bkExport").click()};
