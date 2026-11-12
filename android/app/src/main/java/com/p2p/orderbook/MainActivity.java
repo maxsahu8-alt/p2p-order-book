@@ -147,6 +147,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onPageFinished(WebView v, String url) {
+                apkHousekeeping();
                 if (!checking) new Thread(() -> checkUpdates(false)).start();
             }
         });
@@ -765,7 +766,7 @@ public class MainActivity extends Activity {
 
 
     // ---- in-app APK update: download -> Android installer ----
-    volatile String apkS = "idle", apkErr = "";
+    volatile String apkS = "idle", apkErr = "", apkSha = "";
     volatile int apkPct = 0;
 
     boolean apkHostOk(String u) {
@@ -774,6 +775,20 @@ public class MainActivity extends Activity {
             String h = x.getHost().toLowerCase();
             return x.getProtocol().equals("https") && (h.equals("github.com") || h.endsWith(".githubusercontent.com"));
         } catch (Exception e) { return false; }
+    }
+
+    // After the app starts: remove a leftover update file and tell the user when the update has landed.
+    void apkHousekeeping() {
+        try {
+            int pend = prefs.getInt("apkPendCode", 0);
+            File f = new File(new File(getCacheDir(), "update"), "update.apk");
+            if (pend > 0 && BuildConfig.VERSION_CODE >= pend) {
+                String nm = prefs.getString("apkPendName", "");
+                prefs.edit().remove("apkPendCode").remove("apkPendName").apply();
+                if (f.exists()) f.delete();
+                js("P2PApkDone", nm.isEmpty() ? BuildConfig.VERSION_NAME : nm);
+            } else if (pend == 0 && f.exists()) f.delete();
+        } catch (Exception e) { }
     }
 
     void startApkDownload(final String u) {
@@ -805,10 +820,12 @@ public class MainActivity extends Activity {
                 if (total > 150L * 1024 * 1024) throw new Exception("File too large");
                 long got = 0;
                 byte[] head = new byte[2];
+                MessageDigest md = MessageDigest.getInstance("SHA-256");
                 try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(f)) {
                     byte[] b = new byte[32768];
                     int n;
                     while ((n = in.read(b)) > 0) {
+                        md.update(b, 0, n);
                         if (got == 0 && n >= 2) { head[0] = b[0]; head[1] = b[1]; }
                         out.write(b, 0, n);
                         got += n;
@@ -817,6 +834,11 @@ public class MainActivity extends Activity {
                     }
                 }
                 if (got < 100000 || head[0] != 'P' || head[1] != 'K') throw new Exception("Downloaded file is not an APK");
+                if (!apkSha.isEmpty()) {
+                    StringBuilder hx = new StringBuilder();
+                    for (byte x : md.digest()) hx.append(String.format("%02x", x));
+                    if (!hx.toString().equals(apkSha)) { f.delete(); throw new Exception("Checksum mismatch - file not trusted"); }
+                }
                 apkPct = 100; apkS = "ready";
                 runOnUiThread(() -> installApk());
             } catch (Exception e) {
@@ -1017,7 +1039,11 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void apkInstall(String u) { startApkDownload(u); }
+        public void apkInstall(String u, String sha, int code, String name) {
+            apkSha = sha == null ? "" : sha.trim().toLowerCase();
+            prefs.edit().putInt("apkPendCode", code).putString("apkPendName", name == null ? "" : name).apply();
+            startApkDownload(u);
+        }
 
         @JavascriptInterface
         public String apkState() {

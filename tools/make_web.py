@@ -31,5 +31,10 @@ out = {"web": ver, "build": build, "display": "0.0.0.%05d" % build, "files": fil
        "apk": {"code": int(props["versionCode"]), "name": props["versionName"],
                "url": f"https://github.com/{repo}/releases/latest/download/P2P-Order-Book.apk" if repo else "",
                "notes": notes}}
+try:
+    c, h = open(os.path.join(here, "android/app/apk.sha256")).read().split()[:2]
+    if int(c) == int(props["versionCode"]): out["apk"]["sha256"] = h
+except Exception:
+    pass
 json.dump(out, open(os.path.join(web, "version.json"), "w"), indent=1)
 print("web", ver, "(display 0.0.0.%05d)" % build, "·", len(files), "files")
