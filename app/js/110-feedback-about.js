@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=210;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=211;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00211","12 Nov 2026",["About page: icons, short descriptions and rows grouped as Help, Your data and Tools."]],
   ["0.0.0.00210","12 Nov 2026",["About page now works like a settings list: status, Check for updates, then simple rows."]],
   ["0.0.0.00209","12 Nov 2026",["About page: centred header, one main button, shorter notes."]],
   ["0.0.0.00208","12 Nov 2026",["About page: cleaner header and update status."]],
@@ -292,15 +293,22 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
         return`<button type="button" class="mini psdl abck" id="ab-chk">Check for updates</button><small class="abln">Last checked ${rel}</small>`})():""}
     </div>
     ${(wait||work)?`<div class="icard"><div class="abr"><span>Next weekly update</span><b>${esc(nxs)}</b></div><div class="abr"><span>Feedback waiting</span><b>${wait}${work?` · ${work} in progress`:""}</b></div>${mcp?`<div class="abbtn"><button type="button" class="mini ghost" id="ab-now" ${wait?"":"disabled"}>${wait?"Update now":"Nothing to update"}</button></div>`:""}</div>`:""}
+    <div class="pcsec">Help</div>
     <div class="ablist">
-      <details class="abrow2"><summary><span>What's new</span><i>›</i></summary><div class="ablog">${APP_LOG.slice(0,3).map(([v,d,L],i)=>`<details ${i===0?"open":""}><summary><b>v${v}</b>${i===0?'<em>Current</em>':""}<small>${esc(d)}</small></summary><ul>${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}
+      <details class="abrow2"><summary><span class="abic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></span><span class="abtx"><b>What's new</b><small>Latest changes in each version</small></span><i>›</i></summary><div class="ablog">${APP_LOG.slice(0,3).map(([v,d,L],i)=>`<details ${i===0?"open":""}><summary><b>v${v}</b>${i===0?'<em>Current</em>':""}<small>${esc(d)}</small></summary><ul>${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}
         ${APP_LOG.length>3?`<details class="abold"><summary><b>Older versions</b><small>${APP_LOG.length-3} more</small></summary><div class="ablog" style="margin-top:8px">${APP_LOG.slice(3).map(([v,d,L])=>`<details><summary><b>v${v}</b><small>${esc(d)}</small></summary><ul>${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}</div></details>`:""}</div></details>
-      <button type="button" class="abrow2" id="ab-fb"><span>Send feedback</span><i>›</i></button>
-      <details class="abrow2"><summary><span>How updates work</span><i>›</i></summary><div class="wahelp"><ol><li>Send feedback any time: problems, ideas, changes.</li><li>Every Sunday ${nx.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})} (or when you tap Update now), Claude builds a new version.</li><li>You get a notification with a preview. Your app does not change yet.</li><li>Try it. Happy? Tap <b>Apply update</b> here. Your data stays as it is.</li></ol></div></details>
-      <button type="button" class="abrow2" id="ab-bk"><span>Backup now</span><i>›</i></button>
-      <button type="button" class="abrow2" data-sheet="imphist"><span>Import history</span><i>›</i></button>
-      <button type="button" class="abrow2" data-feat="nightalarm" data-sheet="nalarm"><span>Night order alarm</span><i>›</i></button>
-      <button type="button" class="abrow2" data-sheet="features"><span>Features and licence</span><i>›</i></button>
+      <button type="button" class="abrow2" id="ab-fb"><span class="abic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span><span class="abtx"><b>Send feedback</b><small>Report a problem or suggest something</small></span><i>›</i></button>
+      <details class="abrow2"><summary><span class="abic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 115 .2c0 1.6-2.5 2-2.5 3.8M12 17v.01"/></svg></span><span class="abtx"><b>How updates work</b><small>Updates, previews and your data</small></span><i>›</i></summary><div class="wahelp"><ol><li>Send feedback any time: problems, ideas, changes.</li><li>Every Sunday ${nx.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})} (or when you tap Update now), Claude builds a new version.</li><li>You get a notification with a preview. Your app does not change yet.</li><li>Try it. Happy? Tap <b>Apply update</b> here. Your data stays as it is.</li></ol></div></details>
+    </div>
+    <div class="pcsec">Your data</div>
+    <div class="ablist">
+      <button type="button" class="abrow2" id="ab-bk"><span class="abic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14"/></svg></span><span class="abtx"><b>Backup now</b><small>Save a copy of everything</small></span><i>›</i></button>
+      <button type="button" class="abrow2" data-sheet="imphist"><span class="abic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V5m0 0L8 9m4-4l4 4M5 19h14"/></svg></span><span class="abtx"><b>Import history</b><small>Bring in old orders</small></span><i>›</i></button>
+    </div>
+    <div class="pcsec">Tools</div>
+    <div class="ablist">
+      <button type="button" class="abrow2" data-feat="nightalarm" data-sheet="nalarm"><span class="abic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17V11a6 6 0 1112 0v6l1.5 2h-15zM10 21h4"/></svg></span><span class="abtx"><b>Night order alarm</b><small>Wake up for new KuCoin orders</small></span><i>›</i></button>
+      <button type="button" class="abrow2" data-sheet="features"><span class="abic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span><span class="abtx"><b>Features and licence</b><small>Turn features on or off</small></span><i>›</i></button>
     </div>
     <p class="note abf" style="margin-top:14px">${orders.length.toLocaleString("en-IN")} orders · ${parties.length} parties · ${banks.length} banks · saved on ${col?"cloud sync":"this device"}${col?`<br>Space used ${used.toLocaleString("en-IN")} / ${cap.toLocaleString("en-IN")}`:""}</p>
     <p class="note abf">Made for P2P merchants${pref("owner")?" · "+esc(pref("owner")):""}<br>${APP_NAME} v${APP_VER}</p></div>`,el=>{const q=s=>el.querySelector(s);
