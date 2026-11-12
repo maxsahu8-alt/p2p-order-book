@@ -32,14 +32,14 @@ out = {"web": ver, "build": build, "display": "0.0.0.%05d" % build, "files": fil
                "url": f"https://github.com/{repo}/releases/latest/download/P2P-Order-Book.apk" if repo else "",
                "notes": notes}}
 try:
-    parts = open(os.path.join(here, "android/app/apk.sha256")).read().split()
+    parts = open(os.path.join(here, "tools/apk.sha256")).read().split()
     if int(parts[0]) == int(props["versionCode"]):
         out["apk"]["sha256"] = parts[1]
         if len(parts) > 2: out["apk"]["size"] = int(parts[2])
 except Exception:
     pass
 try:
-    if not notes: out["apk"]["notes"] = open(os.path.join(here, "android/app/apk.notes"), encoding="utf-8").read().strip()
+    if not notes: out["apk"]["notes"] = open(os.path.join(here, "tools/apk.notes"), encoding="utf-8").read().strip()
 except Exception:
     pass
 json.dump(out, open(os.path.join(web, "version.json"), "w"), indent=1)
