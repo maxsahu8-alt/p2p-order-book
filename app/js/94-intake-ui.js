@@ -323,7 +323,10 @@ async function ixDeep(g){const pay=(g.pays.find(x=>!x.support)||g.pays[0]),ord=g
   if(g.partSum){for(const x of g.pays.filter(k=>k.part&&k.blob).slice(0,4)){const q=x.pay||{};if(q.amount>0&&(q.last4||q.bank||q.vpa)&&q.time&&q.date)continue;
     try{const r=(await verExtract([x.blob])).X.pay||{};const m=ixMerge(q,r,x.ocr&&x.ocr.conf!=null?x.ocr.conf/100:null);x.pay={...q,...m.v};if(!x.pay.last4&&r.acct)x.pay.last4=ixL4(r.acct);if(!x.pay.time&&r.time)x.pay.time=r.time;if(!x.pay.date&&r.date)x.pay.date=r.date}catch(e){}}}}
 async function ixOcrAll(items,prog){let n=0;const skip=new Promise((_,no)=>{ixS.skip=()=>no(new Error("skip"))});skip.catch(()=>{});
-  for(const it of items){if(ixS.stopNow)break;if(prog)prog(n,items.length);it.ocr=await ixOcr(it,skip);n++;await new Promise(r=>setTimeout(r,0))}}
+  // the phone reader answers by id, so two pictures can be read at once; the in-page fallback has a single worker and stays one by one
+  let k=0;const C=window.P2POcr&&P2POcr.recognize?2:1;
+  const W=async()=>{while(k<items.length){if(ixS.stopNow)break;const it=items[k++];if(prog)prog(n,items.length);it.ocr=await ixOcr(it,skip);n++;if(prog)prog(n,items.length);await new Promise(r=>setTimeout(r,0))}};
+  await Promise.all(Array.from({length:Math.min(C,items.length)},W))}
 async function ixFinish(groups,useAI){const jobs=[];
   for(const g of groups){ixVerify(g);
     if(useAI&&g.reasonsAI.length&&ixAiReady()&&(g.pays.length||g.order)&&!g.ai)jobs.push(g);
