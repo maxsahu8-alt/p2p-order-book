@@ -16,7 +16,9 @@ async def main():
     await pg.evaluate("t=>{ocrWorker={};ixOcr=async()=>({text:t,conf:92,engine:'Tesseract',status:'ok'});assetsApi={upload:async()=>({id:'asset1'})}}",txt)
     nav=await pg.evaluate("[...document.querySelectorAll('[id^=t-]')].map(e=>e.id)");print(nav)
     await pg.evaluate("(document.querySelector('#t-intake')||document.querySelector('[data-go=intake]')).click()");await pg.wait_for_timeout(300)
-    await pg.set_input_files("#i2-file","/tmp/claude-0/pay/phonepe.png");await pg.wait_for_timeout(300)
+    import base64,tempfile
+    img=os.path.join(tempfile.gettempdir(),"e2e_stub.png");open(img,"wb").write(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="))
+    await pg.set_input_files("#i2-file",img);await pg.wait_for_timeout(300)
     print("auto-saved?",await pg.evaluate("orders.length"))
     await pg.wait_for_timeout(3000)
     has=await pg.evaluate("!!document.querySelector('.paycard')");print("payment card shown:",has)

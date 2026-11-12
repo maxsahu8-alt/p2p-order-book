@@ -29,7 +29,7 @@ with sync_playwright() as p:
     for i in range(5):
         pg.wait_for_timeout(55);cs.append(round(sc(),2))
     print(cs)
-    chk('closes by shrinking back',cs[0]<1 and cs[-1]<cs[0] and cs[-1]<.8)
+    chk('closes by shrinking back',min(cs)<.8 and all(cs[i]>=cs[i+1] for i in range(len(cs)-1)) and any(.2<v<.97 for v in cs))
     pg.wait_for_timeout(500)
     chk('hidden after closing',pg.evaluate("document.getElementById('aiPop').hidden"))
     chk('scroll unlocked after closing',not pg.evaluate("document.documentElement.classList.contains('aplock')"))
