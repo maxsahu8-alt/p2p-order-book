@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=206;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=207;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00207","12 Nov 2026",["About page redesigned: App updates and Feedback are now separate cards, Last checked shows how long ago, a clear Check for updates button, version history shows the latest 4 with older ones folded away, and your data is shown as three tiles."]],
   ["0.0.0.00206","12 Nov 2026",["Update screen now shows file size the same way Android does (48 MB instead of 46 MB for the same file)."]],
   ["0.0.0.00205","12 Nov 2026",["Update screen redesigned: it shows your version and the new one, the file size, a What's new list, a real progress bar with MB downloaded and a Cancel button. Errors now say what went wrong in plain words, and a notification shows download progress. Needs APK 0.0.0.00116 for Cancel and the notification."]],
   ["0.0.0.00204","12 Nov 2026",["In-app update is now safer and cleaner: the downloaded APK is checked with a SHA-256 fingerprint before the install screen opens, the leftover file is deleted after the update, and Pexai shows Updated to the new version once it lands. Needs APK 0.0.0.00115."]],
@@ -281,20 +282,27 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
   openSheet(`<div class="insw abw">
     <div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span>
       <b>${pxWord()}</b><em class="abt">Your P2P business, always in order</em><small>Version ${APP_VER}</small><span class="abs ${st[1]}">${st[1]==="ok"?"✓ ":""}${st[0]}</span></div>
-    <div class="pcsec">Updates</div>
+    <div class="pcsec">App updates</div>
     <div class="icard abu">
       ${prev.length?`<div class="abnew"><b>🎉 New version ready</b><small>${prev.length} change${prev.length>1?"s":""} from your feedback:</small><ul>${prev.slice(0,5).map(x=>`<li>${esc(x.reply||x.text)}</li>`).join("")}</ul><div class="fbact"><a class="mini ghost" href="${esc(pv)}" target="_blank" rel="noopener">Try preview</a><button type="button" class="mini psdl" id="ab-apply">Apply update</button></div></div>`:""}
-      ${APK?(()=>{const I=apkInfo();return`<div class="abr"><span>App (APK)</span><b>${esc(I.apk||"1.0")}</b></div><div class="abr"><span>Last checked</span><b>${I.lastCheck?new Date(+I.lastCheck).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}):"Never"}</b></div><button type="button" class="mini ghost" id="ab-chk" style="width:100%;padding:11px;margin:8px 0 4px">Check for updates</button>`})():""}
-      <div class="abr"><span>Next auto update</span><b>${esc(nxs)}</b></div>
+      <div class="abr"><span>App version</span><b>${APP_VER}</b></div>
+      ${APK?(()=>{const I=apkInfo();const lc=+I.lastCheck||0,ago=lc?Math.max(0,Math.round((Date.now()-lc)/60000)):-1,rel=ago<0?"Never":ago<1?"Just now":ago<60?ago+" min ago":ago<1440?Math.round(ago/60)+" hr ago":new Date(lc).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
+        return`<div class="abr"><span>Android app (APK)</span><b>${esc(I.apk||"1.0")}</b></div><div class="abr"><span>Last checked</span><b>${rel}</b></div><button type="button" class="mini psdl abck" id="ab-chk">Check for updates</button>`})():""}
+    </div>
+    <div class="pcsec">Feedback and weekly improvements</div>
+    <div class="icard">
+      <div class="abr"><span>Next weekly update</span><b>${esc(nxs)}</b></div>
       <div class="abr"><span>Feedback waiting</span><b>${wait}${work?` · ${work} in progress`:""}</b></div>
       <div class="abbtn">${mcp?`<button type="button" class="mini ghost" id="ab-now" ${wait?"":"disabled"}>${wait?"Update now":"Nothing to update"}</button>`:""}<button type="button" class="mini psdl" id="ab-fb">Send feedback</button></div>
       <details class="wahelp"><summary>How updates work</summary><ol><li>Send feedback any time: problems, ideas, changes.</li><li>Every Sunday ${nx.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})} (or when you tap Update now), Claude builds a new version.</li><li>You get a notification with a preview. Your app does not change yet.</li><li>Try it. Happy? Tap <b>Apply update</b> here. Your data stays as it is.</li></ol></details>
     </div>
     <div class="pcsec">What's new</div>
-    <div class="ablog">${APP_LOG.map(([v,d,L],i)=>`<details ${i===0?"open":""}><summary><b>v${v}</b>${i===0?'<em>Current</em>':""}<small>${esc(d)}</small></summary><ul>${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}</div>
+    <div class="ablog">${APP_LOG.slice(0,4).map(([v,d,L],i)=>`<details ${i===0?"open":""}><summary><b>v${v}</b>${i===0?'<em>Current</em>':""}<small>${esc(d)}</small></summary><ul>${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}
+      ${APP_LOG.length>4?`<details class="abold"><summary><b>Older versions</b><small>${APP_LOG.length-4} more</small></summary><div class="ablog" style="margin-top:8px">${APP_LOG.slice(4).map(([v,d,L])=>`<details><summary><b>v${v}</b><small>${esc(d)}</small></summary><ul>${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}</div></details>`:""}</div>
     <div class="pcsec">Your data</div>
-    <div class="icard"><div class="abr"><span>Orders</span><b>${orders.length.toLocaleString("en-IN")}</b></div><div class="abr"><span>Parties · banks</span><b>${parties.length} · ${banks.length}</b></div>${cl?`<div class="abr"><span>Client history</span><b>${cl.toLocaleString("en-IN")} clients</b></div>`:""}
-      <div class="abr"><span>Saved</span><b>${col?"Cloud sync":"This device"}</b></div>
+    <div class="abst"><div><b>${orders.length.toLocaleString("en-IN")}</b><span>Orders</span></div><div><b>${parties.length}</b><span>Parties</span></div><div><b>${banks.length}</b><span>Banks</span></div></div>
+    <div class="icard">${cl?`<div class="abr"><span>Client history</span><b>${cl.toLocaleString("en-IN")} clients</b></div>`:""}
+      <div class="abr"><span>Saved on</span><b>${col?"Cloud sync":"This device"}</b></div>
       ${col?`<div class="abr"><span>Space used</span><b>${used.toLocaleString("en-IN")} / ${cap.toLocaleString("en-IN")}</b></div><div class="pvbar"><i style="width:${Math.min(100,used/cap*100).toFixed(1)}%"></i></div>`:""}
       <div class="abbtn"><button type="button" class="mini ghost" id="ab-bk">Backup now</button><button type="button" class="mini ghost" data-sheet="imphist">Import history</button><button type="button" class="mini ghost" data-feat="nightalarm" data-sheet="nalarm">Night order alarm</button><button type="button" class="mini ghost" data-sheet="features">Features and licence</button></div></div>
     <p class="note abf">Made for P2P merchants${pref("owner")?" · "+esc(pref("owner")):""}<br>${APP_NAME} v${APP_VER}</p></div>`,el=>{const q=s=>el.querySelector(s);

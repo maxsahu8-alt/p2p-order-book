@@ -246,3 +246,7 @@ label.bp-ck span{color:var(--fg);font-weight:500}
 .apu-l{margin:6px 0 0;padding-left:18px;font-size:13px;line-height:1.5}
 .apu-bar{height:8px;border-radius:99px;background:var(--line,rgba(128,128,128,.25));overflow:hidden;margin:10px 0}
 .apu-bar i{display:block;height:100%;width:0;background:var(--fg);border-radius:99px;transition:width .3s}
+
+.abck{width:100%;padding:13px!important;margin-top:10px;font-size:.92rem}
+.abst{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}.abst>div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 6px;text-align:center}.abst b{display:block;font:800 1.15rem var(--display);font-variant-numeric:tabular-nums}.abst span{font-size:.72rem;color:var(--muted);font-weight:600}
+.abold>summary small{margin-left:auto}
