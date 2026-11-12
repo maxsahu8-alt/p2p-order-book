@@ -763,6 +763,87 @@ public class MainActivity extends Activity {
         runOnUiThread(() -> web.evaluateJavascript("window." + fn + "&&" + fn + "(" + a + ")", null));
     }
 
+
+    // ---- in-app APK update: download -> Android installer ----
+    volatile String apkS = "idle", apkErr = "";
+    volatile int apkPct = 0;
+
+    boolean apkHostOk(String u) {
+        try {
+            URL x = new URL(u);
+            String h = x.getHost().toLowerCase();
+            return x.getProtocol().equals("https") && (h.equals("github.com") || h.endsWith(".githubusercontent.com"));
+        } catch (Exception e) { return false; }
+    }
+
+    void startApkDownload(final String u) {
+        if (apkS.equals("downloading")) return;
+        if (u == null || !apkHostOk(u)) { apkS = "error"; apkErr = "Update link is not allowed"; return; }
+        apkS = "downloading"; apkPct = 0; apkErr = "";
+        new Thread(() -> {
+            try {
+                File dir = new File(getCacheDir(), "update");
+                dir.mkdirs();
+                File f = new File(dir, "update.apk");
+                String cur = u;
+                HttpURLConnection c = null;
+                for (int i = 0; i < 6; i++) {
+                    c = (HttpURLConnection) new URL(cur).openConnection();
+                    c.setInstanceFollowRedirects(false);
+                    c.setConnectTimeout(15000); c.setReadTimeout(20000);
+                    int rc = c.getResponseCode();
+                    if (rc >= 300 && rc < 400) {
+                        String loc = c.getHeaderField("Location");
+                        c.disconnect();
+                        if (loc == null || !apkHostOk(loc)) throw new Exception("Unexpected redirect");
+                        cur = loc; continue;
+                    }
+                    if (rc != 200) throw new Exception("Server answered " + rc);
+                    break;
+                }
+                long total = c.getContentLengthLong();
+                if (total > 150L * 1024 * 1024) throw new Exception("File too large");
+                long got = 0;
+                byte[] head = new byte[2];
+                try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(f)) {
+                    byte[] b = new byte[32768];
+                    int n;
+                    while ((n = in.read(b)) > 0) {
+                        if (got == 0 && n >= 2) { head[0] = b[0]; head[1] = b[1]; }
+                        out.write(b, 0, n);
+                        got += n;
+                        if (got > 150L * 1024 * 1024) throw new Exception("File too large");
+                        if (total > 0) apkPct = (int) (got * 100 / total);
+                    }
+                }
+                if (got < 100000 || head[0] != 'P' || head[1] != 'K') throw new Exception("Downloaded file is not an APK");
+                apkPct = 100; apkS = "ready";
+                runOnUiThread(() -> installApk());
+            } catch (Exception e) {
+                apkS = "error"; apkErr = String.valueOf(e.getMessage());
+            }
+        }).start();
+    }
+
+    void installApk() {
+        try {
+            File f = new File(new File(getCacheDir(), "update"), "update.apk");
+            if (!f.exists()) { apkS = "error"; apkErr = "Update file missing"; return; }
+            if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+                apkS = "perm";
+                toast("Allow \"Install unknown apps\" for this app, then come back and tap Install");
+                startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName())));
+                return;
+            }
+            Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".files", f);
+            Intent i = new Intent(Intent.ACTION_VIEW);
+            i.setDataAndType(uri, "application/vnd.android.package-archive");
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+            apkS = "installing";
+        } catch (Exception e) { apkS = "error"; apkErr = String.valueOf(e.getMessage()); }
+    }
+
     void toast(String t) { runOnUiThread(() -> Toast.makeText(this, t, Toast.LENGTH_LONG).show()); }
 
     void openExternal(String u) {
@@ -934,6 +1015,18 @@ public class MainActivity extends Activity {
                 return c != null && c.getItemCount() > 0 ? String.valueOf(c.getItemAt(0).coerceToText(MainActivity.this)) : "";
             } catch (Exception e) { return ""; }
         }
+
+        @JavascriptInterface
+        public void apkInstall(String u) { startApkDownload(u); }
+
+        @JavascriptInterface
+        public String apkState() {
+            try { return new JSONObject().put("s", apkS).put("pct", apkPct).put("err", apkErr).toString(); }
+            catch (Exception e) { return "{}"; }
+        }
+
+        @JavascriptInterface
+        public void apkInstallAgain() { runOnUiThread(() -> installApk()); }
 
         @JavascriptInterface
         public void openUrl(String u) { if (u != null && !u.isEmpty()) openExternal(u); }
