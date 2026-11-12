@@ -282,3 +282,5 @@ button.abrow2,.abrow2>summary{display:flex;justify-content:space-between;align-i
 .abft .abcp{margin:0;opacity:.75;font-size:.7rem}
 
 .abinf{padding:0 16px 10px}
+
+.abft .abv{font-variant-numeric:tabular-nums;letter-spacing:.01em}
