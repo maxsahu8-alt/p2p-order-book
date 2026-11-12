@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=219;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=220;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00220","12 Nov 2026",["Copyright line is back in About."]],
   ["0.0.0.00219","12 Nov 2026",["Removed the copyright line from About."]],
   ["0.0.0.00218","12 Nov 2026",["About footer says APK instead of Android app."]],
   ["0.0.0.00217","12 Nov 2026",["Version and Android app number now sit in one quiet line at the bottom of About."]],
@@ -320,7 +321,8 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
     </div>
     <div class="abft"><div class="abfs"><span><b>${orders.length.toLocaleString("en-IN")}</b> ${orders.length===1?"order":"orders"}</span><span><b>${parties.length}</b> ${parties.length===1?"party":"parties"}</span><span><b>${banks.length}</b> ${banks.length===1?"bank":"banks"}</span></div>
       <small>${col?`Cloud sync · ${used.toLocaleString("en-IN")} of ${cap.toLocaleString("en-IN")} records used`:"Saved on this device"}</small>
-      <hr><small class="abv">Version ${APP_VER}${APK?" · APK "+esc(apkInfo().apk||""):""}</small></div></div>`,el=>{const q=s=>el.querySelector(s);
+      <hr><small class="abv">Version ${APP_VER}${APK?" · APK "+esc(apkInfo().apk||""):""}</small>
+      <small class="abcp">© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</small></div></div>`,el=>{const q=s=>el.querySelector(s);
     if(q("#ab-apply"))q("#ab-apply").onclick=e=>appApply(pv,e.currentTarget);
     if(q("#ab-chk"))q("#ab-chk").onclick=e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Checking…";setTimeout(()=>{if(b.isConnected&&b.disabled){b.disabled=false;b.textContent="Check for updates";toast("No answer yet. Close the app fully, open it again and try on wifi.")}},150000);try{window.P2PNative.checkUpdate()}catch(err){b.disabled=false;b.textContent="Check for updates"}};
     q("#ab-fb").onclick=()=>sheets.feedback();q("#ab-bk").onclick=()=>{closeSheet();$("#bkExport").click()};
