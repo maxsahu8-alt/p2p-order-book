@@ -3144,9 +3144,9 @@ function ixMergeReads(it){try{const o=it.ocr;if(!o||!o.alt||o.alt===o.text)retur
     else if(a.fiat==null&&b.fiat!=null)a.fiat=b.fiat}
   it.disagree=diff;it.ext=it.pay?(it.pay.amount!=null&&it.pay.utr?"ok":it.pay.amount!=null||it.pay.utr?"partial":"fail"):it.ord?(it.ord.fiat!=null&&it.ord.id?"ok":it.ord.fiat!=null||it.ord.id||it.ord.crypto!=null?"partial":"fail"):it.ext}catch(e){}return it}
 // which app made the screenshot (shown on the card, and a hint for what to expect on it)
-function ixApp(t){const x=String(t||"");const L=[[/phonepe|phone\s*pe/i,"PhonePe"],[/google\s*pay|\bg\s*pay\b|gpay/i,"Google Pay"],[/paytm/i,"Paytm"],[/bhim/i,"BHIM"],[/amazon\s*pay/i,"Amazon Pay"],[/cred\b/i,"CRED"],[/\bsbi\b|yono|state bank/i,"SBI"],[/hdfc/i,"HDFC"],[/icici|imobile/i,"ICICI"],[/axis\s*bank/i,"Axis"],[/kotak/i,"Kotak"],[/slice/i,"Slice"],[/kucoin/i,"KuCoin"],[/binance/i,"Binance"],[/\bhtx\b|huobi/i,"HTX"],[/bybit/i,"Bybit"],[/\bokx\b/i,"OKX"]];const h=L.find(r=>r[0].test(x));return h?h[1]:""}
+function ixApp(t){const x=String(t||"");const L=[[/phonepe|phone\s*pe/i,"PhonePe"],[/google\s*pay|\bg\s*pay\b|gpay/i,"Google Pay"],[/paytm/i,"Paytm"],[/bhim/i,"BHIM"],[/amazon\s*pay/i,"Amazon Pay"],[/cred\b/i,"CRED"],[/\bsbi\b|yono|state bank/i,"SBI"],[/hdfc/i,"HDFC"],[/icici|imobile/i,"ICICI"],[/axis\s*bank/i,"Axis"],[/kotak/i,"Kotak"],[/slice/i,"Slice"],[/kucoin|funding account[\s\S]*usdt price|usdt price[\s\S]*counterparty/i,"KuCoin"],[/binance/i,"Binance"],[/\bhtx\b|huobi/i,"HTX"],[/bybit/i,"Bybit"],[/\bokx\b/i,"OKX"]];const h=L.find(r=>r[0].test(x));return h?h[1]:""}
 // ---- item = one picture: classify + extract
-function ixItem(it,forceType){const o=it.ocr||{text:"",conf:0};const c=ixClassify(o.text);it.cls=forceType?{type:forceType,conf:1,forced:true}:c;
+function ixItem(it,forceType){const o=it.ocr||{text:"",conf:0};const c=ixClassify(o.text);const lt=!forceType&&c.type==="UNKNOWN"&&typeof ixTypeOf==="function"?ixTypeOf(o.text):"";it.cls=forceType?{type:forceType,conf:1,forced:true}:lt?{type:lt,conf:0.9,learned:true}:c;
   it.pay=null;it.ord=null;it.list=null;it.ledger=null;const cf=o.conf==null?null:o.conf/100;if(it.cls.type==="EX_LEDGER"){it.ledger=c.ledger||ixLedgerRows(o.text);it.ext=it.ledger.pairs.length?"ok":"fail";return it}if(it.cls.type==="EX_LIST"){it.list=c.rows||ixListRows(o.text);it.ext=it.list.length?"ok":"fail";return it}
   if(ixIsPay(it.cls.type)||(it.cls.type==="UNKNOWN"&&payParse(o.text).ok&&!forceType)){it.pay=ixPayFrom(o.text,cf);if(it.cls.type==="UNKNOWN"){it.cls={type:"PAY_RECEIPT",conf:0.5}}}
   else if(ixIsOrd(it.cls.type)){it.ord=ixOrdFrom(o.text,cf)}
@@ -6425,7 +6425,7 @@ async function ixAct(g,a,btn){
       toast("Saved as your account");ixS.groups.forEach(x=>{try{ixVerify(x)}catch(e){}});ixDraw()}catch(e){console.error(e)}return}
   if(a==="flip"){g.side=ixSide(g)==="BUY"?"SELL":"BUY";try{ixVerify(g)}catch(e){}ixDraw();return}
   if(a.startsWith("side:")){g.side=a.slice(5);try{ixVerify(g)}catch(e){}ixDraw();return}
-  if(a.startsWith("type:")){const [,h,t]=a.split(":");const it=g.unknown.find(u=>u.hash===h);if(it){ixItem(it,t);ixS.groups=ixGroup(ixS.items);await ixFinish(ixS.groups,false);ixDraw()}return}
+  if(a.startsWith("type:")){const [,h,t]=a.split(":");const it=g.unknown.find(u=>u.hash===h);if(it){try{ixTypeLearn(it,t)}catch(e){}ixItem(it,t);ixS.groups=ixGroup(ixS.items);await ixFinish(ixS.groups,false);ixDraw()}return}
   if(a==="save"){btn.disabled=true;btn.textContent="Saving…";g.save=await ixSave(g);if(g.save.state==="saved"){toast("Recorded 1 of 1");try{navigator.vibrate&&navigator.vibrate(18)}catch(e){}}ixDraw();renderIxHist();return}
   if(a==="recheck"){btn.disabled=true;btn.textContent="Rechecking…";g.aiPay=g.aiOrd=null;g.conflicts=null;g.ai=null;g.items.forEach(it=>{ixOcrCache.delete(it.hash);it.ocr=null});await ixOcrAll(g.items);g.items.forEach(it=>ixItem(it));ixReconcile(ixS.items);ixS.groups=ixGroup(ixS.items);await ixFinish(ixS.groups,false);ixDraw();return}
   if(a==="deep"){btn.disabled=true;btn.textContent="Asking AI…";await ixDeep(g);try{if(g.histId&&g.ai==="ok")await patchRec(g.histId,{ai:true})}catch(e){}ixDraw();renderIxHist();return}}
@@ -6435,12 +6435,14 @@ async function ixSaveAll(){const msg=document.querySelector("[data-ixallmsg]");l
     g.save=await ixSave(g,true);if(g.save.state==="saved")ok++;else if(g.save.state==="failed")fail++;else skip++}
   ixDraw();renderIxHist();const m=document.querySelector("[data-ixallmsg]");if(m)m.textContent=`RECORDED ${ok} OF ${ixS.groups.length}`+(skip?` · ${skip} left for review (high risk, duplicate, or details missing)`:"")+(fail?` · ${fail} could not be saved`:"");toast(`Recorded ${ok} of ${ixS.groups.length}`)}
 // AI vision for one group: only the group's pictures are sent
-async function ixDeep(g){const pay=(g.pays.find(x=>!x.support)||g.pays[0]),ord=g.order;const files=[pay,ord].filter(Boolean).concat(g.pays.filter(p=>p!==pay).slice(0,1));
+async function ixDeep(g){const pay=(g.pays.find(x=>!x.support)||g.pays[0]),ord=g.order;let files=[pay,ord].filter(Boolean).concat(g.pays.filter(p=>p!==pay).slice(0,1));
+  // one thing missing on one side: only that screenshot goes to the AI (smaller upload, faster)
+  {const R=(g.reasonsAI||[]).filter(r=>r!=="result needs review"),oO=R.length&&R.every(r=>r==="order ID or amount missing"),oP=R.length&&R.every(r=>r==="payment amount or UTR missing");g.aiTargeted=false;if(oO&&ord){files=[ord];g.aiTargeted=true}else if(oP&&pay&&!g.partSum){files=[pay];g.aiTargeted=true}if(g.aiTargeted&&typeof ixStatTargeted==="function")ixStatTargeted()}
   if(!files.length)return;
   try{const out=await Promise.race([verExtract(files.map(f=>f.blob)),new Promise((_,no)=>setTimeout(()=>no(aiErr("busy","slow")),85000))]);
     const m1=ixMerge(g.pays[0]?g.pays[0].pay:{},out.X.pay,pay&&pay.ocr?pay.ocr.conf/100:null),m2=ixMerge(ord?ord.ord:{},out.X.ord,ord&&ord.ocr?ord.ocr.conf/100:null);
-    g.aiPay=m1.v;g.aiOrd=m2.v;g.aiFlags=out.X.flags;g.aiFilled=new Set([...m1.filled.map(k=>"pay."+k),...m2.filled.map(k=>"ord."+k)]);g.conflicts=[...m1.diffs.map(k=>"payment "+k),...m2.diffs.map(k=>"order "+k)];g.ai="ok";await ixlLearnLayout(g);ixVerify(g)}
-  catch(e){g.ai="unavailable";g.aiErr=e&&e.code;g.aiMsg=String(e&&(e.text||e.message)||"").slice(0,140);ixVerify(g)}
+    g.aiPay=m1.v;g.aiOrd=m2.v;g.aiFlags=out.X.flags;g.aiFilled=new Set([...m1.filled.map(k=>"pay."+k),...m2.filled.map(k=>"ord."+k)]);g.conflicts=[...m1.diffs.map(k=>"payment "+k),...m2.diffs.map(k=>"order "+k)];g.ai="ok";await ixlLearnLayout(g);ixVerify(g);try{ixCaseSave(g)}catch(e){}}
+  catch(e){g.ai="unavailable";g.aiErr=e&&e.code;g.aiMsg=String(e&&(e.text||e.message)||"").slice(0,140);ixVerify(g);try{ixCaseSave(g)}catch(e2){}}
   // part payments: each part picture is read on its own, so every part has its own amount, account and time (the AI only fills what the phone missed)
   if(g.partSum){for(const x of g.pays.filter(k=>k.part&&k.blob).slice(0,4)){const q=x.pay||{};if(q.amount>0&&(q.last4||q.bank||q.vpa)&&q.time&&q.date)continue;
     try{const r=(await verExtract([x.blob])).X.pay||{};const m=ixMerge(q,r,x.ocr&&x.ocr.conf!=null?x.ocr.conf/100:null);x.pay={...q,...m.v};if(!x.pay.last4&&r.acct)x.pay.last4=ixL4(r.acct);if(!x.pay.time&&r.time)x.pay.time=r.time;if(!x.pay.date&&r.date)x.pay.date=r.date}catch(e){}}}}
@@ -6451,8 +6453,8 @@ async function ixOcrAll(items,prog){let n=0;const skip=new Promise((_,no)=>{ixS.
   await Promise.all(Array.from({length:Math.min(C,items.length)},W))}
 async function ixFinish(groups,useAI){const jobs=[];
   for(const g of groups){ixVerify(g);
-    if(useAI&&g.reasonsAI.length&&ixAiReady()&&(g.pays.length||g.order)&&!g.ai)jobs.push(g);
-    else if(g.reasonsAI.length&&!ixAiReady())g.ai="na"}
+    if(useAI&&g.reasonsAI.length&&ixAiReady()&&(g.pays.length||g.order)&&!g.ai){jobs.push(g);try{ixStatNote(g,true)}catch(e){}}
+    else{if(g.reasonsAI.length&&!ixAiReady())g.ai="na";try{if(useAI)ixStatNote(g,false)}catch(e){}}}
   let k=0;const W=async()=>{while(k<jobs.length){const g=jobs[k++];await ixDeep(g);g.needAI=false}};
   await Promise.all(Array.from({length:Math.min(3,jobs.length)},W));
   for(const g of groups){if(!g.histId)await ixHistAdd(g)}}
@@ -7019,7 +7021,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=230;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=231;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -7086,6 +7088,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00231","13 Nov 2026",["Smart Intake learns so the AI is needed less. (1) Intake memory now shows how many deals the phone read alone, why the AI was needed and for which app. (2) Each AI use keeps a small case file with the screenshot text; Copy it and send it to Claude and it becomes a fixed rule. (3) When only the order or only the payment was missing something, just that screenshot goes to the AI. (4) A screenshot type you pick by hand is remembered. (5) KuCoin order pages are recognised even when the word KuCoin is not on the screen."]],
   ["0.0.0.00230","12 Nov 2026",["Smart Intake checks the nickname and the real name together before linking an order to a party. A hidden nickname (like aff***@gmail.com) can belong to more than one person, so when it comes with a different real name you get a warning to check, instead of a hard stop. A clear nickname with a different real name still sends the order to review."]],
   ["0.0.0.00229","12 Nov 2026",["Smart Intake, KuCoin and GPay: the counterparty name that wraps over two lines (mahnder / Thakur(mah***@gmail.com)) is now read whole together with the masked e-mail, which is kept as the second name. On a GPay receipt the paying account is taken from the bank chip (Axis Bank 7410), not from the receiver's phone number, so your own bank is recognised and the check no longer calls your banking name a third party. Checked on your real 28 Oct screenshots: verified without AI. A masked e-mail is only remembered with the name and never used to merge two people."]],
   ["0.0.0.00228","12 Nov 2026",["Smart Intake: a BUY paid from your own bank is recognised from the account number printed next to the bank name on the receipt (for example Axis Bank 7410), not only from the number the reader picked first (a GPay phone number could be taken instead). A bank is never matched by its name alone, so someone else's account at the same bank is still flagged. Also, when every key number was read cleanly and only two names differ, the AI double-check is skipped, because a second reading cannot change a real name mismatch."]],
@@ -7927,6 +7930,40 @@ sheets.coach=function(id){const list=coachRecs.slice().sort((a,b)=>b.time-a.time
       try{r=await aiJson(`You are a sharp, friendly business coach for an Indian P2P crypto merchant. Here are this week's numbers (Mon to now) and last week's, as JSON:\n${JSON.stringify(F)}\n\nWrite a short weekly review. ${aiStyle()}\nReturn JSON: {"headline":"one line verdict","wins":["2-3 short points"],"mistakes":["2-3 short points with numbers"],"plan":["3 concrete actions for next week: times, rates, banks, traders"],"watch":["0-2 risks"]}. Use only the numbers given; do not invent figures.`)}catch(err){r=coachFallback(F);ai=false;toast("AI not available. Made a quick review instead")}
       try{await putRec({id:"coach_"+weekStart(),kind:"coach",week:weekStart(),f:F,r,ai,time:Date.now()});setTimeout(()=>sheets.coach("coach_"+weekStart()),60)}catch(err){toast("Couldn't save");b.disabled=false}};
   })};
+// Smart Intake learning loop. The AI is only for pictures the phone could not read, so every time it is used we
+// (1) count why and for which app, (2) keep a small case file with the screenshot text, so the cause can be turned into a permanent
+// local rule (send it to Claude and it becomes a test), and (3) remember screen types the user picked by hand.
+const IXJ={st:"p2p_ix_stats",cs:"p2p_ix_cases",ty:"p2p_ix_types"};
+function ixjGet(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}}
+function ixjSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function ixjAppsOf(g){return [...new Set(g.items.map(x=>x.app).filter(Boolean))]}
+// count one group once: did the phone read it alone, or was the AI needed, and why
+function ixStatNote(g,usedAI){if(g.statDone)return;g.statDone=true;try{const S=ixjGet(IXJ.st,{since:Date.now(),groups:0,ai:0,targeted:0,byReason:{},byApp:{}});S.groups++;const apps=ixjAppsOf(g);(apps.length?apps:["Other"]).forEach(a=>{const r=S.byApp[a]||(S.byApp[a]={n:0,ai:0});r.n++;if(usedAI)r.ai++});
+  if(usedAI){S.ai++;(g.reasonsAI||[]).forEach(r=>{S.byReason[r]=(S.byReason[r]||0)+1})}ixjSet(IXJ.st,S)}catch(e){}}
+function ixStatTargeted(){try{const S=ixjGet(IXJ.st,{since:Date.now(),groups:0,ai:0,targeted:0,byReason:{},byApp:{}});S.targeted=(S.targeted||0)+1;ixjSet(IXJ.st,S)}catch(e){}}
+function ixCaseSave(g){try{const C=ixjGet(IXJ.cs,[]);C.unshift({t:Date.now(),apps:ixjAppsOf(g),reasons:g.reasonsAI||[],ai:g.ai||null,filled:[...(g.aiFilled||[])],conflicts:g.conflicts||[],targeted:!!g.aiTargeted,
+  shots:g.items.map(x=>({type:x.cls&&x.cls.type,app:x.app||"",text:String(x.ocr&&x.ocr.text||"").slice(0,2500)}))});ixjSet(IXJ.cs,C.slice(0,12))}catch(e){}}
+// remembered screen types: a screenshot that was "unclear" and the user told us what it is
+function ixSig(text){const L=String(text||"").split(/\n+/).map(x=>x.toLowerCase().replace(/[^a-z ]/g,"").replace(/\s+/g," ").trim()).filter(x=>x.length>3).slice(0,6);return L.length>=3?L.join("|").slice(0,90):""}
+function ixTypeOf(text){const s=ixSig(text);if(!s)return"";const m=ixjGet(IXJ.ty,{})[s];return m?m.t:""}
+function ixTypeLearn(it,t){try{const s=ixSig(it.ocr&&it.ocr.text);if(!s||!t)return;const m=ixjGet(IXJ.ty,{});m[s]={t,n:((m[s]||{}).n||0)+1,at:Date.now(),app:it.app||""};const ks=Object.keys(m);if(ks.length>60)delete m[ks[0]];ixjSet(IXJ.ty,m)}catch(e){}}
+// the Intake memory sheet gets three more sections
+(function(){const base=sheets.ixmem;if(typeof base!=="function")return;
+  sheets.ixmem=function(){base.apply(this,arguments);try{const body=document.querySelector("#sheetBody .insw");if(!body)return;const S=ixjGet(IXJ.st,null),C=ixjGet(IXJ.cs,[]),Ty=ixjGet(IXJ.ty,{});
+    const free=S?S.groups-S.ai:0,pct=S&&S.groups?Math.round(100*free/S.groups):null;
+    const rs=S?Object.entries(S.byReason).sort((a,b)=>b[1]-a[1]).slice(0,6):[],ap=S?Object.entries(S.byApp).sort((a,b)=>b[1].n-a[1].n).slice(0,6):[];
+    const d=document.createElement("div");d.id="ixlearn";
+    d.innerHTML=`<div class="pcsec">AI use</div><div class="rml">
+      <div class="dqr"><span>Read on the phone alone<small>${S?`${free} of ${S.groups} deals`:"No deals counted yet"}${S&&S.targeted?` · ${S.targeted} AI checks sent only the needed screenshot`:""}</small></span><b>${pct==null?"—":pct+"%"}</b></div>
+      ${rs.length?rs.map(([r,n])=>`<div class="dqr"><span>${esc(r)}<small>why the AI was needed</small></span><b>${n}</b></div>`).join(""):'<div class="dqr"><span class="note" style="margin:0">The AI has not been needed yet.</span></div>'}
+      ${ap.length?`<div class="dqr"><span class="note" style="margin:0">By app: ${ap.map(([a,v])=>`${esc(a)} ${v.ai}/${v.n}`).join(" · ")}</span></div>`:""}</div>
+    <div class="pcsec">Cases to turn into rules (${C.length})</div><div class="rml">${C.length?C.map((c,i)=>`<div class="dqr"><span>${esc(new Date(c.t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))} · ${esc((c.apps.join(", "))||"Unknown app")}<small>${esc(c.reasons.join("; ")||"AI check")}</small></span><button type="button" class="mini ghost" data-ixlcopy="${i}">Copy</button></div>`).join("")+`<div class="dqr"><span class="note" style="margin:0">Copy a case and send it to Claude. It becomes a fixed rule and a test, so the AI is not needed for it again. The copy holds the screenshot text, so it contains names and numbers.</span><button type="button" class="mini ghost" data-ixlclr="1">Clear</button></div>`:'<div class="dqr"><span class="note" style="margin:0">Nothing yet. When the AI is used, the screenshot text is kept here.</span></div>'}</div>
+    <div class="pcsec">Screens you taught (${Object.keys(Ty).length})</div><div class="rml">${Object.keys(Ty).length?Object.entries(Ty).map(([s,v])=>`<div class="dqr"><span>${esc(IX_TYPES[v.t]||v.t)}<small>${esc(v.app||"screen")} · picked ${v.n} time${v.n>1?"s":""}</small></span><button type="button" class="mini ghost" data-ixlty="${esc(s)}">Forget</button></div>`).join(""):'<div class="dqr"><span class="note" style="margin:0">Nothing yet. When a screenshot is “unclear” and you pick its type, it is remembered.</span></div>'}</div>`;
+    const dev=[...body.querySelectorAll(".pcsec")].find(x=>/Developer/.test(x.textContent));body.insertBefore(d,dev||null);
+    d.addEventListener("click",async e=>{const cp=e.target.closest("[data-ixlcopy]"),cl=e.target.closest("[data-ixlclr]"),ty=e.target.closest("[data-ixlty]");
+      if(cp){const c=ixjGet(IXJ.cs,[])[+cp.dataset.ixlcopy];if(!c)return;const tx="Pexai Smart Intake case\n"+JSON.stringify(c,null,1);try{await navigator.clipboard.writeText(tx);toast("Copied. Send it to Claude")}catch(x){toast("Could not copy")}return}
+      if(cl){try{localStorage.removeItem(IXJ.cs)}catch(x){}sheets.ixmem();return}
+      if(ty){const m=ixjGet(IXJ.ty,{});delete m[ty.dataset.ixlty];ixjSet(IXJ.ty,m);sheets.ixmem()}})}catch(e){console.error(e)}}})();
 // ================= INSIGHTS =================
 const INS_FROM=k=>k==="all"?0:Date.now()-(+k)*DAY;
 const hLab=h=>{h=((h%24)+24)%24;return (h%12||12)+(h<12?" AM":" PM")};

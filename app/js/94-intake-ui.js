@@ -303,7 +303,7 @@ async function ixAct(g,a,btn){
       toast("Saved as your account");ixS.groups.forEach(x=>{try{ixVerify(x)}catch(e){}});ixDraw()}catch(e){console.error(e)}return}
   if(a==="flip"){g.side=ixSide(g)==="BUY"?"SELL":"BUY";try{ixVerify(g)}catch(e){}ixDraw();return}
   if(a.startsWith("side:")){g.side=a.slice(5);try{ixVerify(g)}catch(e){}ixDraw();return}
-  if(a.startsWith("type:")){const [,h,t]=a.split(":");const it=g.unknown.find(u=>u.hash===h);if(it){ixItem(it,t);ixS.groups=ixGroup(ixS.items);await ixFinish(ixS.groups,false);ixDraw()}return}
+  if(a.startsWith("type:")){const [,h,t]=a.split(":");const it=g.unknown.find(u=>u.hash===h);if(it){try{ixTypeLearn(it,t)}catch(e){}ixItem(it,t);ixS.groups=ixGroup(ixS.items);await ixFinish(ixS.groups,false);ixDraw()}return}
   if(a==="save"){btn.disabled=true;btn.textContent="Saving…";g.save=await ixSave(g);if(g.save.state==="saved"){toast("Recorded 1 of 1");try{navigator.vibrate&&navigator.vibrate(18)}catch(e){}}ixDraw();renderIxHist();return}
   if(a==="recheck"){btn.disabled=true;btn.textContent="Rechecking…";g.aiPay=g.aiOrd=null;g.conflicts=null;g.ai=null;g.items.forEach(it=>{ixOcrCache.delete(it.hash);it.ocr=null});await ixOcrAll(g.items);g.items.forEach(it=>ixItem(it));ixReconcile(ixS.items);ixS.groups=ixGroup(ixS.items);await ixFinish(ixS.groups,false);ixDraw();return}
   if(a==="deep"){btn.disabled=true;btn.textContent="Asking AI…";await ixDeep(g);try{if(g.histId&&g.ai==="ok")await patchRec(g.histId,{ai:true})}catch(e){}ixDraw();renderIxHist();return}}
@@ -313,12 +313,14 @@ async function ixSaveAll(){const msg=document.querySelector("[data-ixallmsg]");l
     g.save=await ixSave(g,true);if(g.save.state==="saved")ok++;else if(g.save.state==="failed")fail++;else skip++}
   ixDraw();renderIxHist();const m=document.querySelector("[data-ixallmsg]");if(m)m.textContent=`RECORDED ${ok} OF ${ixS.groups.length}`+(skip?` · ${skip} left for review (high risk, duplicate, or details missing)`:"")+(fail?` · ${fail} could not be saved`:"");toast(`Recorded ${ok} of ${ixS.groups.length}`)}
 // AI vision for one group: only the group's pictures are sent
-async function ixDeep(g){const pay=(g.pays.find(x=>!x.support)||g.pays[0]),ord=g.order;const files=[pay,ord].filter(Boolean).concat(g.pays.filter(p=>p!==pay).slice(0,1));
+async function ixDeep(g){const pay=(g.pays.find(x=>!x.support)||g.pays[0]),ord=g.order;let files=[pay,ord].filter(Boolean).concat(g.pays.filter(p=>p!==pay).slice(0,1));
+  // one thing missing on one side: only that screenshot goes to the AI (smaller upload, faster)
+  {const R=(g.reasonsAI||[]).filter(r=>r!=="result needs review"),oO=R.length&&R.every(r=>r==="order ID or amount missing"),oP=R.length&&R.every(r=>r==="payment amount or UTR missing");g.aiTargeted=false;if(oO&&ord){files=[ord];g.aiTargeted=true}else if(oP&&pay&&!g.partSum){files=[pay];g.aiTargeted=true}if(g.aiTargeted&&typeof ixStatTargeted==="function")ixStatTargeted()}
   if(!files.length)return;
   try{const out=await Promise.race([verExtract(files.map(f=>f.blob)),new Promise((_,no)=>setTimeout(()=>no(aiErr("busy","slow")),85000))]);
     const m1=ixMerge(g.pays[0]?g.pays[0].pay:{},out.X.pay,pay&&pay.ocr?pay.ocr.conf/100:null),m2=ixMerge(ord?ord.ord:{},out.X.ord,ord&&ord.ocr?ord.ocr.conf/100:null);
-    g.aiPay=m1.v;g.aiOrd=m2.v;g.aiFlags=out.X.flags;g.aiFilled=new Set([...m1.filled.map(k=>"pay."+k),...m2.filled.map(k=>"ord."+k)]);g.conflicts=[...m1.diffs.map(k=>"payment "+k),...m2.diffs.map(k=>"order "+k)];g.ai="ok";await ixlLearnLayout(g);ixVerify(g)}
-  catch(e){g.ai="unavailable";g.aiErr=e&&e.code;g.aiMsg=String(e&&(e.text||e.message)||"").slice(0,140);ixVerify(g)}
+    g.aiPay=m1.v;g.aiOrd=m2.v;g.aiFlags=out.X.flags;g.aiFilled=new Set([...m1.filled.map(k=>"pay."+k),...m2.filled.map(k=>"ord."+k)]);g.conflicts=[...m1.diffs.map(k=>"payment "+k),...m2.diffs.map(k=>"order "+k)];g.ai="ok";await ixlLearnLayout(g);ixVerify(g);try{ixCaseSave(g)}catch(e){}}
+  catch(e){g.ai="unavailable";g.aiErr=e&&e.code;g.aiMsg=String(e&&(e.text||e.message)||"").slice(0,140);ixVerify(g);try{ixCaseSave(g)}catch(e2){}}
   // part payments: each part picture is read on its own, so every part has its own amount, account and time (the AI only fills what the phone missed)
   if(g.partSum){for(const x of g.pays.filter(k=>k.part&&k.blob).slice(0,4)){const q=x.pay||{};if(q.amount>0&&(q.last4||q.bank||q.vpa)&&q.time&&q.date)continue;
     try{const r=(await verExtract([x.blob])).X.pay||{};const m=ixMerge(q,r,x.ocr&&x.ocr.conf!=null?x.ocr.conf/100:null);x.pay={...q,...m.v};if(!x.pay.last4&&r.acct)x.pay.last4=ixL4(r.acct);if(!x.pay.time&&r.time)x.pay.time=r.time;if(!x.pay.date&&r.date)x.pay.date=r.date}catch(e){}}}}
@@ -329,8 +331,8 @@ async function ixOcrAll(items,prog){let n=0;const skip=new Promise((_,no)=>{ixS.
   await Promise.all(Array.from({length:Math.min(C,items.length)},W))}
 async function ixFinish(groups,useAI){const jobs=[];
   for(const g of groups){ixVerify(g);
-    if(useAI&&g.reasonsAI.length&&ixAiReady()&&(g.pays.length||g.order)&&!g.ai)jobs.push(g);
-    else if(g.reasonsAI.length&&!ixAiReady())g.ai="na"}
+    if(useAI&&g.reasonsAI.length&&ixAiReady()&&(g.pays.length||g.order)&&!g.ai){jobs.push(g);try{ixStatNote(g,true)}catch(e){}}
+    else{if(g.reasonsAI.length&&!ixAiReady())g.ai="na";try{if(useAI)ixStatNote(g,false)}catch(e){}}}
   let k=0;const W=async()=>{while(k<jobs.length){const g=jobs[k++];await ixDeep(g);g.needAI=false}};
   await Promise.all(Array.from({length:Math.min(3,jobs.length)},W));
   for(const g of groups){if(!g.histId)await ixHistAdd(g)}}
