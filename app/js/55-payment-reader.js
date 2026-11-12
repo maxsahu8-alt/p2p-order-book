@@ -52,6 +52,7 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
   const find=re=>{for(const m of flat.matchAll(new RegExp(re.source,"ig"))){const v=fixO(m[1]);if((v.match(/\d/g)||[]).length>=6)return v}return ""};
   P.utr=find(/\bUTR\s*(?:No\.?|number)?\s*[:\-#]?\s*([A-Z0-9]{8,24})/)||find(/\bUPI\s*(?:Ref(?:erence)?\.?|Txn|transaction)\s*(?:No\.?|ID|number)?\s*[:\-#]?\s*([A-Z0-9]{8,24})/)||find(/\b(?:IMPS|NEFT|RTGS)\s*(?:Ref(?:erence)?\.?\s*)?(?:No\.?|ID|number)?\s*[:\-#]?\s*([A-Z0-9]{8,24})/)||find(/\b(?:Ref(?:erence)?\.?|RRN)\s*(?:No\.?|ID|number)?\s*[:\-#]?\s*(?:IMPS|NEFT|UPI)?\s*([A-Z0-9]{8,24})/)||find(/\b(?:Transaction|Txn)\s*(?:ID|No\.?)\s*[:\-#]?\s*([A-Z0-9]{8,32})/);
   if(!P.utr){const m=flat.match(/(?:^|[^\d])(\d{12})(?!\d)/);if(m)P.utr=m[1]}
+  if(!P.utr){const m=flat.match(/\b(?:ref(?:erence)?\.?|rrn|utr)\s*(?:no\.?|number|id)?\s*[:\-#]?\s*(\d{4})\s(\d{4})\s(\d{4})(?!\d)/i);if(m)P.utr=m[1]+m[2]+m[3]} // Paytm prints the reference in groups of four
   P.status=/fail(?:ed|ure)|declin|unsuccessful|reject|reversed|cancel/i.test(flat)?"Failed":/pending|processing|in progress|initiated/i.test(flat)?"Pending":/success|complet|credited|debited|received|\bsent\b|\bpaid\b/i.test(flat)?"Success":"";
   P.dir=/debited from|paid to|money sent|sent to|transferred to|you paid/i.test(flat)?"out":/received|credited (?:to|in|by|with)|credit alert/i.test(flat)?"in":"";
   P.method=/\bIMPS\b/i.test(flat)?"IMPS":/\bNEFT\b|\bRTGS\b/i.test(flat)?"NEFT":"UPI";
@@ -80,6 +81,10 @@ function payParse(raw){const lines=String(raw||"").split(/\n+/).map(x=>x.replace
       if(inl){lab=inl[1];l4=inl[2]}else if(MK.test(nx)){lab=rest;l4=MD(nx)}else if(!rest&&lines[i+2]&&MK.test((lines[i+2]||"").trim())){lab=nx;l4=MD(lines[i+2])}
       if(l4){lab=lab.replace(/[^A-Za-z0-9 .&'\-]/g," ").replace(/\s+/g," ").trim();P.fromLabel=lab.slice(0,40);P.fromLast4=l4.slice(-4);if(!P.last4||/^(?:debited from|paid from)\b/i.test(lines[i]))P.last4=l4.slice(-4);
         const w=(lab.toLowerCase().match(/[a-z]{3,}/g)||[]);if(P.sender&&w.some(x=>P.sender.toLowerCase().includes(x)))P.sender="";break}}}
+  // Paytm style: a bare "From" divider, then the SENDER's name and the SENDER's bank with its last digits ("Kotak Mahindra Bank - 1612"). That account is the payer's, not yours
+  for(let i=0;i<lines.length-2;i++){if(!/^[^A-Za-z]*from[^A-Za-z]*$/i.test(lines[i]))continue;const bl=lines[i+2],d=(bl.match(/(\d{4})\D*$/)||[])[1];if(d&&/bank/i.test(bl)&&!/[xX*•]/.test(bl)){P.fromLast4=d;P.fromLabel=bl.replace(/[^A-Za-z .&]/g," ").replace(/\s+/g," ").trim().slice(0,40);if(P.last4===d)P.last4="";const w=(P.fromLabel.toLowerCase().match(/[a-z]{4,}/g)||[]);if(P.bank&&w.some(x=>P.bank.toLowerCase().includes(x)))P.bank="";P.senderBank=true;
+    // "Paid Successfully" with the sender under "From": this receipt is for money you RECEIVED; the name at the top is the receiver
+    if(!P.dir)P.dir="in";if(!P.receiver&&lines[0]&&/@/.test(lines[1]||"")){const rn=nameOf(lines[0]);if(rn)P.receiver=rn}}break}
   // SMS style (one line): "... credited to RAVI KUMAR VPA ..." / "... received from AMIT SHARMA ..."
   const nm="([A-Za-z][A-Za-z .'\\-]{2,40}?)(?=\\s+(?:VPA|UPI|IMPS|NEFT|on|ref|via|a\\/c|\\()|[.,;(]|\\s*$)";
   if(!P.receiver){const m=flat.match(new RegExp("(?:credited to|paid to|sent to|transferred to)\\s+"+nm,"i"));if(m)P.receiver=nameOf(m[1])}
