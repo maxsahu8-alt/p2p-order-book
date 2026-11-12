@@ -242,3 +242,7 @@ label.bp-ck span{color:var(--fg);font-weight:500}
 .mkx-hero{position:relative;overflow:hidden}
 .mkx-hero::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 16%,transparent),transparent 70%);pointer-events:none}
 .mkx-ch,.mkx-cr{grid-template-columns:1fr 1.15fr 1.55fr .95fr}
+
+.apu-l{margin:6px 0 0;padding-left:18px;font-size:13px;line-height:1.5}
+.apu-bar{height:8px;border-radius:99px;background:var(--line,rgba(128,128,128,.25));overflow:hidden;margin:10px 0}
+.apu-bar i{display:block;height:100%;width:0;background:var(--fg);border-radius:99px;transition:width .3s}

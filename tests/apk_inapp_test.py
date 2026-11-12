@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 APP=os.environ.get("APP","/home/claude/p2p-tracker.html")
 INIT="""window.__c=[];window.__st={s:'idle',pct:0,err:''};
 window.P2PNative={appReady(){},appInfo(){return JSON.stringify({apk:'0.0.0.00112',code:34,web:'',lastCheck:0,channel:''})},
-apkInstall(u,h,c,n){window.__c.push(['dl',u,h,c,n]);if(!window.__keep)window.__st={s:'downloading',pct:40,err:''}},apkState(){return JSON.stringify(window.__st)},apkInstallAgain(){window.__c.push(['again'])},
+apkInstall(u,h,c,n){window.__c.push(['dl',u,h,c,n]);if(!window.__keep)window.__st={s:'downloading',pct:40,err:''}},apkState(){return JSON.stringify(window.__st)},apkCancel(){window.__c.push(['cancel'])},apkInstallAgain(){window.__c.push(['again'])},
 openUrl(u){window.__c.push(['open',u])},naGet(){return '{}'},naLog(){return '[]'}};"""
 async def main():
   ok=True
@@ -16,8 +16,10 @@ async def main():
     await pg.route("**/*",lambda r:r.abort() if r.request.url.startswith("http") else r.continue_())
     await pg.add_init_script(INIT)
     await pg.goto("file://"+APP);await pg.wait_for_timeout(900)
-    await pg.evaluate("P2PApkUpdate({name:'0.0.0.00113',code:35,sha256:'abc',url:'https://github.com/x/y/releases/latest/download/a.apk',notes:'n'})")
+    await pg.evaluate("P2PApkUpdate({name:'0.0.0.00113',code:35,sha256:'abc',size:50000000,url:'https://github.com/x/y/releases/latest/download/a.apk',notes:'- Faster\\n- Safer'})")
+    chk("sheet shows size+notes","What's new" in await pg.inner_text("#sheetBody"))
     await pg.click("#apk-dl");await pg.wait_for_timeout(900)
+    chk("bar visible",await pg.evaluate("!document.querySelector('.apu-bar').hidden"))
     chk("download started",await pg.evaluate("__c.some(c=>c[0]==='dl')"))
     chk("sha/code passed",await pg.evaluate("JSON.stringify(__c[0].slice(2))")=='["abc",35,"0.0.0.00113"]')
     await pg.evaluate("P2PApkDone('0.0.0.00113')");chk("updated toast","updated to" in (await pg.inner_text(".apkup")).lower())

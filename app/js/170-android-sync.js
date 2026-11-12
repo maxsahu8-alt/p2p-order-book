@@ -23,18 +23,29 @@ if(APK){const N=window.P2PNative;document.body.classList.add("apk");
   // called by the Android side
   window.P2PUpdated=v=>{const t=document.createElement("div");t.className="apkup";t.innerHTML=`<b>✓ ${APP_NAME} updated · v${esc(String(v))}</b><button type="button">Reload</button>`;t.querySelector("button").onclick=()=>location.reload();document.body.appendChild(t);setTimeout(()=>t.remove(),20000)};
   window.P2PApkDone=v=>{const t=document.createElement("div");t.className="apkup";t.innerHTML=`<b>✓ ${APP_NAME} updated to ${esc(String(v))}</b>`;document.body.appendChild(t);setTimeout(()=>t.remove(),8000)};
-  window.P2PApkUpdate=info=>{info=info||{};openSheet(`<div class="insw"><div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span><b>New ${APP_NAME} version</b><small>${esc(info.name||"")}</small></div>
-    ${info.notes?`<div class="icard"><p class="note" style="margin:0;white-space:pre-wrap">${esc(info.notes)}</p></div>`:""}<p class="note">Download, then tap Install. It installs over this app — your data stays.</p>
-    <div class="row2"><button type="button" class="mini ghost" data-close>Later</button><button type="button" class="mini psdl" id="apk-dl">Download update</button></div></div>`,el=>{const b=el.querySelector("#apk-dl"),nt=el.querySelector(".note");b.onclick=()=>{
-      if(typeof N.apkInstall!=="function"){N.openUrl(info.url||"");closeSheet();return}
-      b.disabled=true;b.textContent="Downloading… 0%";try{N.apkInstall(info.url||"",info.sha256||"",info.code||0,info.name||"")}catch(e){N.apkInstall(info.url||"")}
-      const t=setInterval(()=>{let st={};try{st=JSON.parse(N.apkState())}catch(e){}
-        if(!document.body.contains(b)){clearInterval(t);return}
-        if(st.s==="downloading")b.textContent="Downloading… "+(st.pct||0)+"%";
-        else if(st.s==="error"){clearInterval(t);b.disabled=false;b.textContent="Retry";nt.textContent="Download failed: "+(st.err||"unknown")+". Tap Retry."}
-        else if(st.s==="perm"){clearInterval(t);b.disabled=false;b.textContent="Install";nt.textContent="Allow 'Install unknown apps' for this app, come back, then tap Install.";b.onclick=()=>{N.apkInstallAgain()}}
-        else if(st.s==="installing"){clearInterval(t);b.disabled=false;b.textContent="Install again";nt.textContent="Android install screen opened. Tap Install there. Your data stays.";b.onclick=()=>{N.apkInstallAgain()}}
-      },400)}})};
+  window.P2PApkUpdate=info=>{info=info||{};const cur=(apkInfo().apk||""),mb=n=>(n/1048576).toFixed(n>=1.05e7?0:1)+" MB";
+    const bl=String(info.notes||"").split("\n").map(x=>x.replace(/^[-•*\s]+/,"").trim()).filter(Boolean).slice(0,5);
+    openSheet(`<div class="insw apu"><div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span><b>Update available</b><small>${cur?esc(cur)+" → ":""}${esc(info.name||"")}${info.size?" · "+mb(info.size):""}</small></div>
+    ${bl.length?`<div class="icard"><b style="font-size:12px">What's new</b><ul class="apu-l">${bl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+    <div class="apu-bar" hidden><i></i></div><p class="note apu-n">Tap Update, then tap Install on the Android screen. It installs over this app. Your data stays.</p>
+    <div class="row2"><button type="button" class="mini ghost" id="apk-later">Later</button><button type="button" class="mini psdl" id="apk-dl">Update</button></div></div>`,el=>{
+      const b=el.querySelector("#apk-dl"),nt=el.querySelector(".apu-n"),bar=el.querySelector(".apu-bar"),fill=bar.firstChild,lt=el.querySelector("#apk-later");let t=null;
+      const stop=()=>{if(t){clearInterval(t);t=null}};
+      lt.onclick=()=>{if(t&&!confirm("Stop the download?")){return}if(t){try{N.apkCancel()}catch(e){}}stop();closeSheet()};
+      const start=()=>{
+        if(typeof N.apkInstall!=="function"){N.openUrl(info.url||"");closeSheet();return}
+        b.disabled=true;b.textContent="Downloading… 0%";bar.hidden=false;fill.style.width="0%";nt.textContent="Downloading. You can close this and keep using the app.";lt.textContent="Cancel";
+        try{N.apkInstall(info.url||"",info.sha256||"",info.code||0,info.name||"")}catch(e){N.apkInstall(info.url||"")}
+        t=setInterval(()=>{let st={};try{st=JSON.parse(N.apkState())}catch(e){}
+          if(!document.body.contains(b)){stop();return}
+          if(st.s==="downloading"){const p=st.pct||0;b.textContent="Downloading… "+p+"%";fill.style.width=p+"%";if(st.total)nt.textContent=mb(st.got||0)+" of "+mb(st.total)}
+          else if(st.s==="error"){stop();b.disabled=false;b.textContent="Retry";bar.hidden=true;lt.textContent="Later";
+            const m=String(st.err||"");nt.textContent=/Unable to resolve|timed out|connect|Network|failed to/i.test(m)?"No internet. Check your connection and tap Retry.":/Checksum/i.test(m)?"The file did not match its fingerprint, so it was not installed. Tap Retry.":"Download failed ("+m+"). Tap Retry.";b.onclick=start}
+          else if(st.s==="idle"){stop();b.disabled=false;b.textContent="Update";bar.hidden=true;lt.textContent="Later";nt.textContent="Download cancelled.";b.onclick=start}
+          else if(st.s==="perm"){stop();b.disabled=false;b.textContent="Open settings";bar.hidden=true;lt.textContent="Later";nt.textContent="Turn on 'Install unknown apps' for Pexai, come back here, then tap Install.";b.onclick=()=>{N.apkInstallAgain();b.textContent="Install"}}
+          else if(st.s==="installing"){stop();b.disabled=false;b.textContent="Install again";fill.style.width="100%";lt.textContent="Close";nt.textContent="Android install screen opened. Tap Install there. Your data stays.";b.onclick=()=>{N.apkInstallAgain()}}
+        },400)};
+      b.onclick=start})};
   window.P2PBack=()=>{const lk=$("#lock");if(lk&&!lk.hidden)return false;const fo=$("#dFold");if(fo&&!fo.hidden){closeFolder();return true}
     if(!$("#sheetBg").hidden){closeSheet();return true}if(!$("#drawer").hidden){$("#drawer").hidden=true;return true}const ap=$("#aiPop");if(ap&&!ap.hidden){closeAiPop();return true}
     const us=$("#us");if(us&&!us.hidden&&typeof closeUS==="function"){closeUS();return true}if($("#p-home").hidden){goPage("home");return true}return false};
