@@ -510,10 +510,18 @@ function ixCpRisk(g,hi,me){try{if(!feat("counterparties"))return;const cpn=ixCpO
   const x=cpx(cpn),lw=((x&&x.labels)||[]).filter(l=>CP_LBL_WARN.includes(l));if(lw.length)me.push(lw.join(", ")+": "+cpn);
   const st=cpStats()[cpKey(cpn)];if(st&&st.n>=3&&st.c/st.n>=0.3&&!(t&&t.tag==="block"))me.push(`${st.c} of ${st.n} orders with ${cpn} were cancelled`);
   const am=(g.X.pay&&g.X.pay.amount)||(g.X.ord&&g.X.ord.fiat);const w=am?cpLimitWarn(cpn,+am):"";if(w)me.push(w)}catch(e){}}
+// name pair memory: the exchange order page shows a nickname and a real name. Remember both per deal and warn when a pair does not fit an earlier one
+function ixPairCheck(g){try{const O=(g.X&&g.X.ord)||{},nk=String(O.nick||"").trim(),rn=String(ixCpOf(g)||"").trim();if(!nk||!rn)return null;
+  const T=orders.filter(o=>o.status!=="Cancelled"&&o.cp&&o.nk&&(!g.target||o.id!==g.target.id)),sameNk=T.filter(o=>ixlN(o.nk)===ixlN(nk));
+  const bad=sameNk.find(o=>verName(o.cp,rn)==="X");if(bad)return{lvl:"hi",nick:nk,real:rn,other:bad.cp,msg:`Nickname “${nk}” earlier belonged to ${bad.cp}, but this order shows ${rn}. It may be a different person, so check before saving to a party`};
+  if(g.target&&g.target.nk&&ixlN(g.target.nk)!==ixlN(nk)&&verName(g.target.cp||"",rn)==="X")return{lvl:"hi",nick:nk,real:rn,other:g.target.cp,msg:`This order is saved as ${g.target.cp} (“${g.target.nk}”), but the screenshot shows ${rn} (“${nk}”)`};
+  const bad2=!sameNk.length&&T.find(o=>verName(o.cp,rn)==="M"&&ixlN(o.nk)!==ixlN(nk));if(bad2)return{lvl:"me",nick:nk,real:rn,other:bad2.nk,msg:`${rn} earlier had the nickname “${bad2.nk}”, now “${nk}”. Check once`};
+  return null}catch(e){return null}}
 function ixRisk(g){const F=g.cmp.fields,hi=[],me=[],fl=g.cmp.flags;const f=k=>F.find(x=>x.k===k)||{};if(g.partLoose)me.push("Part payments were joined only because they add up to the order total (names / time did not confirm). Check once.");
   if(f("amount").res==="MISMATCH")hi.push("Amount mismatch");
   if(f("buyer").res==="MISMATCH"||f("seller").res==="MISMATCH")hi.push("Name mismatch");else if(f("buyer").res==="UNCLEAR"||f("seller").res==="UNCLEAR")me.push("Names only partly match");
   ixCpRisk(g,hi,me);
+  {const pc=ixPairCheck(g);g.pair=pc;if(pc)(pc.lvl==="hi"?hi:me).push(pc.msg)}
   if(g.cmp.local.some(x=>/Duplicate UTR/.test(x)))hi.push("Duplicate UTR");
   if((g.dups||[]).some(d=>d.k==="amt"))me.push("Possible duplicate transaction");if((g.dups||[]).some(d=>d.k==="shot"))hi.push("Screenshot already used");
   if(f("status").res==="MISMATCH")hi.push("Payment shows as failed");else if(f("status").res==="UNCLEAR")me.push("Payment status missing or unclear");

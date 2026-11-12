@@ -3469,10 +3469,18 @@ function ixCpRisk(g,hi,me){try{if(!feat("counterparties"))return;const cpn=ixCpO
   const x=cpx(cpn),lw=((x&&x.labels)||[]).filter(l=>CP_LBL_WARN.includes(l));if(lw.length)me.push(lw.join(", ")+": "+cpn);
   const st=cpStats()[cpKey(cpn)];if(st&&st.n>=3&&st.c/st.n>=0.3&&!(t&&t.tag==="block"))me.push(`${st.c} of ${st.n} orders with ${cpn} were cancelled`);
   const am=(g.X.pay&&g.X.pay.amount)||(g.X.ord&&g.X.ord.fiat);const w=am?cpLimitWarn(cpn,+am):"";if(w)me.push(w)}catch(e){}}
+// name pair memory: the exchange order page shows a nickname and a real name. Remember both per deal and warn when a pair does not fit an earlier one
+function ixPairCheck(g){try{const O=(g.X&&g.X.ord)||{},nk=String(O.nick||"").trim(),rn=String(ixCpOf(g)||"").trim();if(!nk||!rn)return null;
+  const T=orders.filter(o=>o.status!=="Cancelled"&&o.cp&&o.nk&&(!g.target||o.id!==g.target.id)),sameNk=T.filter(o=>ixlN(o.nk)===ixlN(nk));
+  const bad=sameNk.find(o=>verName(o.cp,rn)==="X");if(bad)return{lvl:"hi",nick:nk,real:rn,other:bad.cp,msg:`Nickname “${nk}” earlier belonged to ${bad.cp}, but this order shows ${rn}. It may be a different person, so check before saving to a party`};
+  if(g.target&&g.target.nk&&ixlN(g.target.nk)!==ixlN(nk)&&verName(g.target.cp||"",rn)==="X")return{lvl:"hi",nick:nk,real:rn,other:g.target.cp,msg:`This order is saved as ${g.target.cp} (“${g.target.nk}”), but the screenshot shows ${rn} (“${nk}”)`};
+  const bad2=!sameNk.length&&T.find(o=>verName(o.cp,rn)==="M"&&ixlN(o.nk)!==ixlN(nk));if(bad2)return{lvl:"me",nick:nk,real:rn,other:bad2.nk,msg:`${rn} earlier had the nickname “${bad2.nk}”, now “${nk}”. Check once`};
+  return null}catch(e){return null}}
 function ixRisk(g){const F=g.cmp.fields,hi=[],me=[],fl=g.cmp.flags;const f=k=>F.find(x=>x.k===k)||{};if(g.partLoose)me.push("Part payments were joined only because they add up to the order total (names / time did not confirm). Check once.");
   if(f("amount").res==="MISMATCH")hi.push("Amount mismatch");
   if(f("buyer").res==="MISMATCH"||f("seller").res==="MISMATCH")hi.push("Name mismatch");else if(f("buyer").res==="UNCLEAR"||f("seller").res==="UNCLEAR")me.push("Names only partly match");
   ixCpRisk(g,hi,me);
+  {const pc=ixPairCheck(g);g.pair=pc;if(pc)(pc.lvl==="hi"?hi:me).push(pc.msg)}
   if(g.cmp.local.some(x=>/Duplicate UTR/.test(x)))hi.push("Duplicate UTR");
   if((g.dups||[]).some(d=>d.k==="amt"))me.push("Possible duplicate transaction");if((g.dups||[]).some(d=>d.k==="shot"))hi.push("Screenshot already used");
   if(f("status").res==="MISMATCH")hi.push("Payment shows as failed");else if(f("status").res==="UNCLEAR")me.push("Payment status missing or unclear");
@@ -6291,7 +6299,7 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       if(split.length>1)notes.push("Paid from "+split.length+" banks")}catch(e){}}
     if(g.target){const t=g.target;
       if(P.utr&&t.utr&&normRef(t.utr)===normRef(P.utr))return{state:"skipped",msg:"Already recorded on that order"};
-      const vpaN=(ixSide(g)==="BUY"||t.side==="BUY")?(P.vpa||pp.vpa||""):"";const patch={...(vpaN&&!t.vpa?{vpa:vpaN}:{}),...(t.side==="SELL"&&P.sender&&!t.payer?{payer:String(P.sender).slice(0,60)}:{}),shots:[...new Set([...(t.shots||[]),...shots])],proofs:[...(t.proofs||[]),...proofs],pv,...(P.utr&&!t.utr?{utr:P.utr}:{}),...(((g.tdsSet!=null?g.tdsSet:O.tds)>0)&&t.side==="SELL"&&!t.tds?{tds:g.tdsSet!=null?g.tdsSet:O.tds,...(O.tdsQ>0&&g.tdsSet==null?{tdsQ:O.tdsQ}:{})}:{}),...(!exIdOf(t)&&O.id?{exId:O.id}:{}),...(P.date?{payAt:verWhen(P.date,P.time)||undefined}:{})};
+      const vpaN=(ixSide(g)==="BUY"||t.side==="BUY")?(P.vpa||pp.vpa||""):"";const patch={...(vpaN&&!t.vpa?{vpa:vpaN}:{}),...(!t.nk&&O.nick?{nk:String(O.nick).slice(0,40)}:{}),...(t.side==="SELL"&&P.sender&&!t.payer?{payer:String(P.sender).slice(0,60)}:{}),shots:[...new Set([...(t.shots||[]),...shots])],proofs:[...(t.proofs||[]),...proofs],pv,...(P.utr&&!t.utr?{utr:P.utr}:{}),...(((g.tdsSet!=null?g.tdsSet:O.tds)>0)&&t.side==="SELL"&&!t.tds?{tds:g.tdsSet!=null?g.tdsSet:O.tds,...(O.tdsQ>0&&g.tdsSet==null?{tdsQ:O.tdsQ}:{})}:{}),...(!exIdOf(t)&&O.id?{exId:O.id}:{}),...(P.date?{payAt:verWhen(P.date,P.time)||undefined}:{})};
       if(split.length&&allocated(t)<orderTotal(t)-0.5){const have=new Set((t.splits||[]).map(x=>x.bank+"|"+x.amt));patch.splits=[...(t.splits||[]),...split.filter(x=>!have.has(x.bank+"|"+x.amt))]}
       await patchRec(t.id,patch);await auditLog(t,"intake_attach",{result:g.cmp.overall,risk:g.risk.level});g.savedId=t.id;notes.unshift("Added to your existing order")}
     else{const side=ixSide(g);if(!side)return{state:"failed",msg:"Choose whether you bought or sold, then save"};
@@ -6301,10 +6309,10 @@ async function ixSave(g,force){const X=g.X,P=X.pay,O=X.ord;
       if(!(qty2>0&&rate2>0)&&ixStatusOf(O.status)==="Cancelled"&&fiat>0){const tr=rate2>0?rate2:ixTypRate();if(tr>0){rate2=rate2>0?rate2:tr;qty2=qty2>0?qty2:+(fiat/rate2).toFixed(2);estNote="Cancelled order. "+(rate?"":"Rate estimated from your recent orders")}}
       if(!(qty2>0&&rate2>0))return{state:"failed",msg:"Order quantity or price couldn't be read. Run Deep AI check or add the order by hand."}
       const cp=side==="SELL"?(O.buyer||P.sender||""):(O.seller||P.receiver||"");
-      const no={id:newId("o"),...(side==="SELL"&&P.sender?{payer:String(P.sender).slice(0,60)}:{}),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:[estNote,O.why?"Reason: "+O.why:""].filter(Boolean).join(" · "),splits:split,proofs,shots,pv,time:ixOrdTime(X,P.date?verWhen(P.date,P.time):0)||Date.now(),src:"ai"};
+      const no={id:newId("o"),...(side==="SELL"&&P.sender?{payer:String(P.sender).slice(0,60)}:{}),...(O.nick?{nk:String(O.nick).slice(0,40)}:{}),side,coin:O.coin||"USDT",qty:qty2,rate:rate2,status:ixStatusOf(O.status),mode:"P2P",pay:method,platform:O.platform?(O.platform[0].toUpperCase()+O.platform.slice(1).toLowerCase()):(pref("plat")||"Binance"),cp,note:[estNote,O.why?"Reason: "+O.why:""].filter(Boolean).join(" · "),splits:split,proofs,shots,pv,time:ixOrdTime(X,P.date?verWhen(P.date,P.time):0)||Date.now(),src:"ai"};
       {const td=g.tdsSet!=null?g.tdsSet:O.tds;if(side==="SELL"&&td>0){no.tds=td;if(O.tdsQ>0&&g.tdsSet==null)no.tdsQ=O.tdsQ;no.tdsSrc="order"}}if(O.id)no.exId=String(O.id).slice(0,40);if(P.utr)no.utr=String(P.utr).slice(0,40);if(side==="BUY"&&(P.vpa||pp.vpa))no.vpa=P.vpa||pp.vpa;if(P.date)no.payAt=verWhen(P.date,P.time)||undefined;
       await putRec(no);await auditLog(no,"create",{by:"intake",result:g.cmp.overall,risk:g.risk.level});g.savedId=no.id}
-    try{const nk=(g.order&&g.order.ord&&g.order.ord.nick)||O.nick||"";const real=g.target?g.target.cp:(O.buyer&&ixSide(g)==="SELL"?O.buyer:O.seller)||"";if(nk&&real&&ixlN(nk)!==ixlN(real))await ixLinkNames(nk,real)}catch(e){}
+    try{const nk=(g.order&&g.order.ord&&g.order.ord.nick)||O.nick||"";const real=g.target?g.target.cp:(O.buyer&&ixSide(g)==="SELL"?O.buyer:O.seller)||"";if(nk&&real&&ixlN(nk)!==ixlN(real)&&!(g.pair&&g.pair.lvl==="hi"))await ixLinkNames(nk,real)}catch(e){}
     try{const ln=await ixlOnSave(g);if(ln)notes.push(ln)}catch(e){}
     try{if(P.lite&&bk&&P.amount>0&&!g.liteDone){g.liteDone=true;const lb=banks.find(x=>x.id===bk.id);if(lb&&lb.lite&&lb.lite.on){const nb=await liteApply(lb,"spend",+P.amount,"from payment screenshot");notes.push("Paid from UPI Lite · Lite balance now "+inr(nb))}}}catch(e){}
     g.saved=true;ixHistUpdate(g);return{state:"saved",msg:notes.join(" · ")||"Saved"}
@@ -6997,7 +7005,7 @@ sheets.wa=function(tab){tab=tab||"home";const due=parties.map(p=>({p,l:partyOwed
   })};
 ACT.wa_send={d:a=>`WhatsApp ${a.kind==="stmt"?"statement":"update"} → ${(parties.find(p=>p.id===a.party)||{}).name||"party"}`,run:async a=>{const p=parties.find(x=>x.id===a.party);if(!p)throw new Error("party not found");try{closeAiPop()}catch(e){}setTimeout(()=>sheets.wasend({party:p.id,kind:a.kind==="stmt"?"stmt":"update"}),200)}};
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=222;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=223;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -7064,6 +7072,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00223","12 Nov 2026",["Smart Intake now remembers both names on the exchange order page, the nickname and the real name, for every order you save. If a nickname that earlier belonged to one person now shows another real name, the order goes to review (High risk) instead of being added to the wrong party, and the two names are not linked. If a known real name comes with a new nickname, you get a warning to check once. Works for BUY and SELL."]],
   ["0.0.0.00222","12 Nov 2026",["Smart Intake can now read up to 50 screenshots at once. It shows a progress bar with a Stop button, double-checks unclear parts with AI three at a time, and ends with a Batch report (screenshots, orders, payments, saved, to review, duplicates, unreadable). If saved orders have no bank, it shows your usual bank and opens Bank audit."]],
   ["0.0.0.00221","12 Nov 2026",["Features page redesigned: every optional function has its own on/off switch (5 more added: Bank audit, Bank charges, Pay card and UPI QR, Notes, Risk checks), All on and All off, a save bar that shows how many changes, and a Core list of what is always on."]],
   ["0.0.0.00220","12 Nov 2026",["Copyright line is back in About."]],
