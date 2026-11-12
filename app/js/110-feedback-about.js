@@ -1,5 +1,5 @@
 // ================= FEEDBACK & UPDATES
-const APP_BUILD=207;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
+const APP_BUILD=208;const APP_VER="0.0.0."+String(APP_BUILD).padStart(5,"0");
 setInterval(()=>{const c=document.getElementById("dClock");if(c)c.textContent=new Date().toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})},15000);
 
 const FB_T={bug:["Problem","🐞","Kya galat hua? Kis screen pe, kya dabaya, kya aana chahiye tha…"],feat:["New feature","✨","Naya kya chahiye? Jaise: har party ka monthly summary…"],imp:["Improve","🔧","Kya behtar ho sakta hai? Jaise: ye button bada ho…"],like:["Like it","❤️","Kya accha laga? Isse pata chalta hai kya mat badlo."]};
@@ -66,6 +66,7 @@ sheets.feedback=function(tab,pre){tab=tab||"send";pre=pre||{};
   })};
 // ================= ABOUT (version + updates)
 const APP_LOG=[
+  ["0.0.0.00208","12 Nov 2026",["About page made more compact: the logo and name sit in one row with the app and APK version, and the update status (Up to date or New version) sits inside the App updates card."]],
   ["0.0.0.00207","12 Nov 2026",["About page redesigned: App updates and Feedback are now separate cards, Last checked shows how long ago, a clear Check for updates button, version history shows the latest 4 with older ones folded away, and your data is shown as three tiles."]],
   ["0.0.0.00206","12 Nov 2026",["Update screen now shows file size the same way Android does (48 MB instead of 46 MB for the same file)."]],
   ["0.0.0.00205","12 Nov 2026",["Update screen redesigned: it shows your version and the new one, the file size, a What's new list, a real progress bar with MB downloaded and a Cancel button. Errors now say what went wrong in plain words, and a notification shows download progress. Needs APK 0.0.0.00116 for Cancel and the notification."]],
@@ -281,13 +282,13 @@ sheets.about=function(){const FL=fbList();const prev=FL.filter(x=>x.status==="pr
   const st=prev.length?["Update ready","ready"]:work?["Update being built","work"]:["Up to date","ok"];
   openSheet(`<div class="insw abw">
     <div class="abh"><span class="dlogo dl2 abl">${PX_LOGO}</span>
-      <b>${pxWord()}</b><em class="abt">Your P2P business, always in order</em><small>Version ${APP_VER}</small><span class="abs ${st[1]}">${st[1]==="ok"?"✓ ":""}${st[0]}</span></div>
+      <div class="abm"><b>${pxWord()}</b><em class="abt">Your P2P business, always in order</em><small>v${APP_VER}${APK?" · APK "+esc(apkInfo().apk||""):""}</small></div></div>
     <div class="pcsec">App updates</div>
     <div class="icard abu">
       ${prev.length?`<div class="abnew"><b>🎉 New version ready</b><small>${prev.length} change${prev.length>1?"s":""} from your feedback:</small><ul>${prev.slice(0,5).map(x=>`<li>${esc(x.reply||x.text)}</li>`).join("")}</ul><div class="fbact"><a class="mini ghost" href="${esc(pv)}" target="_blank" rel="noopener">Try preview</a><button type="button" class="mini psdl" id="ab-apply">Apply update</button></div></div>`:""}
-      <div class="abr"><span>App version</span><b>${APP_VER}</b></div>
+      <div class="abst1"><span class="abs ${st[1]}">${st[1]==="ok"?"✓ ":""}${st[0]}</span><small>${st[1]==="ok"?"You have the latest version":st[1]==="ready"?"A new version is waiting":"A new version is being built"}</small></div>
       ${APK?(()=>{const I=apkInfo();const lc=+I.lastCheck||0,ago=lc?Math.max(0,Math.round((Date.now()-lc)/60000)):-1,rel=ago<0?"Never":ago<1?"Just now":ago<60?ago+" min ago":ago<1440?Math.round(ago/60)+" hr ago":new Date(lc).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
-        return`<div class="abr"><span>Android app (APK)</span><b>${esc(I.apk||"1.0")}</b></div><div class="abr"><span>Last checked</span><b>${rel}</b></div><button type="button" class="mini psdl abck" id="ab-chk">Check for updates</button>`})():""}
+        return`<div class="abr"><span>Last checked</span><b>${rel}</b></div><button type="button" class="mini psdl abck" id="ab-chk">Check for updates</button>`})():""}
     </div>
     <div class="pcsec">Feedback and weekly improvements</div>
     <div class="icard">
